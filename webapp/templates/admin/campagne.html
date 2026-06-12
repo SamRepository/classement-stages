@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block titre %}Campagne{% endblock %}
+{% block contenu %}
+<h1>Campagne</h1>
+<article>
+  <h3>{{ campaign.grid_id }} — {{ campaign.institution_id }}
+      <span class="badge {{ campaign.statut }}">{{ campaign.statut }}</span></h3>
+  {% if campaign.statut == 'gelee' %}
+  <p>Classement gelé{% if campaign.frozen_at %} le {{ campaign.frozen_at.strftime('%d/%m/%Y %H:%M') }}{% endif %} :
+     les paramètres sont figés.</p>
+  {% else %}
+  <form method="post" action="/admin/campagne">
+    <div class="grid">
+      <label>Date de référence de la campagne
+        <input type="date" name="campaign_date" value="{{ campaign.campaign_date.isoformat() }}">
+      </label>
+      <label>Statut
+        <select name="statut">
+          <option value="ouverte" {% if campaign.statut == 'ouverte' %}selected{% endif %}>ouverte (saisie possible)</option>
+          <option value="cloturee" {% if campaign.statut == 'cloturee' %}selected{% endif %}>clôturée (saisie fermée)</option>
+        </select>
+      </label>
+    </div>
+    <div class="grid">
+      <label>Ouverture de la saisie (optionnel)
+        <input type="datetime-local" name="date_ouverture"
+               value="{{ campaign.date_ouverture.strftime('%Y-%m-%dT%H:%M') if campaign.date_ouverture else '' }}">
+      </label>
+      <label>Clôture de la saisie (optionnel)
+        <input type="datetime-local" name="date_cloture"
+               value="{{ campaign.date_cloture.strftime('%Y-%m-%dT%H:%M') if campaign.date_cloture else '' }}">
+      </label>
+    </div>
+    <button type="submit">Enregistrer</button>
+  </form>
+  {% endif %}
+</article>
+
+<article>
+  <h3>Dossiers ({{ dossiers|length }})</h3>
+  <table>
+    <thead><tr><th>Réf.</th><th>Candidat</th><th>Statut</th><th>Soumis le</th><th></th></tr></thead>
+    <tbody>
+      {% for d in dossiers %}
+      <tr>
+        <td>{{ d.candidate_ref }}</td>
+        <td>{{ d.user.nom }} {{ d.user.prenom }}</td>
+        <td><span class="badge {{ d.statut }}">{{ d.statut }}</span></td>
+        <td>{{ d.submitted_at.strftime('%d/%m/%Y %H:%M') if d.submitted_at else '—' }}</td>
+        <td>
+          {% if d.statut == 'soumis' and campaign.statut != 'gelee' %}
+          <form method="post" action="/admin/dossiers/{{ d.id }}/reouvrir" class="inline-form"
+                onsubmit="return confirm('Rouvrir le dossier {{ d.candidate_ref }} ? Les décisions déjà prises sont conservées.');">
+            <button class="secondary outline">Rouvrir</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5">Aucun dossier.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</article>
+{% endblock %}

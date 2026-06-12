@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block titre %}Bénéfices antérieurs{% endblock %}
+{% block contenu %}
+<h1>Historique des bénéfices</h1>
+<p><small>Ces données font foi : elles déterminent la pénalité « bénéfices antérieurs »
+   (3 − n) et la fenêtre « après dernier bénéfice » de chaque candidat.</small></p>
+
+<form method="get" action="/admin/benefices">
+  <label>Enseignant
+    <select name="user_id" onchange="this.form.submit()">
+      <option value="">— choisir —</option>
+      {% for e in enseignants %}
+      <option value="{{ e.id }}" {% if cible and cible.id == e.id %}selected{% endif %}>
+        {{ e.nom }} {{ e.prenom }} ({{ e.email }})
+      </option>
+      {% endfor %}
+    </select>
+  </label>
+</form>
+
+{% if cible %}
+<article>
+  <h3>Bénéfices de {{ cible.nom }} {{ cible.prenom }}</h3>
+  <table>
+    <thead><tr><th>Date de mobilité</th><th>Clôture plateforme</th><th>Note</th><th></th></tr></thead>
+    <tbody>
+      {% for b in benefits %}
+      <tr>
+        <td>{{ b.date.strftime('%d/%m/%Y') }}</td>
+        <td>{{ b.platform_close_date.strftime('%d/%m/%Y') if b.platform_close_date else '—' }}</td>
+        <td>{{ b.note or '' }}</td>
+        <td>
+          <form method="post" action="/admin/benefices/{{ b.id }}/supprimer" class="inline-form"
+                onsubmit="return confirm('Supprimer ce bénéfice ?');">
+            <button class="secondary outline">✕</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">Aucun bénéfice enregistré.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <form method="post" action="/admin/benefices">
+    <input type="hidden" name="user_id" value="{{ cible.id }}">
+    <div class="grid">
+      <label>Date de la mobilité <input type="date" name="date" required></label>
+      <label>Clôture de plateforme <input type="date" name="platform_close_date"></label>
+      <label>Note <input name="note" placeholder="ex. stage 2024 Barcelone"></label>
+    </div>
+    <button type="submit">Ajouter le bénéfice</button>
+  </form>
+</article>
+{% endif %}
+{% endblock %}

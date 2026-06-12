@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block titre %}Utilisateurs{% endblock %}
+{% block contenu %}
+<h1>Utilisateurs</h1>
+
+{% if nouveaux %}
+<article>
+  <h3>Comptes créés / mots de passe réinitialisés</h3>
+  <p class="warning"><strong>Notez ces mots de passe maintenant</strong> : ils ne seront plus
+     affichés (communication individuelle à chaque intéressé).</p>
+  <table>
+    <thead><tr><th>Email</th><th>Nom</th><th>Prénom</th><th>Mot de passe initial</th></tr></thead>
+    <tbody>
+      {% for n in nouveaux %}
+      <tr><td>{{ n.email }}</td><td>{{ n.nom }}</td><td>{{ n.prenom }}</td><td><code>{{ n.password }}</code></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</article>
+{% endif %}
+{% if ignores %}
+<article>
+  <h3>Lignes ignorées</h3>
+  <ul>{% for m in ignores %}<li><small>{{ m }}</small></li>{% endfor %}</ul>
+</article>
+{% endif %}
+
+<div class="grid">
+  <article>
+    <h3>Créer un compte</h3>
+    <form method="post" action="/admin/utilisateurs">
+      <label>Email <input type="email" name="email" required></label>
+      <div class="grid">
+        <label>Nom <input name="nom" required></label>
+        <label>Prénom <input name="prenom"></label>
+      </div>
+      <label>Rôle
+        <select name="role">
+          <option value="enseignant">Enseignant (candidat)</option>
+          <option value="commission">Membre de la commission</option>
+          <option value="admin">Administrateur</option>
+        </select>
+      </label>
+      <button type="submit">Créer (mot de passe généré)</button>
+    </form>
+  </article>
+  <article>
+    <h3>Importer des comptes (CSV / Excel)</h3>
+    <p><small>Colonnes reconnues : email, nom, prénom, référence de candidature, département.
+       Chaque enseignant créé reçoit un dossier brouillon pour la campagne en cours.</small></p>
+    <form method="post" action="/admin/utilisateurs/import" enctype="multipart/form-data">
+      <input type="file" name="fichier" accept=".csv,.xlsx" required>
+      <button type="submit">Importer</button>
+    </form>
+  </article>
+</div>
+
+<table>
+  <thead><tr><th>Email</th><th>Nom</th><th>Rôle</th><th>Actif</th><th></th></tr></thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.email }}</td>
+      <td>{{ u.nom }} {{ u.prenom }}</td>
+      <td>{{ u.role }}</td>
+      <td>{{ 'oui' if u.actif else 'non' }}</td>
+      <td>
+        <form method="post" action="/admin/utilisateurs/{{ u.id }}/basculer-actif" class="inline-form">
+          <button class="secondary outline">{{ 'Désactiver' if u.actif else 'Réactiver' }}</button>
+        </form>
+        <form method="post" action="/admin/utilisateurs/{{ u.id }}/motdepasse" class="inline-form"
+              onsubmit="return confirm('Réinitialiser le mot de passe de {{ u.email }} ?');">
+          <button class="secondary outline">Réinit. mot de passe</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

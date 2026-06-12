@@ -18,6 +18,26 @@ from sqlalchemy.orm import Session
 
 from webapp.models import Campaign, Dossier, User
 from webapp.security import generate_password, hash_password
+from webapp.services.scoring import get_institution
+
+
+def _normalize(text: str) -> str:
+    t = unicodedata.normalize("NFKD", text.strip().lower())
+    return "".join(c for c in t if not unicodedata.combining(c))
+
+
+def _departement_resolver(institution_id: str):
+    """id ou libellé de département (normalisé) → id du profil d'établissement."""
+    table: dict[str, str] = {}
+    for d in get_institution(institution_id).get("departements", []):
+        table[_normalize(d["id"])] = d["id"]
+        if d.get("label_fr"):
+            table[_normalize(d["label_fr"])] = d["id"]
+
+    def resolve(value: str) -> str | None:
+        return table.get(_normalize(value)) if value else None
+
+    return resolve
 
 
 def _map_headers(headers: list[str]) -> dict[str, int]:
@@ -27,7 +47,9 @@ def _map_headers(headers: list[str]) -> dict[str, int]:
         h = "".join(c for c in h if not unicodedata.combining(c))
         if "mail" in h and "email" not in mapping:
             mapping["email"] = i
-        elif ("prenom" in h or "prénom" in h) and "prenom" not in mapping:
+        elif h == "nom_prenom" and "nom" not in mapping:
+            mapping["nom"] = i  # nom complet (feuille Candidats du circuit Excel)
+        elif "prenom" in h and "prenom" not in mapping:
             mapping["prenom"] = i
         elif "nom" in h and "nom" not in mapping:
             mapping["nom"] = i
@@ -70,6 +92,7 @@ def import_accounts(
     if not rows:
         raise HTTPException(status_code=422, detail="Fichier vide.")
     mapping = _map_headers(rows[0])
+    resolve_departement = _departement_resolver(campaign.institution_id)
 
     created: list[dict] = []
     skipped: list[str] = []
@@ -92,11 +115,17 @@ def import_accounts(
                     nom=nom or email.split("@")[0], prenom=cell("prenom"), role="enseignant")
         db.add(user)
         db.flush()
+        departement = resolve_departement(cell("departement"))
+        if cell("departement") and departement is None:
+            skipped.append(
+                f"Ligne {index} : département {cell('departement')!r} inconnu du profil — "
+                "laissé vide sur le dossier."
+            )
         db.add(Dossier(
             campaign_id=campaign.id,
             user_id=user.id,
             candidate_ref=cell("ref") or f"WEB-{user.id:03d}",
-            departement=cell("departement") or None,
+            departement=departement,
         ))
         created.append({"email": email, "nom": user.nom, "prenom": user.prenom,
                         "password": password})

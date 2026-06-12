@@ -43,6 +43,30 @@ def test_import_xlsx_cree_comptes_et_dossiers(client, db_session, campaign, admi
     assert {"DC-2026-101", "DC-2026-102"} <= refs
 
 
+def test_import_feuille_candidats_circuit_excel(client, db_session, campaign, admin):
+    """La feuille Candidats du dossier u3 (id, email, nom_prenom, departement en
+    libellé) s'importe telle quelle : email = identifiant de connexion (comme Odoo),
+    libellé de département converti en id du profil."""
+    wb = Workbook()
+    ws = wb.active
+    ws.append(["id", "email", "nom_prenom", "population", "departement"])
+    ws.append(["DC/2026/264", "candidat@univ.dz", "MERIMECHE IMENE",
+               "enseignant_chercheur", "Département de Technologie"])
+    buffer = io.BytesIO()
+    wb.save(buffer)
+
+    login(client, "admin@test.dz")
+    r = client.post("/admin/utilisateurs/import",
+                    files={"fichier": ("dossier-u3.xlsx", buffer.getvalue(),
+                                       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")})
+    assert r.status_code == 200
+    user = db_session.scalar(select(User).where(User.email == "candidat@univ.dz"))
+    assert user is not None and user.nom == "MERIMECHE IMENE"
+    dossier = db_session.scalar(select(Dossier).where(Dossier.user_id == user.id))
+    assert dossier.candidate_ref == "DC/2026/264"
+    assert dossier.departement == "technologie"  # libellé converti en id du profil
+
+
 def test_benefices_ajout_suppression(client, db_session, campaign, admin, enseignant):
     login(client, "admin@test.dz")
     r = client.post("/admin/benefices",

@@ -75,6 +75,7 @@ def column_plan(grid: dict) -> tuple[list[dict], list[dict]]:
     """
     columns: list[dict] = [
         {"header": "id", "kind": "id"},
+        {"header": "email", "kind": "info", "field": "email"},
         {"header": "nom_prenom", "kind": "info", "field": "nom"},
         {"header": "population", "kind": "population"},
         {"header": "departement", "kind": "departement"},

@@ -5,8 +5,9 @@ Usage :
     python scripts/import_odoo.py --source examples/enset/stages.candidature.sejour.xlsx
         [--out examples/enset/dossier-u3.xlsx] [--cloture-precedente AAAA-MM-JJ]
 
-Pré-remplit les feuilles Candidats (id, nom, rang, département, destination, durée,
-montant d'indemnité) et Historique (date du dernier stage). Contrôle au passage la
+Pré-remplit les feuilles Candidats (id, email — identifiant de connexion Odoo et de
+l'application web —, nom, rang, département, destination, durée, montant d'indemnité)
+et Historique (date du dernier stage). Contrôle au passage la
 cohérence des zones et des montants d'indemnité calculés par Odoo avec notre
 référentiel (data/costs).
 Les critères/activités restent à collecter (fiche de déclaration ou formulaire).
@@ -123,6 +124,13 @@ def main() -> int:
         duree = cell(row, "Durée")
 
         cand.cell(row=target, column=headers["id"], value=str(ref))
+        email = str(cell(row, "Email") or "").strip().lower() if "Email" in cols else ""
+        if email:
+            cand.cell(row=target, column=headers["email"], value=email)
+        else:
+            warnings.append(
+                f"{ref} ({nom}) : e-mail absent de l'export Odoo — compte web à créer à la main."
+            )
         cand.cell(row=target, column=headers["nom_prenom"], value=nom)
         cand.cell(row=target, column=headers["population"], value="enseignant_chercheur")
         if dept:

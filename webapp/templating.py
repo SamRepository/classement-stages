@@ -19,4 +19,12 @@ def fmt_points(value: float | int | None) -> str:
     return text.replace(".", ",") or "0"
 
 
+def fmt_da(value: float | int | None) -> str:
+    """Affichage français des montants en dinars : 1 234 567 DA."""
+    if value is None:
+        return "—"
+    return f"{value:,.0f}".replace(",", "\u00a0") + "\u00a0DA"
+
+
 templates.env.filters["points"] = fmt_points
+templates.env.filters["da"] = fmt_da

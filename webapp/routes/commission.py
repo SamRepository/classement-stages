@@ -14,13 +14,15 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from classement.budget import simulate_budget
+
 from webapp.auth import require_role
 from webapp.db import get_db
 from webapp.forms.grid_form import build_form_spec
 from webapp.models import Dossier, Entry, User
 from webapp.services.dossier import get_campaign, log_event
 from webapp.services.exports import export_response, freeze_campaign, pending_entries_count
-from webapp.services.scoring import compute_ranking, compute_score, get_grid
+from webapp.services.scoring import compute_ranking, compute_score, get_costs, get_grid
 from webapp.templating import templates
 
 router = APIRouter(prefix="/commission")
@@ -236,6 +238,82 @@ def classement(
             "pending": pending_entries_count(db, campaign),
             "nb_brouillons": nb_brouillons,
             "nb_classes": len(result.dossiers),
+        },
+    )
+
+
+def _parse_da(value: str | None) -> float | None:
+    """Montant saisi par la commission : tolère espaces (1 200 000) et virgule décimale."""
+    if value is None or not str(value).strip():
+        return None
+    text = str(value).replace("\u00a0", "").replace("\u202f", "").replace(" ", "")
+    return float(text.replace(",", "."))
+
+
+@router.get("/budget")
+def simulation_budget(
+    request: Request,
+    budget: str | None = None,
+    plafond_billet: str | None = None,
+    user: User = COMMISSION,
+    db: Session = Depends(get_db),
+):
+    """Simulation budgétaire : qui peut bénéficier avec une enveloppe donnée.
+
+    Simulation pure (aucune écriture) : financement par rang tous groupes
+    confondus, départage au score, coupure stricte — voir ``classement.budget``.
+    """
+    campaign = get_campaign(db)
+    erreur = None
+    montant = plafond = None
+    try:
+        montant = _parse_da(budget)
+        plafond = _parse_da(plafond_billet)
+    except ValueError:
+        erreur = "Montant invalide : saisir un nombre en dinars (ex. 1 200 000)."
+    if montant is not None and montant <= 0:
+        erreur = "L'enveloppe doit être strictement positive."
+        montant = None
+    if plafond is not None and plafond < 0:
+        erreur = "Le plafond billet ne peut pas être négatif."
+        montant = None
+
+    simulation = None
+    noms: dict[str, str] = {}
+    dossier_ids: dict[str, int] = {}
+    if montant is not None and erreur is None:
+        result = compute_ranking(db, campaign, mode="commission")
+        noms = {
+            d.candidate_ref: f"{d.user.nom} {d.user.prenom}".strip() for d in result.dossiers
+        }
+        dossier_ids = {d.candidate_ref: d.id for d in result.dossiers}
+        simulation = simulate_budget(
+            result.candidates,
+            result.groups,
+            get_grid(campaign.grid_id),
+            get_costs(),
+            montant,
+            plafond,
+        )
+    nb_brouillons = db.scalar(
+        select(func.count(Dossier.id)).where(
+            Dossier.campaign_id == campaign.id, Dossier.statut == "brouillon"
+        )
+    ) or 0
+    return templates.TemplateResponse(
+        request,
+        "commission/budget.html",
+        {
+            "user": user,
+            "campaign": campaign,
+            "grid": get_grid(campaign.grid_id),
+            "simulation": simulation,
+            "noms": noms,
+            "dossier_ids": dossier_ids,
+            "erreur": erreur,
+            "budget_saisi": budget or "",
+            "plafond_saisi": plafond_billet or "",
+            "nb_brouillons": nb_brouillons,
         },
     )
 

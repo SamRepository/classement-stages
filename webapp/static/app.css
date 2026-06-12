@@ -18,6 +18,12 @@ small { color: var(--pico-muted-color, #6c757d); }
 .badge.brouillon { background: #e2e3e5; color: #41464b; }
 .badge.soumis { background: #cfe2ff; color: #084298; }
 .badge.gele { background: #d1e7dd; color: #0f5132; }
+.badge.finance { background: #d1e7dd; color: #0f5132; }
+.badge.non-financable { background: #f8d7da; color: #842029; }
+
+/* Simulation budgétaire : dossiers au-delà de la coupure */
+tr.non-finance td { opacity: .55; }
+tr.non-finance .badge { opacity: 1; }
 
 /* Score */
 #score-box { position: sticky; top: 1rem; }

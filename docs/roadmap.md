@@ -53,7 +53,7 @@ au pont Odoo → application :
 
 Application **FastAPI + Jinja2/HTMX + SQLAlchemy/PostgreSQL** ([webapp/](../webapp/))
 réutilisant le paquet `classement` tel quel — aucune logique réglementaire dupliquée,
-le moteur est rappelé à chaque calcul. 40 tests dédiés (128 au total), dont la **parité**
+le moteur est rappelé à chaque calcul. 47 tests dédiés (135 au total), dont la **parité**
 dossier web ≡ dict moteur pour chaque type de critère.
 
 **Réalisé** :
@@ -64,7 +64,9 @@ dossier web ≡ dict moteur pour chaque type de critère.
   rejeter avec motif obligatoire** (art. 14-15, contrainte en base), élément rejeté exclu
   du calcul avec trace, observations du moteur affichées, classement (ex aequo signalés),
   **gel** bloqué tant qu'un élément reste en attente + instantané JSON d'audit, exports
-  PV / fiches / HTML ;
+  PV / fiches / HTML, **simulation budgétaire** (13/06/2026 : enveloppe + plafond billet,
+  ordre de financement par rang, coupure stricte, synthèse par population — lecture
+  seule, mêmes règles que la CLI `budget`) ;
 - **Espace admin** : import de comptes **directement depuis `dossier-u3.xlsx`** (comptes +
   dossiers + mobilité + historique des bénéfices en une opération, idempotent — recette
   réelle : 41/41), gestion des bénéfices, fenêtre de campagne, réouverture d'un dossier ;
@@ -77,8 +79,9 @@ dossier web ≡ dict moteur pour chaque type de critère.
 **Reste à faire** :
 - déploiement effectif sur l'instance Coolify (PostgreSQL + volume `/data/uploads` +
   HTTPS) puis recette réelle (un dossier complet saisi et comparé au barème) ;
-- simulation **budgétaire / exercice** dans l'interface commission (`budget.py` est prêt,
-  les données mobilité sont déjà sur les dossiers) — pour l'instant disponible via la CLI ;
+- simulation d'**exercice multi-campagnes** (art. 6) dans l'interface — la simulation
+  budgétaire par campagne est faite (13/06/2026) ; l'exercice attend que l'application
+  gère plusieurs campagnes simultanées (MVP : une seule), reste disponible via la CLI ;
 - import Odoo via **XML-RPC** (remplaçant l'export Excel manuel) — reporté en phase 3.
 
 ## Phase 3 — Adaptation du module Odoo 14 « Stages »
@@ -123,6 +126,6 @@ tout le SI doit converger dans Odoo.
 |---|---|---|
 | 1 | Modèle Excel + import + PV/fiches + budget/exercice | **Réalisée** (10/06/2026) |
 | 1bis | Campagne u3 2026 : pont Odoo → application | **Absorbée par la phase 2** — convertisseur `import_odoo.py` réalisé (export reçu avec e-mail, 41 candidatures) ; collecte des critères : directement dans l'application web, fiches Excel en secours |
-| 2 | Application web FastAPI + PostgreSQL sur Coolify, uploads PDF, validation commission, historique persistant | **MVP réalisé** (12/06/2026) pour la campagne u3 2026 — `webapp/`, 128 tests, dépôt GitHub ; reste : déploiement effectif sur Coolify ([guide](guide-deploiement-coolify.md)), recette réelle, budget/exercice dans l'interface |
+| 2 | Application web FastAPI + PostgreSQL sur Coolify, uploads PDF, validation commission, historique persistant | **MVP réalisé** (12/06/2026) pour la campagne u3 2026 — `webapp/`, 135 tests, dépôt GitHub ; simulation budgétaire commission ajoutée (13/06/2026) ; reste : déploiement effectif sur Coolify ([guide](guide-deploiement-coolify.md)), recette réelle, exercice multi-campagnes dans l'interface |
 | 3 | Adaptation du module Odoo 14 « Stages » (3a façade XML-RPC recommandée / 3b intégration native) | Après le déploiement de la phase 2 |
 | 4 | Notifications, vérification Crossref/Scopus, archivage | Ultérieur |

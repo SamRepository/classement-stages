@@ -13,6 +13,7 @@ from typing import Literal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from classement.costs import load_costs
 from classement.engine import score_candidate
 from classement.grids import find_grid, load_shared_rules
 from classement.institutions import group_by_for, load_institution
@@ -39,6 +40,11 @@ def get_shared_rules() -> dict:
 @lru_cache
 def get_institution(institution_id: str) -> dict:
     return load_institution(institution_id)
+
+
+@lru_cache
+def get_costs() -> dict:
+    return load_costs()
 
 
 @dataclass

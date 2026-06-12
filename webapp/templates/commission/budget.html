@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block titre %}Simulation budgétaire{% endblock %}
+{% block contenu %}
+<hgroup>
+  <h1>Simulation budgétaire</h1>
+  <p>{{ grid.title_fr }} — campagne du {{ campaign.campaign_date.strftime('%d/%m/%Y') }}
+     · <span class="badge {{ campaign.statut }}">{{ campaign.statut }}</span></p>
+</hgroup>
+
+<p>Simulation indicative — aucune donnée n'est modifiée. Les dossiers sont financés par
+rang croissant tous groupes confondus (tous les rangs 1, puis les rangs 2…), départagés
+au score ; dès qu'un dossier ne tient pas dans le reliquat, lui et tous les suivants sont
+non finançables (le rang prime — pas de saut vers un dossier moins cher). Coûts selon
+l'arrêté interministériel du 25/12/2011 : indemnité réglementaire + billet (plafonnable
+par l'établissement) + frais divers.</p>
+
+{% if nb_brouillons %}
+<mark>{{ nb_brouillons }} dossier(s) encore en brouillon ne sont pas pris en compte
+(seuls les dossiers soumis sont classés et simulés).</mark>
+{% endif %}
+
+<form method="get" action="/commission/budget">
+  <div class="grid">
+    <label>Enveloppe disponible (DA)
+      <input type="text" name="budget" inputmode="decimal" required
+             value="{{ budget_saisi }}" placeholder="ex. 1 200 000">
+    </label>
+    <label>Plafond billet (DA, optionnel)
+      <input type="text" name="plafond_billet" inputmode="decimal"
+             value="{{ plafond_saisi }}" placeholder="ex. 120 000">
+    </label>
+    <label>&nbsp;
+      <button type="submit">Simuler</button>
+    </label>
+  </div>
+</form>
+{% if erreur %}<p class="erreur">{{ erreur }}</p>{% endif %}
+
+{% if simulation %}
+<article>
+  <h3>Ordre de financement — enveloppe {{ simulation.budget|da }}{% if simulation.plafond_billet %}
+      · plafond billet {{ simulation.plafond_billet|da }}{% endif %}</h3>
+  <figure>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Groupe</th><th>Rang</th><th>Candidat</th><th>Pays (zone)</th>
+          <th>Jours</th><th>Indemnité</th><th>Billet retenu</th><th>Frais</th>
+          <th>Coût total</th><th>Statut</th><th>Reste après</th></tr>
+    </thead>
+    <tbody>
+      {% for l in simulation.lignes %}
+      <tr{% if l.statut != 'financé' %} class="non-finance"{% endif %}>
+        <td>{{ loop.index }}</td>
+        <td>{{ l.groupe[1:]|join(' · ') }}</td>
+        <td><strong>{{ l.rang }}</strong>{% if l.ex_aequo %}
+            <span class="badge en_attente">ex aequo</span>{% endif %}</td>
+        <td>
+          {% if dossier_ids.get(l.candidate_id) %}
+            <a href="/commission/dossiers/{{ dossier_ids[l.candidate_id] }}">{{ l.candidate_id }}</a>
+          {% else %}{{ l.candidate_id }}{% endif %}
+          <small>{{ noms.get(l.candidate_id, '') }}</small>
+        </td>
+        <td>{{ l.pays or '?' }} ({{ 'I' if l.zone == 'zone1' else 'II' }})</td>
+        <td>{{ l.duree_jours or '?' }}</td>
+        <td title="{{ l.indemnite_detail }}">{{ l.indemnite|da }}</td>
+        <td>{{ l.billet_retenu|da }}</td>
+        <td>{{ l.frais_divers|da }}</td>
+        <td><strong>{{ l.total|da }}</strong></td>
+        <td><span class="badge {{ 'finance' if l.statut == 'financé' else 'non-financable' }}">{{ l.statut }}</span></td>
+        <td>{{ l.budget_restant_apres|da }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </figure>
+</article>
+
+<article>
+  <h3>Synthèse</h3>
+  <ul>
+    <li>Coût de <strong>toutes</strong> les demandes : {{ simulation.totaux.demande|da }}
+        {% if simulation.tous_financables %} — l'enveloppe couvre toutes les demandes ✔{% endif %}</li>
+    <li>Coût financé : {{ simulation.totaux.finance|da }}
+        (indemnités {{ simulation.totaux.indemnites|da }} + billets {{ simulation.totaux.billets|da }}
+        + frais divers {{ simulation.totaux.frais_divers|da }})</li>
+    <li>Reliquat budgétaire : <strong>{{ simulation.reste|da }}</strong>
+        — laissé à l'arbitrage de la commission</li>
+  </ul>
+  <table>
+    <thead>
+      <tr><th>Population</th><th>Dossiers</th><th>Financés</th>
+          <th>Coût demandé</th><th>Coût financé</th></tr>
+    </thead>
+    <tbody>
+      {% for population, p in simulation.par_population.items() %}
+      <tr>
+        <td>{{ population }}</td>
+        <td>{{ p.candidats }}</td>
+        <td>{{ p.finances }}</td>
+        <td>{{ p.demande|da }}</td>
+        <td>{{ p.finance|da }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</article>
+
+{% set warnings = simulation.lignes | map(attribute='warnings') | sum(start=[]) %}
+{% if warnings %}
+<article>
+  <h3>Avertissements</h3>
+  <ul>
+    {% for w in warnings %}<li class="warning">⚠ {{ w }}</li>{% endfor %}
+  </ul>
+</article>
+{% endif %}
+{% elif not erreur %}
+<p>Saisir l'enveloppe disponible puis lancer la simulation.</p>
+{% endif %}
+
+<p><a href="/commission/classement">← retour au classement</a></p>
+{% endblock %}

@@ -10,10 +10,16 @@ cartographie des annexes, le modèle de données et les lectures validées). Le 
 une grille, évalue chaque dossier candidat (avec son historique de mobilités) et produit le
 détail du score par critère ainsi que le classement par population et par groupe.
 
+Deux circuits d'utilisation : le **circuit Excel** (phase 1, piloté par la CLI) et
+l'**application web** ([webapp/](webapp/), phase 2) qui couvre la campagne de bout en
+bout — déclaration en ligne avec justificatifs PDF, validation par la commission avec
+rejets motivés, classement gelé et exports officiels.
+
 ## Prérequis
 
-Python ≥ 3.10 et `openpyxl` (`pip install openpyxl`) pour les modèles de saisie et exports
-Excel ; pytest pour les tests.
+Python ≥ 3.10 et `openpyxl` (`pip install openpyxl`) pour le moteur, les modèles de
+saisie et les exports Excel ; pytest pour les tests. Pour l'application web :
+`pip install -e .[webapp,dev]` (FastAPI, SQLAlchemy, Alembic…).
 
 ## Profils d'établissement
 
@@ -39,6 +45,35 @@ Avec `--institution`, la CLI :
 
 Pour ajouter un autre établissement : copier
 [_template.json](data/institutions/_template.json) vers `<id>.json` et l'adapter.
+
+## Application web (phase 2 — campagne en ligne)
+
+Application **FastAPI + Jinja2/HTMX + SQLAlchemy** ([webapp/](webapp/)) qui réutilise le
+moteur tel quel — chaque score affiché est recalculé par `classement.engine`, aucune
+logique réglementaire dupliquée. Trois espaces :
+
+- **Enseignant** : connexion par e-mail (le même identifiant que le portail Odoo),
+  formulaire généré depuis la grille JSON, une ligne par activité avec son **justificatif
+  PDF**, score provisoire en temps réel, soumission = dossier gelé ;
+- **Commission** : chaque élément déclaré face à son justificatif, **valider / rejeter
+  avec motif obligatoire** (art. 14-15), recalcul immédiat, classement avec ex aequo
+  signalés, **gel** (bloqué tant qu'un élément reste en attente, instantané d'audit en
+  base), exports PV / fiches / HTML ;
+- **Admin** : import des comptes et dossiers **directement depuis `dossier-u3.xlsx`**
+  (produit par [scripts/import_odoo.py](scripts/import_odoo.py) : comptes, mobilité et
+  historique des bénéfices en une opération idempotente), gestion de la campagne,
+  réouverture de dossiers.
+
+Démarrage local (SQLite par défaut) :
+
+```powershell
+pip install -e .[webapp,dev]
+python -m webapp.scripts.seed --admin-email admin@local
+python -m uvicorn webapp.main:app --reload
+```
+
+Déploiement : Dockerfile + PostgreSQL + volume pour les pièces jointes — guide pas-à-pas
+Coolify : **[docs/guide-deploiement-coolify.md](docs/guide-deploiement-coolify.md)**.
 
 ## Circuit Excel (phase 1 — recommandé pour la commission)
 
@@ -257,22 +292,27 @@ aequo sont signalés (`ex_aequo: true`) et laissés à l'arbitrage de la commiss
 python -m pytest -q
 ```
 
-41 tests couvrent les six types de critères, les plafonds, la pondération auteur, les
-fenêtres temporelles, les formules, le classement, les profils d'établissement
-(validation, règles de regroupement, quotas) et le circuit Excel (modèle, menus en
-libellés français, import avec rapport d'erreurs, équivalence Excel/JSON, exports
-PV/fiches/HTML).
+128 tests : le moteur (six types de critères, plafonds, pondération auteur, fenêtres
+temporelles, formules, classement, profils d'établissement, coûts/budget) et le circuit
+Excel (modèle, menus en libellés français, import avec rapport d'erreurs, équivalence
+Excel/JSON, exports PV/fiches/HTML), plus l'application web
+([tests/webapp/](tests/webapp/)) : **parité dossier web ≡ dict moteur** pour chaque type
+de critère, application des rejets avec trace, workflow brouillon/soumis/gelé,
+permissions par rôle, uploads (octets magiques, taille), import de comptes, classement,
+gel et exports.
 
 ## Structure du projet
 
 ```
 classement/          # paquet Python : moteur + classement + profils + coûts/budget + Excel + CLI
+webapp/              # application web FastAPI (espaces enseignant/commission/admin, Alembic)
 data/grids/          # barèmes de l'arrêté 345 transcrits en JSON + règles transverses
 data/costs/          # indemnités (arrêté du 25/12/2011) + zones I/II
 data/institutions/   # profils d'établissement (enset-skikda + modèle _template)
 docs/decret_loi/     # arrêté source (scan) + JORA n° 71 (indemnités)
-docs/roadmap.md      # feuille de route ; docs/audit-grilles.md : audit des grilles
+docs/roadmap.md      # feuille de route ; guide-deploiement-coolify.md ; guide-excel.md
 examples/enset/      # modèles Excel u1-u4 ENSET + exemple rempli + JSON
-scripts/             # génération des exemples Excel, audit des grilles
-tests/               # suite pytest
+scripts/             # import Odoo, génération des exemples Excel, audit des grilles
+tests/               # suite pytest (moteur + tests/webapp/)
+Dockerfile           # image de production (migrations au démarrage) ; docker-compose.yml : dev
 ```

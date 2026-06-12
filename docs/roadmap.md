@@ -1,10 +1,15 @@
 # Feuille de route — rendre le moteur de classement utilisable
 
-État au 11/06/2026 : le moteur de scoring (paquet [classement/](../classement/)) couvre les
+État au 12/06/2026 : le moteur de scoring (paquet [classement/](../classement/)) couvre les
 neuf grilles de l'arrêté n° 345 ([data/grids/](../data/grids/)), les profils
 d'établissement ([enset-skikda](../data/institutions/enset-skikda.json)), le circuit Excel
 complet (modèles, import, PV, fiches, HTML) et la couche coûts/budget (indemnités de
 l'arrêté du 25/12/2011, simulation par campagne et par exercice selon l'art. 6).
+S'y ajoute désormais l'**application web** ([webapp/](../webapp/), MVP de la phase 2) :
+espaces enseignant/commission/admin, justificatifs PDF, rejets motivés, gel du
+classement et exports officiels — prête à déployer sur Coolify
+([guide](guide-deploiement-coolify.md)). Le projet est versionné sur GitHub
+(`SamRepository/classement-stages`), historique purgé des données nominatives.
 
 Contexte ENSET pour l'exercice 2026 : seule la campagne **u3 — résidences scientifiques
 de haut niveau (7–15 jours)** nécessite un classement (41 candidatures recensées). Les
@@ -25,59 +30,56 @@ officiels (PV, fiches d'évaluation, HTML imprimable), simulation budgétaire (`
 et simulation d'exercice multi-campagnes (`exercice`, art. 6). Guide utilisateur :
 [guide-excel.md](guide-excel.md).
 
-## Phase 1bis — Campagne u3 2026 (pont Odoo → Excel) — EN COURS
+## Phase 1bis — Campagne u3 2026 (pont Odoo → Excel) — ABSORBÉE PAR LA PHASE 2
 
-Objectif : lancer le classement réel des 41 candidatures u3 sans attendre l'application
-web.
+Objectif initial : lancer le classement réel des 41 candidatures u3 sans attendre
+l'application web. Le MVP web étant arrivé avant la collecte, la phase 1bis se réduit
+au pont Odoo → application :
 
-1. **Convertisseur `scripts/import_odoo.py`** : export Excel du module Odoo « Stages » →
-   pré-remplissage de la feuille Candidats de `dossier-u3.xlsx` (id, nom, prénom,
-   département, et selon l'export : rang, destination, durée). *En attente de l'export
-   Odoo (ou de ses en-têtes de colonnes) pour le mapping.*
-2. **Collecte des critères et activités** — choix à fixer :
-   - fiche de déclaration individuelle (mini-classeur ou formulaire généré depuis la
-     grille u3, pré-rempli au nom du candidat), ou
-   - formulaire Google Forms (export CSV → consolidation scriptée), ou
-   - saisie directe par le service depuis les dossiers déposés.
-3. **Justificatifs** : dossier réseau `justificatifs/<id_candidat>/`, lien par les
-   colonnes DOI/URL pour les publications.
-4. Classement + PV + fiches + simulation budgétaire u3 avec l'outillage existant.
+1. **Convertisseur [scripts/import_odoo.py](../scripts/import_odoo.py)** ✅ — export
+   Excel du module Odoo « Stages » (avec colonne **Email** ajoutée côté Odoo) →
+   `dossier-u3.xlsx` : 41 candidatures (id, e-mail, nom, département, rang,
+   destination, durée, montant) + feuille Historique (date du dernier stage), avec
+   contrôle croisé zones/montants contre `data/costs`.
+2. **Collecte des critères et activités** : décision actée — **directement dans
+   l'application web** (un élément déclaré = une ligne + son justificatif PDF). Les
+   fiches de déclaration Excel ([scripts/fiches_declaration.py](../scripts/fiches_declaration.py),
+   `declarations/`) sont conservées en secours mais ne seront pas distribuées.
+3. **Justificatifs** : uploadés dans l'application (volume persistant), servis à la
+   commission sous contrôle d'accès — plus de dossier réseau.
+4. Classement + PV + fiches u3 : produits par l'application (mêmes exports que la CLI).
 
-## Phase 2 — Application web sur Coolify (campagne 2027)
+## Phase 2 — Application web sur Coolify — MVP RÉALISÉ (12/06/2026), ciblée campagne u3 2026
 
-Application **FastAPI + PostgreSQL** réutilisant le paquet `classement` tel quel (le
-moteur est déjà une bibliothèque pilotée par les grilles JSON).
+Application **FastAPI + Jinja2/HTMX + SQLAlchemy/PostgreSQL** ([webapp/](../webapp/))
+réutilisant le paquet `classement` tel quel — aucune logique réglementaire dupliquée,
+le moteur est rappelé à chaque calcul. 40 tests dédiés (128 au total), dont la **parité**
+dossier web ≡ dict moteur pour chaque type de critère.
 
-**Déploiement** (infrastructure déjà en place) :
-- repo GitHub → Coolify (build Dockerfile, HTTPS, redéploiement sur push) ;
-- PostgreSQL en instance Coolify adjacente ; volumes persistants pour les pièces
-  jointes ;
-- configuration par variables d'environnement (établissement, campagne, plafonds).
+**Réalisé** :
+- **Espace enseignant** : connexion par e-mail (le même identifiant qu'Odoo), formulaire
+  généré depuis la grille JSON, une ligne par activité avec **justificatif PDF rattaché**,
+  score provisoire recalculé en temps réel (HTMX), soumission = dossier gelé ;
+- **Espace commission** : chaque élément face à son justificatif (visionneuse), **valider /
+  rejeter avec motif obligatoire** (art. 14-15, contrainte en base), élément rejeté exclu
+  du calcul avec trace, observations du moteur affichées, classement (ex aequo signalés),
+  **gel** bloqué tant qu'un élément reste en attente + instantané JSON d'audit, exports
+  PV / fiches / HTML ;
+- **Espace admin** : import de comptes **directement depuis `dossier-u3.xlsx`** (comptes +
+  dossiers + mobilité + historique des bénéfices en une opération, idempotent — recette
+  réelle : 41/41), gestion des bénéfices, fenêtre de campagne, réouverture d'un dossier ;
+- **Base de données** : dossiers, éléments déclarés, pièces, décisions, **bénéfices
+  persistants** (pénalités `3-n` et fenêtre calculées automatiquement), journal des
+  actions ; migrations Alembic ;
+- **Déploiement** : Dockerfile, docker-compose de dev, variables d'environnement,
+  [guide Coolify pas-à-pas](guide-deploiement-coolify.md).
 
-**Espace enseignant** :
-- authentification simple (comptes pré-créés depuis les candidatures Odoo) ;
-- formulaire généré depuis la grille JSON (même principe que les modèles Excel) ;
-- une entrée par activité (publication, communication, encadrement…) avec **upload du
-  justificatif PDF rattaché à l'élément déclaré**, DOI/URL, dates ;
-- score provisoire visible en temps réel, dossier soumis = gelé.
-
-**Espace commission** :
-- chaque élément déclaré affiché côte à côte avec son justificatif → **valider /
-  rejeter avec motif** (le rejet motivé est une exigence de l'art. 14-15) ;
-- recalcul du score en direct ; gel du classement ;
-- PV, fiches d'évaluation et **simulation budgétaire / exercice** intégrés (réutilisation
-  directe de `exports.py` et `budget.py`).
-
-**Base de données** (apport décisif par rapport à l'Excel) :
-- candidats, dossiers, éléments déclarés, pièces, décisions de la commission ;
-- **historique des mobilités persistant** : les bénéficiaires financés de l'exercice N
-  alimentent automatiquement les pénalités (`3-n`, `-5×n`) et la fenêtre « après dernier
-  bénéfice » de l'exercice N+1 — plus de feuille Historique à ressaisir.
-
-**Intégration Odoo (entrée)** : import des candidatures depuis le module « Stages » via
-l'API XML-RPC d'Odoo 14 (demandes + pièces jointes), à défaut import de l'export Excel.
-Odoo reste la porte d'entrée de la *demande* ; l'application gère critères, validation,
-classement et budget.
+**Reste à faire** :
+- déploiement effectif sur l'instance Coolify (PostgreSQL + volume `/data/uploads` +
+  HTTPS) puis recette réelle (un dossier complet saisi et comparé au barème) ;
+- simulation **budgétaire / exercice** dans l'interface commission (`budget.py` est prêt,
+  les données mobilité sont déjà sur les dossiers) — pour l'instant disponible via la CLI ;
+- import Odoo via **XML-RPC** (remplaçant l'export Excel manuel) — reporté en phase 3.
 
 ## Phase 3 — Adaptation du module Odoo 14 « Stages »
 
@@ -120,7 +122,7 @@ tout le SI doit converger dans Odoo.
 | Phase | Contenu | Statut |
 |---|---|---|
 | 1 | Modèle Excel + import + PV/fiches + budget/exercice | **Réalisée** (10/06/2026) |
-| 1bis | Campagne u3 2026 : convertisseur Odoo→Excel + collecte critères | **En cours** — en attente de l'export Odoo et du choix du mode de collecte |
-| 2 | Application web FastAPI + PostgreSQL sur Coolify, uploads PDF, validation commission, historique persistant | **MVP réalisé** (12/06/2026) pour la campagne u3 2026 — `webapp/`, guide : [guide-deploiement-coolify.md](guide-deploiement-coolify.md) ; reste : déploiement effectif + pré-remplissage depuis `declarations/` |
-| 3 | Adaptation du module Odoo 14 « Stages » (3a façade XML-RPC recommandée / 3b intégration native) | Après le socle de la phase 2 |
+| 1bis | Campagne u3 2026 : pont Odoo → application | **Absorbée par la phase 2** — convertisseur `import_odoo.py` réalisé (export reçu avec e-mail, 41 candidatures) ; collecte des critères : directement dans l'application web, fiches Excel en secours |
+| 2 | Application web FastAPI + PostgreSQL sur Coolify, uploads PDF, validation commission, historique persistant | **MVP réalisé** (12/06/2026) pour la campagne u3 2026 — `webapp/`, 128 tests, dépôt GitHub ; reste : déploiement effectif sur Coolify ([guide](guide-deploiement-coolify.md)), recette réelle, budget/exercice dans l'interface |
+| 3 | Adaptation du module Odoo 14 « Stages » (3a façade XML-RPC recommandée / 3b intégration native) | Après le déploiement de la phase 2 |
 | 4 | Notifications, vérification Crossref/Scopus, archivage | Ultérieur |

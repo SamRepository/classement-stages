@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from webapp.auth import require_role
@@ -19,7 +19,8 @@ from webapp.db import get_db
 from webapp.forms.grid_form import build_form_spec
 from webapp.models import Dossier, Entry, User
 from webapp.services.dossier import get_campaign, log_event
-from webapp.services.scoring import compute_score, get_grid
+from webapp.services.exports import export_response, freeze_campaign, pending_entries_count
+from webapp.services.scoring import compute_ranking, compute_score, get_grid
 from webapp.templating import templates
 
 router = APIRouter(prefix="/commission")
@@ -203,3 +204,57 @@ def tout_valider(
     log_event(db, user, "tout_valider", dossier, detail=f"{n} élément(s) validé(s)")
     db.commit()
     return RedirectResponse(f"/commission/dossiers/{dossier_id}", status_code=303)
+
+
+@router.get("/classement")
+def classement(
+    request: Request,
+    user: User = COMMISSION,
+    db: Session = Depends(get_db),
+):
+    campaign = get_campaign(db)
+    result = compute_ranking(db, campaign, mode="commission")
+    noms = {
+        d.candidate_ref: f"{d.user.nom} {d.user.prenom}".strip() for d in result.dossiers
+    }
+    departements = {d.candidate_ref: d.departement for d in result.dossiers}
+    nb_brouillons = db.scalar(
+        select(func.count(Dossier.id)).where(
+            Dossier.campaign_id == campaign.id, Dossier.statut == "brouillon"
+        )
+    ) or 0
+    return templates.TemplateResponse(
+        request,
+        "commission/classement.html",
+        {
+            "user": user,
+            "campaign": campaign,
+            "grid": get_grid(campaign.grid_id),
+            "groups": result.groups,
+            "noms": noms,
+            "departements": departements,
+            "pending": pending_entries_count(db, campaign),
+            "nb_brouillons": nb_brouillons,
+            "nb_classes": len(result.dossiers),
+        },
+    )
+
+
+@router.post("/classement/geler")
+def geler(
+    user: User = COMMISSION,
+    db: Session = Depends(get_db),
+):
+    campaign = get_campaign(db)
+    freeze_campaign(db, campaign, user)
+    return RedirectResponse("/commission/classement", status_code=303)
+
+
+@router.get("/exports/{kind}")
+def telecharger_export(
+    kind: str,
+    user: User = COMMISSION,
+    db: Session = Depends(get_db),
+):
+    campaign = get_campaign(db)
+    return export_response(db, campaign, kind)

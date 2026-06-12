@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block titre %}Classement{% endblock %}
+{% block contenu %}
+<hgroup>
+  <h1>Classement</h1>
+  <p>{{ grid.title_fr }} — campagne du {{ campaign.campaign_date.strftime('%d/%m/%Y') }}
+     · <span class="badge {{ campaign.statut }}">{{ campaign.statut }}</span>
+     {% if campaign.frozen_at %} · gelé le {{ campaign.frozen_at.strftime('%d/%m/%Y %H:%M') }}{% endif %}</p>
+</hgroup>
+
+{% if nb_brouillons %}
+<mark>{{ nb_brouillons }} dossier(s) encore en brouillon ne figurent pas dans ce classement
+(seuls les dossiers soumis sont classés).</mark>
+{% endif %}
+
+{% for key, ranked in groups.items() %}
+<article>
+  <h3>Groupe : {{ key|join(' · ') }} — {{ ranked|length }} candidat(s)</h3>
+  <table>
+    <thead><tr><th>Rang</th><th>Réf.</th><th>Candidat</th><th>Département</th><th>Score</th><th></th></tr></thead>
+    <tbody>
+      {% for r in ranked %}
+      <tr>
+        <td><strong>{{ r.rank }}</strong></td>
+        <td>{{ r.candidate_id }}</td>
+        <td>{{ noms.get(r.candidate_id, '?') }}</td>
+        <td>{{ departements.get(r.candidate_id) or '—' }}</td>
+        <td>{{ r.total|points }}</td>
+        <td>{% if r.ex_aequo %}<span class="badge en_attente">ex aequo</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</article>
+{% else %}
+<p>Aucun dossier soumis : pas de classement à afficher.</p>
+{% endfor %}
+
+<article>
+  <h3>Gel et documents officiels</h3>
+  {% if campaign.statut == 'gelee' %}
+    <p>Classement gelé : les décisions sont closes, les documents ci-dessous font foi.</p>
+  {% elif pending %}
+    <p class="warning">Gel impossible pour l'instant : <strong>{{ pending }}</strong> élément(s)
+    encore en attente de décision (revue exhaustive exigée, art. 14-15).</p>
+  {% elif nb_classes == 0 %}
+    <p class="warning">Aucun dossier soumis : rien à geler.</p>
+  {% else %}
+    <form method="post" action="/commission/classement/geler"
+          onsubmit="return confirm('Geler définitivement le classement ? Les décisions seront closes.');">
+      <button type="submit">Geler le classement ({{ nb_classes }} dossier(s))</button>
+    </form>
+  {% endif %}
+  <p>
+    <a href="/commission/exports/pv.xlsx" role="button" class="outline">PV de classement (.xlsx)</a>
+    <a href="/commission/exports/fiches.xlsx" role="button" class="outline">Fiches d'évaluation (.xlsx)</a>
+    <a href="/commission/exports/classement.html" role="button" class="outline">Document imprimable (HTML → PDF)</a>
+  </p>
+  <p><a href="/commission/dossiers">← retour aux dossiers</a></p>
+</article>
+{% endblock %}

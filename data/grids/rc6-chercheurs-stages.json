@@ -1,0 +1,170 @@
+{
+  "id": "rc6-chercheurs-stages",
+  "source_pages": "26-29",
+  "title_ar": "التربصات قصيرة المدى - خاصة بالباحثين الدائمين",
+  "title_fr": "Stages de courte durée — chercheurs permanents (centres de recherche)",
+  "institution_type": "centre_recherche",
+  "mobility_type": "perfectionnement",
+  "population": ["chercheur_permanent"],
+  "candidate_info": ["nom_prenom", "grade", "departement_unite"],
+  "criteria": [
+    {
+      "id": "inscription_doctorat",
+      "label_ar": "التسجيل بانتظام في الدكتوراه حسب التنظيم المعمول به",
+      "label_fr": "Inscription régulière en doctorat selon la réglementation en vigueur",
+      "type": "count",
+      "items": [{ "id": "annee_inscription", "points_per_unit": 2, "unit": "année d'inscription" }]
+    },
+    {
+      "id": "penalite_stages_recents",
+      "label_ar": "عدد التربصات المنجزة خلال السنوات الأخيرة - (ن): أكبر عدد من تسجيلات لكل فئة؛ ن: عدد التربصات المنجزة",
+      "label_fr": "Nombre de stages réalisés durant les dernières années",
+      "type": "formula",
+      "formula": "(N) - n",
+      "variable": "n = nombre de stages réalisés ; (N) = plus grand nombre d'inscriptions par catégorie",
+      "examples": ["4 - n (maximum 03)", "5 - n (maximum 04)"],
+      "notes": ["Ligne confirmée comme s'appliquant à la catégorie des chercheurs permanents des centres de recherche (خاصة بالباحثين الدائمين) : les deux barèmes dégressifs '4-ن (max 03)' et '5-ن (max 04)' relèvent de cette même population."]
+    },
+    {
+      "id": "publications_internationales",
+      "label_ar": "المنشورات الدولية في مجلة مصنفة (Scopus أو Web of Science) بعد آخر استفادة",
+      "label_fr": "Publications internationales en revue classée (Scopus/WOS) après le dernier bénéfice",
+      "type": "count",
+      "window": "after_last_benefit",
+      "rules": ["author_position_weighting", "scopus_wos_dedup"],
+      "items": [
+        { "id": "wos_if", "label_fr": "Web of Science avec facteur d'impact (IF)", "points_per_unit": 12, "reference_recommended": true },
+        { "id": "scopus", "label_fr": "Scopus", "points_per_unit": 8, "reference_recommended": true },
+        { "id": "scopus_conference_paper", "label_fr": "Scopus (conference paper)", "points_per_unit": 4, "cap_points": 12, "reference_recommended": true }
+      ],
+      "block_caps": [{ "cap_points": 70 }]
+    },
+    {
+      "id": "publications_nationales_c",
+      "label_ar": "المنشورات الوطنية في مجلة صنف C بعد آخر استفادة",
+      "label_fr": "Publications nationales classe C après le dernier bénéfice",
+      "type": "count",
+      "window": "after_last_benefit",
+      "rules": ["author_position_weighting"],
+      "items": [{ "id": "article_c", "points_per_unit": 3, "cap_points": 9, "reference_recommended": true }]
+    },
+    {
+      "id": "communications",
+      "label_ar": "المداخلات",
+      "label_fr": "Communications",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [
+        { "id": "intl_orale", "scope": "international", "label_fr": "Communication internationale orale", "points_per_unit": 4, "shared_cap": "intl_4" },
+        { "id": "intl_poster", "scope": "international", "label_fr": "Poster international", "points_per_unit": 2, "shared_cap": "intl_4" },
+        { "id": "nat_orale", "scope": "national", "label_fr": "Communication nationale orale", "points_per_unit": 2, "shared_cap": "nat_4" },
+        { "id": "nat_poster", "scope": "national", "label_fr": "Poster national", "points_per_unit": 1, "shared_cap": "nat_4" }
+      ],
+      "shared_caps": { "intl_4": { "cap_units": 4 }, "nat_4": { "cap_units": 4 } },
+      "notes": ["Pas de ligne 'Proceeding' dans cette grille (contrairement à rc5)."]
+    },
+    {
+      "id": "brevets",
+      "label_ar": "براءات الاختراع المتحصل عليها بعد آخر استفادة",
+      "label_fr": "Brevets obtenus après le dernier bénéfice",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [
+        { "id": "brevet_obtenu", "label_fr": "Brevet délivré ou attestation d'acceptation", "points_per_unit": 15, "cap_points": 45 },
+        { "id": "certificat_onda", "label_fr": "Certificat ONDA (par programme)", "points_per_unit": 10, "cap_points": 20 },
+        { "id": "outil_decision", "label_fr": "Outil d'aide à la décision / base de données", "points_per_unit": 10, "cap_points": 20 },
+        { "id": "prototype", "label_fr": "Prototype fonctionnel", "points_per_unit": 10, "cap_points": 20 },
+        { "id": "projet_innovant_startup", "label_fr": "Projet innovant / startup", "points_per_unit": 10, "cap_points": 20 }
+      ],
+      "notes": ["Pas de ligne 'dépôt de demande de brevet' dans cette grille (contrairement à rc5)."]
+    },
+    {
+      "id": "ouvrages",
+      "label_ar": "نشر عمل علمي مطبوع في الجزائر أو غيرها في دار نشر مصنفة بعد آخر استفادة",
+      "label_fr": "Ouvrage scientifique imprimé chez un éditeur classé après le dernier bénéfice",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [
+        { "id": "ouvrage_issn_isbn", "label_fr": "Ouvrage avec N°ISSN/N°ISBN chez éditeur classé", "points_per_unit": 10, "cap_points": 30 },
+        { "id": "chapterbook", "label_fr": "Chapterbook évalué, base de données internationale", "points_per_unit": 4, "cap_points": 12 }
+      ]
+    },
+    {
+      "id": "projets",
+      "label_ar": "المشاركة في نشاطات التطوير التكنولوجي والمشاريع الدولية/النشاطات العلمية بعد آخر استفادة",
+      "label_fr": "Projets après le dernier bénéfice",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [
+        { "id": "projet_national_prfu_pnr", "label_fr": "Projets nationaux (PRFU, PNR…)", "points_per_unit": 2, "cap_points": 6, "bonus": { "points": 1, "condition_fr": "+1 point pour le porteur du projet" } },
+        { "id": "projet_international", "label_fr": "Projet international (Erasmus, PRIMA, Horizon Europe…)", "points_per_unit": 2, "cap_points": 6 },
+        { "id": "projet_techno_partenaire", "label_fr": "Projet techno avec partenaire socio-économique", "points_per_unit": 2, "cap_points": 6 },
+        { "id": "projet_etablissement", "label_fr": "Projet d'établissement approuvé par le conseil scientifique du centre", "points_per_unit": 1, "cap_points": 3 }
+      ]
+    },
+    {
+      "id": "activites_administratives",
+      "label_ar": "المساهمة في الأنشطة الإدارية بعد آخر استفادة",
+      "label_fr": "Activités administratives après le dernier bénéfice",
+      "type": "count",
+      "items": [
+        { "id": "chef_equipe_recherche", "label_ar": "مسؤول فرقة بحث", "label_fr": "Chef d'équipe de recherche", "points_per_unit": 2 },
+        { "id": "membre_conseil", "label_ar": "عضو في المجلس العلمي أو في مجلس الإدارة", "label_fr": "Membre du conseil scientifique ou d'administration", "points_per_unit": 1 },
+        { "id": "comite_scientifique_incubateur", "label_ar": "عضوية في اللجنة العلمية للحاضنة", "label_fr": "Membre du comité scientifique de l'incubateur", "points_per_unit": 1, "cap_points": 4 }
+      ]
+    },
+    {
+      "id": "activites_scientifiques",
+      "label_ar": "المساهمة في الأنشطة العلمية بعد آخر استفادة",
+      "label_fr": "Activités scientifiques après le dernier bénéfice",
+      "type": "count",
+      "items": [
+        { "id": "membre_comite_manifestation", "label_fr": "Membre du comité scientifique ou d'organisation de manifestations internationales ou nationales", "points_per_unit": 1, "cap_units": 6 },
+        { "id": "president_comite_manifestation", "label_fr": "Président du comité scientifique ou d'organisation", "points_per_unit": 2, "cap_units": 4 },
+        { "id": "comite_lecture_revue", "label_fr": "Membre du comité de lecture d'une revue nationale ou internationale", "points_per_unit": 1, "cap_points": 3 },
+        { "id": "chef_revue", "label_fr": "Responsable d'une revue scientifique", "points_per_unit": 2, "cap_points": 4 }
+      ]
+    },
+    {
+      "id": "encadrement_memoires",
+      "label_ar": "الإشراف أو الإشراف المشترك على مذكرات (بكالوريا+05 سنوات و/أو الماستر) التي تمت مناقشتها",
+      "label_fr": "Encadrement/co-encadrement de mémoires (bac+5 / master) soutenus",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [{ "id": "memoire_soutenu", "label_fr": "Mémoire bac+5 / master soutenu", "points_per_unit": 2, "cap_points": 6 }],
+      "notes": ["Pas de lignes 'thèse de doctorat' dans cette grille (contrairement à rc5)."]
+    },
+    {
+      "id": "encadrement_arrete_1275",
+      "label_ar": "الإشراف على طالب في إطار القرار الوزاري رقم 1275",
+      "label_fr": "Encadrement arrêté 1275",
+      "type": "count",
+      "items": [{ "id": "projet_1275", "points_per_unit": 5, "cap_units": 3, "note_ar": "3 مشاريع على الأقصى بعد الاستفادة من آخر تربص" }]
+    },
+    {
+      "id": "encadrement_projet_labelise",
+      "label_ar": "تأطير مشروع حصل على وسم لابل، مشروع مبتكر، مشروع مؤسسة ناشئة",
+      "label_fr": "Encadrement projet labellisé / innovant / startup",
+      "type": "count",
+      "items": [{ "id": "projet_labelise", "points_per_unit": 10, "cap_units": 3 }]
+    },
+    {
+      "id": "etudes_expertises",
+      "label_ar": "دراسات وخبرات وتقارير خلال الثلاث سنوات الأخيرة",
+      "label_fr": "Études, expertises et rapports durant les trois dernières années",
+      "type": "count",
+      "window": "last_3_years",
+      "items": [
+        { "id": "etude_expertise_nationale", "label_ar": "دراسة وخبرة ذات بعد وطني", "label_fr": "Étude/expertise d'envergure nationale", "points_per_unit": 2, "cap_points": 6 },
+        { "id": "etude_expertise_internationale", "label_ar": "دراسة وخبرة ذات بعد دولي", "label_fr": "Étude/expertise d'envergure internationale", "points_per_unit": 3, "cap_points": 9 },
+        { "id": "rapport_national", "label_ar": "تحرير تقرير ذو بعد وطني", "label_fr": "Rédaction d'un rapport d'envergure nationale", "points_per_unit": 3, "cap_points": 6 }
+      ]
+    }
+  ],
+  "process": {
+    "evaluation_finale": ["مجموع النقاط", "ترتيب المترشح"],
+    "valide_par": "رئيس المجلس العلمي"
+  },
+  "rules": ["author_position_weighting", "scopus_wos_dedup", "counting_window", "institution_transfer"],
+  "flags": []
+}

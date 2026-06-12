@@ -1,0 +1,76 @@
+{
+  "id": "rc7-personnel-administratif",
+  "source_pages": "30",
+  "title_ar": "التربصات قصيرة المدى بالخارج - خاص بالمستخدمين الإداريين بمراكز البحث (شعبة إدارة البحث + شعبة الإعلام العلمي والتكنولوجي)",
+  "title_fr": "Stages de courte durée à l'étranger — personnel administratif des centres de recherche (division administration de la recherche + division information scientifique et technologique)",
+  "institution_type": "centre_recherche",
+  "mobility_type": "perfectionnement",
+  "population": ["personnel_administratif"],
+  "candidate_info": ["nom_prenom", "fonction", "categorie", "diplome_universitaire", "centre_unite"],
+  "criteria": [
+    {
+      "id": "anciennete",
+      "label_ar": "الأقدمية في القطاع",
+      "label_fr": "Ancienneté dans le secteur",
+      "type": "count",
+      "items": [{ "id": "annee", "points_per_unit": 1, "unit": "année", "cap_points": 8 }]
+    },
+    {
+      "id": "penalite_stages_5ans",
+      "label_ar": "عدد التربصات المستفاد منها خلال 05 سنوات الأخيرة",
+      "label_fr": "Nombre de stages obtenus durant les cinq dernières années",
+      "type": "formula",
+      "formula": "5 - n",
+      "variable": "n = nombre de stages durant les 5 dernières années",
+      "notes": ["Le scan affiche '(n-5)' (rendu bidirectionnel) ; lecture confirmée : 5 − n."]
+    },
+    {
+      "id": "adequation_stage_poste",
+      "label_ar": "ملاءمة التربص لوظيفة المترشح",
+      "label_fr": "Adéquation du stage avec la fonction du candidat",
+      "type": "capped",
+      "cap_points": 2
+    },
+    {
+      "id": "importance_formation",
+      "label_ar": "أهمية التكوين بالنسبة لبرنامج تطوير المؤسسة",
+      "label_fr": "Importance de la formation pour le programme de développement de l'établissement",
+      "type": "capped",
+      "cap_points": 8
+    },
+    {
+      "id": "responsabilite",
+      "label_ar": "رئيس مصلحة إدارية - خلية",
+      "label_fr": "Chef de service administratif / cellule",
+      "type": "capped",
+      "cap_points": 3
+    },
+    {
+      "id": "comites_permanents",
+      "label_ar": "عضوية اللجان الدائمة في المركز أو المؤسسة",
+      "label_fr": "Membre des comités permanents du centre ou de l'établissement",
+      "type": "count",
+      "items": [{ "id": "comite", "points_per_unit": 2, "unit": "comité", "cap_points": 4 }]
+    },
+    {
+      "id": "contribution_1275",
+      "label_ar": "المساهمة في تجسيد آليات القرار الوزاري رقم 1275 المؤرخ في 27 سبتمبر 2022 (مذكرة تخرج مؤسسة ناشئة من قبل طلبة مؤسسات التعليم العالي)",
+      "label_fr": "Contribution à la mise en œuvre des mécanismes de l'arrêté 1275 du 27/09/2022",
+      "type": "fixed",
+      "points": 2
+    },
+    {
+      "id": "publication_etudes",
+      "label_ar": "نشر الدراسات في المجلات العلمية",
+      "label_fr": "Publication d'études dans des revues scientifiques",
+      "type": "fixed",
+      "points": 2
+    }
+  ],
+  "process": {
+    "evaluation_finale": ["مجموع النقاط", "ترتيب المترشح /(عدد المترشحين)"],
+    "valide_par": "لجنة الانتقاء (comité de sélection)"
+  },
+  "rules": ["committee_conflict_of_interest", "international_agreements_only"],
+  "flags": []
+}

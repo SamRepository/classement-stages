@@ -1,0 +1,49 @@
+{
+  "source": {
+    "arrete": "Arrêté interministériel du 30 Moharram 1433 (25 décembre 2011) modifiant l'arrêté interministériel du 27 Rabie El Aouel 1425 (17 mai 2004)",
+    "objet": "Indemnité convertible relative à la formation et au perfectionnement de durée ≤ 6 mois effectués à l'étranger (art. 30 du décret présidentiel n° 03-309)",
+    "journal_officiel": "JORA n° 71 du 28/12/2011, p. 32 (docs/journal71-1.pdf)",
+    "tableau_verification": "docs/Montant Indemnités de stage de courte duree et de participation manif scient à l etranger.pdf — colonnes « Nouveau »"
+  },
+
+  "bareme_base": {
+    "_comment": "Montants de BASE de l'annexe n° 1 du JO (hors majoration). Formule : ≤10 j : jour_1_10 × j ; 11–29 j : jour_1_10×10 + supp_11_29×(j−10) ; 30 j : mois ; >30 j : mois + supp_apres_30×(j−30). Le tableau interne « Nouveau » applique ce barème au-delà de 30 jours (jour 60 = mois + 30×supp, pas 2×mois).",
+    "zone1": {
+      "jour_1_10": 12000,
+      "supp_11_29": 4000,
+      "mois": 200000,
+      "supp_apres_30": 6000
+    },
+    "zone2": {
+      "jour_1_10": 10000,
+      "supp_11_29": 3000,
+      "mois": 160000,
+      "supp_apres_30": 5000
+    }
+  },
+
+  "majoration_enseignants": {
+    "_comment": "Art. 2 de l'arrêté du 25/12/2011 : +20 % pour les enseignants chercheurs hospitalo-universitaires, les enseignants chercheurs des établissements d'enseignement et de formation supérieurs et les chercheurs permanents des établissements de recherche. Le tableau interne « Nouveau » (stages) intègre déjà cette majoration (vérifié : 14 400 = 12 000 × 1,2). Confirmé par l'utilisateur le 10/06/2026 : le personnel administratif et technique (grille u2) reste au barème de base.",
+    "taux": 0.2,
+    "populations_majorees": [
+      "enseignant_chercheur",
+      "maitre_assistant",
+      "chercheur_permanent"
+    ],
+    "flags": [
+      "Doctorants non salariés : non cités par l'art. 2 (pas enseignants chercheurs) → barème de base appliqué. À confirmer avec le service financier."
+    ]
+  },
+
+  "manifestation_scientifique": {
+    "_comment": "Tableau « Nouveau » des manifestations avec communication = barème de base × 1,4, sans majoration supplémentaire (vérifié : Zone I jour 1 = 16 800 = 12 000 × 1,4 ; jour 11 = 173 600 = 124 000 × 1,4 ; Zone II jour 1 = 14 000 = 10 000 × 1,4 — une décomposition base×1,2 donnerait des montants non ronds en Zone II).",
+    "multiplicateur": 1.4,
+    "majoration_applicable": false
+  },
+
+  "regles": [
+    "L'indemnité est calculée sur la durée effective en jours de la mobilité.",
+    "Le titre de voyage (billet) et les frais divers (visa, assurance voyage) ne sont pas couverts par ce barème : ils sont estimés par dossier, le billet pouvant être plafonné par l'établissement.",
+    "Durées de l'arrêté 345 : perfectionnement 15–30 j, résidence scientifique 7–15 j, manifestation ≤ 7 j."
+  ]
+}

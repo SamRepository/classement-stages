@@ -1,0 +1,40 @@
+{
+  "candidates": [
+    {
+      "id": "A001",
+      "nom": "Hamdi",
+      "prenom": "Nadia",
+      "population": "personnel_administratif",
+      "grouping": { "service": "Scolarité" },
+      "benefits": [
+        { "date": "2023-05-02", "platform_close_date": "2023-02-15" }
+      ],
+      "entries": {
+        "grade": { "value": "14" },
+        "anciennete": { "items": [{ "item": "annee", "count": 12 }] },
+        "langues": { "items": [{ "item": "langue_formation", "count": 1 }] },
+        "evaluation_superieur": {
+          "scores": { "assiduite": 3, "competence": 3, "initiative": 2, "disponibilite": 3 }
+        },
+        "projets_internationaux": { "points": 2 },
+        "penalite_stages_6ans": {}
+      }
+    },
+    {
+      "id": "A002",
+      "nom": "Mansouri",
+      "prenom": "Yacine",
+      "population": "personnel_administratif",
+      "grouping": { "service": "Ressources humaines" },
+      "benefits": [],
+      "entries": {
+        "grade": { "value": "16" },
+        "anciennete": { "items": [{ "item": "annee", "count": 25 }] },
+        "evaluation_superieur": {
+          "scores": { "assiduite": 2, "competence": 2, "initiative": 2, "disponibilite": 2 }
+        },
+        "penalite_stages_6ans": {}
+      }
+    }
+  ]
+}

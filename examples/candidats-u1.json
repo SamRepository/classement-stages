@@ -1,0 +1,80 @@
+{
+  "candidates": [
+    {
+      "id": "C001",
+      "nom": "Benali",
+      "prenom": "Karim",
+      "population": "enseignant_chercheur",
+      "grouping": { "departement": "Informatique", "faculte": "NTIC" },
+      "benefits": [
+        { "date": "2024-09-15", "platform_close_date": "2024-04-30" }
+      ],
+      "entries": {
+        "rang_scientifique": { "value": "professeur" },
+        "penalite_beneficies_3ans": {},
+        "publications": {
+          "items": [
+            { "item": "classe_a", "count": 1, "author_position": 1, "date": "2025-03-10" },
+            { "item": "classe_b", "count": 1, "author_position": 3, "date": "2025-11-02" }
+          ]
+        },
+        "communications": {
+          "items": [
+            { "item": "intl_indexee_scopus_wos", "count": 2, "date": "2025-06-20" }
+          ]
+        },
+        "expertise_reviewing": {
+          "items": [{ "item": "revue_a", "count": 5 }]
+        },
+        "poste_superieur": { "applies": true }
+      }
+    },
+    {
+      "id": "C002",
+      "nom": "Saidi",
+      "prenom": "Amina",
+      "population": "enseignant_chercheur",
+      "grouping": { "departement": "Informatique", "faculte": "NTIC" },
+      "benefits": [],
+      "entries": {
+        "rang_scientifique": { "value": "mca" },
+        "penalite_beneficies_3ans": {},
+        "publications": {
+          "items": [
+            { "item": "classe_a_plus", "count": 1, "author_position": 2, "date": "2025-09-01" }
+          ]
+        },
+        "elearning": {
+          "items": [
+            { "item": "cours", "count": 2, "bonus_count": 1 },
+            { "item": "td", "count": 1 }
+          ]
+        },
+        "encadrement_master": {
+          "items": [{ "item": "memoire_master", "count": 4, "date": "2025-07-01" }]
+        }
+      }
+    },
+    {
+      "id": "C003",
+      "nom": "Cherif",
+      "prenom": "Lina",
+      "population": "doctorant_non_salarie",
+      "grouping": { "departement": "Mathématiques", "faculte": "Sciences" },
+      "benefits": [],
+      "entries": {
+        "rang_scientifique": { "value": "doctorant_non_salarie" },
+        "penalite_beneficies_3ans": {},
+        "communications": {
+          "items": [
+            { "item": "nationale", "count": 1, "date": "2025-05-12" },
+            { "item": "intl_non_classee", "count": 5, "date": "2025-10-03" }
+          ]
+        },
+        "structures_accompagnement": {
+          "items": [{ "item": "attestation", "count": 3 }]
+        }
+      }
+    }
+  ]
+}

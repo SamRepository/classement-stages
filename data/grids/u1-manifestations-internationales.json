@@ -1,0 +1,220 @@
+{
+  "id": "u1-manifestations-internationales",
+  "source_pages": "10-13",
+  "title_ar": "المشاركة في التظاهرات العلمية الدولية - خاص بالمؤسسات الجامعية والمدارس",
+  "title_fr": "Participation aux manifestations scientifiques internationales indexées — établissements universitaires et écoles",
+  "institution_type": "universite",
+  "mobility_type": "manifestation_scientifique",
+  "population": ["enseignant_chercheur", "doctorant_non_salarie"],
+  "criteria": [
+    {
+      "id": "rang_scientifique",
+      "label_ar": "الرتبة العلمية",
+      "label_fr": "Rang scientifique",
+      "type": "enum",
+      "options": [
+        { "value": "professeur_emerite", "label_ar": "أستاذ مميز", "label_fr": "Professeur émérite", "points": 9 },
+        { "value": "professeur", "label_ar": "أستاذ", "label_fr": "Professeur", "points": 7 },
+        { "value": "mca", "label_ar": "أستاذ محاضر أ", "label_fr": "Maître de conférences A", "points": 5 },
+        { "value": "mcb", "label_ar": "أستاذ محاضر ب", "label_fr": "Maître de conférences B", "points": 3 },
+        { "value": "maitre_assistant", "label_ar": "الأساتذة المساعدين", "label_fr": "Maîtres assistants", "points": 2 },
+        { "value": "doctorant_non_salarie", "label_ar": "طالب دكتوراه غير أجير", "label_fr": "Doctorant non salarié", "points": 1 }
+      ]
+    },
+    {
+      "id": "penalite_beneficies_3ans",
+      "label_ar": "(n) الإستفادات السابقة للثلاث سنوات",
+      "label_fr": "Bénéfices antérieurs sur les trois dernières années",
+      "type": "formula",
+      "formula": "3 - n",
+      "variable": "n = nombre de bénéfices durant les 3 dernières années"
+    },
+    {
+      "id": "prix_distinctions",
+      "label_ar": "جوائز دولية و/أو وطنية مرتبطة بإنجازات علمية، براءة اختراع",
+      "label_fr": "Prix internationaux et/ou nationaux liés à des réalisations scientifiques, brevet d'invention",
+      "type": "fixed",
+      "window": "after_last_benefit",
+      "points": 10
+    },
+    {
+      "id": "publications",
+      "label_ar": "نشر مقال بعد الاستفادة السابقة (يخضع لنفس شروط مناقشة الدكتوراه)؛ يجب تسمية المؤسسة في المقال المنشور",
+      "label_fr": "Publication d'articles après le dernier bénéfice (mêmes conditions que la soutenance de doctorat) ; l'établissement doit être mentionné dans l'article",
+      "type": "count",
+      "window": "after_last_benefit",
+      "rules": ["author_position_weighting"],
+      "items": [
+        { "id": "classe_a_plus", "scope": "international", "label_fr": "Revue classe A+", "points_per_unit": 20, "reference_recommended": true },
+        { "id": "classe_a", "scope": "international", "label_fr": "Revue classe A", "points_per_unit": 15, "reference_recommended": true },
+        { "id": "classe_b", "scope": "international", "label_fr": "Revue classe B", "points_per_unit": 10, "reference_recommended": true },
+        { "id": "classe_c", "scope": "national", "label_fr": "Revue classe C", "points_per_unit": 5, "cap_units": 2, "reference_recommended": true }
+      ]
+    },
+    {
+      "id": "communications",
+      "label_ar": "مداخلات بعد الاستفادة السابقة؛ يجب تسمية المؤسسة في المداخلة",
+      "label_fr": "Communications après le dernier bénéfice ; l'établissement doit être mentionné",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [
+        { "id": "intl_indexee_scopus_wos", "scope": "international", "label_fr": "Manifestation classée (Scopus/WOS)", "points_per_unit": 6, "reference_recommended": true },
+        { "id": "intl_referencee", "scope": "international", "label_ar": "المفهرسة", "label_fr": "Manifestation référencée (indexée dans des bases)", "points_per_unit": 4, "cap_units": 4, "reference_recommended": true },
+        { "id": "intl_non_classee", "scope": "international", "label_fr": "Manifestation non classée", "points_per_unit": 2, "cap_units": 4 },
+        { "id": "nationale", "scope": "national", "label_fr": "Communication nationale", "points_per_unit": 1, "cap_units": 4 }
+      ]
+    },
+    {
+      "id": "projet_international",
+      "label_ar": "مشروع دولي (PRIMA، Erasmus+...الخ)",
+      "label_fr": "Projet international (PRIMA, Erasmus+, etc.)",
+      "type": "count",
+      "items": [{ "id": "projet_intl", "points_per_unit": 10, "unit": "projet" }]
+    },
+    {
+      "id": "projet_national",
+      "label_ar": "مشروع تطوير تكنولوجي مع شريك اجتماعي-اقتصادي / مشروع في إطار البرنامج الوطني للبحث PNR-PRFU",
+      "label_fr": "Projet de développement technologique avec partenaire socio-économique / projet PNR-PRFU",
+      "type": "count",
+      "items": [{ "id": "projet_national", "points_per_unit": 5, "unit": "projet" }]
+    },
+    {
+      "id": "encadrement_doctoral",
+      "label_ar": "الإشراف على أطروحات الدكتوراه",
+      "label_fr": "Encadrement doctoral",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [
+        { "id": "directeur_these_soutenue", "label_ar": "مشرف على أطروحة دكتوراه نوقشت بعد الاستفادة السابقة", "label_fr": "Directeur d'une thèse soutenue après le dernier bénéfice", "points_per_unit": 5 },
+        { "id": "co_directeur_these_soutenue", "label_ar": "مساعد المشرف على أطروحة دكتوراه نوقشت بعد الاستفادة السابقة", "label_fr": "Co-directeur d'une thèse soutenue après le dernier bénéfice", "points_per_unit": 3 },
+        { "id": "jury_soutenance", "label_ar": "مشاركة في لجان مناقشة دكتوراه", "label_fr": "Participation aux jurys de soutenance de doctorat", "points_per_unit": 1, "cap_units": 2 }
+      ]
+    },
+    {
+      "id": "encadrement_arrete_1275",
+      "label_ar": "الإشراف على طالب في إطار القرار الوزاري رقم 1275 المؤرخ في 27 سبتمبر 2022 (مذكرة تخرج مؤسسة ناشئة، مؤسسة مصغرة، مؤسسة فرعية / براءة اختراع)",
+      "label_fr": "Encadrement d'étudiants dans le cadre de l'arrêté 1275 du 27/09/2022 (mémoire startup / brevet)",
+      "type": "count",
+      "items": [{ "id": "projet_1275", "points_per_unit": 2, "unit": "projet", "cap_units": 2 }]
+    },
+    {
+      "id": "encadrement_projet_labelise",
+      "label_ar": "الإشراف على مشروع حصل على وسم لابل، مشروع مبتكر، مشروع مؤسسة ناشئة",
+      "label_fr": "Encadrement d'un projet labellisé, projet innovant, projet startup",
+      "type": "fixed",
+      "points": 5
+    },
+    {
+      "id": "encadrement_master",
+      "label_ar": "تأطير طلبة الماستر",
+      "label_fr": "Encadrement de mémoires de master",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [{ "id": "memoire_master", "points_per_unit": 1, "unit": "mémoire", "cap_points": 3 }]
+    },
+    {
+      "id": "encadrement_licence",
+      "label_ar": "تأطير طلبة الليسانس",
+      "label_fr": "Encadrement de projets de licence",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [{ "id": "sujet_licence", "points_per_unit": 0.5, "unit": "sujet", "cap_points": 3 }]
+    },
+    {
+      "id": "cours_tronc_commun",
+      "label_ar": "تدريس محاضرة في جذع مشترك",
+      "label_fr": "Enseignement d'un cours magistral en tronc commun",
+      "type": "count",
+      "items": [{ "id": "cours_tc", "points_per_unit": 4, "unit": "cours", "cap_units": 2, "note": "احتساب محاضرتين على الأكثر" }]
+    },
+    {
+      "id": "expertise_reviewing",
+      "label_ar": "الخبرة التحكيمية الفعلية في المجلات العلمية المصنفة",
+      "label_fr": "Expertise effective de reviewing dans les revues scientifiques classées",
+      "type": "count",
+      "rules": ["refereeing_proof"],
+      "items": [
+        { "id": "revue_a_plus", "label_fr": "Revue classe A+", "points_per_unit": 5, "note": "Sans plafond explicite dans le barème (confirmé)" },
+        { "id": "revue_a", "label_fr": "Revue classe A", "points_per_unit": 4, "cap_points": 16 },
+        { "id": "revue_b", "label_fr": "Revue classe B", "points_per_unit": 2, "cap_points": 8 },
+        { "id": "revue_c", "label_fr": "Revue classe C", "points_per_unit": 1, "cap_points": 4 }
+      ]
+    },
+    {
+      "id": "structures_accompagnement",
+      "label_ar": "شهادة تثبت عمل داخل هيئات المرافقة (مركز تطوير المقاولاتية، مركز المسارات المهنية CDC، نادي البحث عن الشغل، حاضنة أعمال، مركز الدعم التكنولوجي والابتكار CATI، دار الذكاء الاصطناعي، مركز الربط بين المؤسسة والجامعة...الخ)",
+      "label_fr": "Attestation de travail au sein des structures d'accompagnement (centre entrepreneuriat, CDC, club emploi, incubateur, CATI, maison de l'IA, centre de liaison entreprise-université, etc.)",
+      "type": "count",
+      "items": [{ "id": "attestation", "points_per_unit": 1, "unit": "attestation d'organismes différents", "cap_points": 2 }]
+    },
+    {
+      "id": "citations_scopus",
+      "label_ar": "اقتباسات Scopus للمؤسسة الجامعية والبحثية في المقال",
+      "label_fr": "Citations Scopus de l'établissement (nombre depuis le dernier bénéfice + URL du profil Scopus / Google Scholar — https://www.scopus.com/freelookup/form/author.uri)",
+      "type": "count",
+      "window": "after_last_benefit",
+      "excel": { "saisie_simple": true, "url_profil": true },
+      "items": [{ "id": "citation", "points_per_unit": 0.1, "unit": "citation" }]
+    },
+    {
+      "id": "polycopie_pedagogique",
+      "label_ar": "مطبوعة بيداغوجية فردية مصادق عليها من الهيئة العلمية (مستخرج أو مقرر أو إشهاد)",
+      "label_fr": "Polycopié pédagogique individuel approuvé par l'instance scientifique",
+      "type": "fixed",
+      "points": 3,
+      "bonuses": [
+        { "condition": "rédigé en anglais", "points": 2 },
+        { "condition": "utilisé en enseignement (hors module de langue anglaise)", "points": 2 }
+      ]
+    },
+    {
+      "id": "elearning",
+      "label_ar": "دروس بيداغوجية متوفرة على الخط (e-Learning)",
+      "label_fr": "Cours pédagogiques en ligne (e-learning)",
+      "type": "count",
+      "uncapped": true,
+      "rules": ["elearning_conditions"],
+      "items": [
+        { "id": "cours", "label_fr": "Cours", "points_per_unit": 2 },
+        { "id": "td", "label_fr": "Travaux dirigés", "points_per_unit": 1 },
+        { "id": "tp", "label_fr": "Travaux pratiques", "points_per_unit": 1 }
+      ],
+      "bonuses": [{ "condition": "support en anglais (hors module de langue anglaise)", "points": 2 }]
+    },
+    {
+      "id": "chapterbook",
+      "label_ar": "Chapterbook محكم في قاعدة بيانات دولية",
+      "label_fr": "Chapitre d'ouvrage évalué, référencé dans une base de données internationale",
+      "type": "fixed",
+      "points": 5
+    },
+    {
+      "id": "livre_isbn",
+      "label_ar": "كتاب محكم بيداغوجي/علمي في التخصص برقم تسلسلي ISBN مصادق عليه من طرف الهيئات العلمية",
+      "label_fr": "Livre pédagogique/scientifique évalué dans la spécialité avec ISBN, approuvé par les instances scientifiques",
+      "type": "fixed",
+      "points": 5,
+      "bonuses": [{ "condition": "rédigé en anglais", "points": 2 }]
+    },
+    {
+      "id": "responsabilites_scientifiques",
+      "label_ar": "عضوية اللجان والمجالس العلمية",
+      "label_fr": "Membre des comités et conseils scientifiques",
+      "type": "count",
+      "items": [
+        { "id": "membre_conseil", "label_ar": "المجلس العلمي، اللجنة العلمية، المجلس التأديبي، مجلس الإدارة، وخلية الجودة", "label_fr": "Conseil scientifique, comité scientifique, conseil de discipline, conseil d'administration, cellule qualité", "points_per_unit": 1, "unit": "appartenance de nature différente, hors membre de droit", "cap_points": 3 },
+        { "id": "president_instance", "label_ar": "رؤساء الهيئات العلمية دون حساب العضوية بحكم الصفة", "label_fr": "Président d'instance scientifique (hors membre de droit)", "points_per_unit": 2 },
+        { "id": "editeur", "label_ar": "مدير النشر الجامعي، رئيس التحرير في مجلة مصنفة، عضو في المخبر", "label_fr": "Directeur des publications universitaires, rédacteur en chef d'une revue classée, membre de laboratoire", "points_per_unit": 1 }
+      ]
+    },
+    {
+      "id": "poste_superieur",
+      "label_ar": "المنصب العالي (هيكلي/وظيفي)",
+      "label_fr": "Poste supérieur (structurel/fonctionnel)",
+      "type": "fixed",
+      "points": 2
+    }
+  ],
+  "rules": ["author_position_weighting", "counting_window", "institution_transfer", "refereeing_proof"],
+  "flags": []
+}

@@ -1,0 +1,101 @@
+{
+  "id": "rc8-techniciens-ingenierie",
+  "source_pages": "31-32",
+  "title_ar": "التربصات قصيرة المدى - خاصة بالمستخدمين التقنيين لدعم البحث (شعبة الهندسة)",
+  "title_fr": "Stages de courte durée — personnel technique de soutien à la recherche (division ingénierie), centres de recherche",
+  "institution_type": "centre_recherche",
+  "mobility_type": "perfectionnement",
+  "population": ["personnel_technique_soutien_recherche"],
+  "candidate_info": ["nom_prenom", "fonction", "categorie", "diplome_universitaire", "centre_unite"],
+  "criteria": [
+    {
+      "id": "anciennete",
+      "label_ar": "الأقدمية في القطاع",
+      "label_fr": "Ancienneté dans le secteur",
+      "type": "count",
+      "items": [{ "id": "annee", "points_per_unit": 1, "unit": "année", "cap_points": 8 }]
+    },
+    {
+      "id": "penalite_stages_5ans",
+      "label_ar": "عدد التربصات المستفاد منها خلال 05 سنوات الأخيرة",
+      "label_fr": "Nombre de stages obtenus durant les cinq dernières années",
+      "type": "formula",
+      "formula": "5 - n",
+      "variable": "n = nombre de stages durant les 5 dernières années",
+      "notes": ["Le scan affiche '(n-5)' ; lecture confirmée : 5 − n."]
+    },
+    {
+      "id": "adequation_stage_poste",
+      "label_ar": "ملاءمة التربص لوظيفة المترشح",
+      "label_fr": "Adéquation du stage avec la fonction du candidat",
+      "type": "capped",
+      "cap_points": 5
+    },
+    {
+      "id": "importance_formation",
+      "label_ar": "أهمية التكوين بالنسبة لبرنامج تطوير المؤسسة",
+      "label_fr": "Importance de la formation pour le programme de développement de l'établissement",
+      "type": "capped",
+      "cap_points": 5
+    },
+    {
+      "id": "responsabilite",
+      "label_ar": "رئيس قسم تقني، رئيس مصلحة مشتركة، رئيس مصلحة تقنية، رئيس ورشة، مسؤول فرقة",
+      "label_fr": "Chef de département technique, chef de service commun, chef de service technique, chef d'atelier, chef d'équipe",
+      "type": "fixed",
+      "points": 3
+    },
+    {
+      "id": "comites",
+      "label_ar": "عضوية اللجان في المركز أو المؤسسة",
+      "label_fr": "Membre des comités du centre ou de l'établissement",
+      "type": "count",
+      "items": [{ "id": "comite", "points_per_unit": 2, "unit": "comité", "cap_points": 4 }]
+    },
+    {
+      "id": "brevets",
+      "label_ar": "براءات الاختراع المتحصل عليها بعد الاستفادة من آخر تربص",
+      "label_fr": "Brevets obtenus après le dernier stage",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [
+        { "id": "brevet", "label_ar": "شهادة NAPI أو إشهاد بقبول براءة اختراع / شهادة ONDA", "label_fr": "Certificat INAPI ou attestation d'acceptation de brevet / certificat ONDA", "points_per_unit": 10, "cap_points": 30 },
+        { "id": "outil_numerique", "label_ar": "تطوير بطاقية رقمية (أداة مساعدة في اتخاذ القرار/قاعدة بيانات)", "label_fr": "Développement d'un outil numérique d'aide à la décision / base de données", "points_per_unit": 10, "cap_points": 30 }
+      ]
+    },
+    {
+      "id": "projets",
+      "label_ar": "المشاركة في المشاريع الدولية ومشاريع التطوير التكنولوجي بعد آخر استفادة",
+      "label_fr": "Participation aux projets internationaux et de développement technologique après le dernier bénéfice",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [
+        { "id": "pnr", "label_fr": "Projet PNR", "points_per_unit": 7, "unit": "projet" },
+        { "id": "projet_international", "label_fr": "Projet international (Erasmus, PRIMA, Horizon Europe…)", "points_per_unit": 7, "unit": "projet" },
+        { "id": "projet_techno_partenaire", "label_ar": "مشروع تطوير تكنولوجي مع شريك سوسيو-اقتصادي (اقتصادي/موضوعاتي) معتمد من طرف المجلس العلمي", "label_fr": "Projet techno avec partenaire socio-économique, approuvé par le conseil scientifique", "points_per_unit": 5, "unit": "projet" },
+        { "id": "projet_techno_sans_partenaire", "label_ar": "مشروع تطوير تكنولوجي بدون شريك مصادق عليه من قبل الإدارة", "label_fr": "Projet techno sans partenaire, approuvé par l'administration", "points_per_unit": 3, "unit": "projet" },
+        { "id": "projet_etablissement", "label_ar": "مشروع مؤسسة مصادق عليه من قبل المجلس العلمي للمركز", "label_fr": "Projet d'établissement approuvé par le conseil scientifique du centre", "points_per_unit": 1, "unit": "projet" }
+      ]
+    },
+    {
+      "id": "encadrement_arrete_1275",
+      "label_ar": "المساهمة في الإشراف على طالب في إطار القرار الوزاري رقم 1275 (مذكرة بكالوريا+05 سنوات /أو ماستر) بعد آخر استفادة",
+      "label_fr": "Contribution à l'encadrement d'étudiants dans le cadre de l'arrêté 1275 (mémoire bac+5 / master)",
+      "type": "count",
+      "items": [{ "id": "projet_1275", "points_per_unit": 5, "cap_units": 3, "note_ar": "3 مشاريع على الأقصى بعد الإستفادة من آخر تربص" }]
+    },
+    {
+      "id": "travaux_recherche_anglais",
+      "label_ar": "قيام بأعمال بحثية خبرة، تقارير باللغة الانجليزية في ميادين العلوم والتكنولوجيا",
+      "label_fr": "Travaux de recherche, expertises, rapports en anglais dans les domaines des sciences et technologies",
+      "type": "fixed",
+      "points": 5
+    }
+  ],
+  "process": {
+    "evaluation_finale": ["مجموع النقاط", "ترتيب المترشح /(عدد المترشحين)"],
+    "valide_par": "المجلس العلمي (conseil scientifique)"
+  },
+  "rules": ["international_agreements_only"],
+  "flags": []
+}

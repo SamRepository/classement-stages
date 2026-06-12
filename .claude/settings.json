@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest *)",
+      "Bash(python -m pytest)",
+      "Bash(python -m classement *)",
+      "Bash(python scripts/audit_grids.py)",
+      "Bash(python scripts/make_example_xlsx.py)",
+      "Bash(python -m pip install openpyxl *)",
+      "Bash(python -m pip install openpyxl)",
+      "PowerShell(python -m pytest *)",
+      "PowerShell(python -m pytest)",
+      "PowerShell(python -m classement *)",
+      "PowerShell(python scripts\\audit_grids.py)",
+      "PowerShell(python scripts\\make_example_xlsx.py)",
+      "PowerShell(python scripts/audit_grids.py)",
+      "PowerShell(python scripts/make_example_xlsx.py)",
+      "PowerShell(python -m pip install openpyxl *)",
+      "PowerShell(python -m pip install openpyxl)"
+    ],
+    "deny": []
+  }
+}

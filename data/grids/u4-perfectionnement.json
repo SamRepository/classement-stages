@@ -1,0 +1,161 @@
+{
+  "id": "u4-perfectionnement",
+  "source_pages": "20-21",
+  "title_ar": "تربص تحسين المستوى بالخارج - خاص بالمؤسسات الجامعية والمدارس",
+  "title_fr": "Stage de perfectionnement à l'étranger — établissements universitaires et écoles",
+  "institution_type": "universite",
+  "mobility_type": "perfectionnement",
+  "population": ["doctorant_non_salarie", "maitre_assistant", "enseignant_chercheur"],
+  "criteria": [
+    {
+      "id": "inscription_doctorat",
+      "label_ar": "التسجيل بانتظام في الدكتوراه حسب التنظيم المعمول به",
+      "label_fr": "Inscription régulière en doctorat selon la réglementation en vigueur",
+      "type": "count",
+      "items": [{ "id": "inscription", "points_per_unit": 2, "unit": "inscription régulière" }]
+    },
+    {
+      "id": "penalite_beneficies_3ans",
+      "label_ar": "(n) الإستفادات السابقة للثلاث سنوات",
+      "label_fr": "Bénéfices antérieurs sur les trois dernières années",
+      "type": "formula",
+      "formula": "3 - n",
+      "variable": "n = nombre de bénéfices durant les 3 dernières années"
+    },
+    {
+      "id": "projet_startup_incubateur",
+      "label_ar": "مشروع مؤسسة ناشئة في الحاضنة الجامعية - شهادة تسجيل المشروع",
+      "label_fr": "Projet de startup dans l'incubateur universitaire (attestation d'enregistrement du projet)",
+      "type": "fixed",
+      "points": 1
+    },
+    {
+      "id": "structures_accompagnement",
+      "label_ar": "شهادة تثبت عمل داخل هيئات المرافقة (مركز تطوير المقاولاتية، CDC، نادي البحث عن الشغل، حاضنة أعمال، CATI، دار الذكاء الاصطناعي، مركز الربط بين المؤسسة والجامعة...الخ)",
+      "label_fr": "Attestation de travail dans les structures d'accompagnement",
+      "type": "count",
+      "items": [{ "id": "attestation", "points_per_unit": 1, "unit": "attestation d'organismes différents", "cap_points": 2 }]
+    },
+    {
+      "id": "prix_distinctions",
+      "label_ar": "جوائز وطنية ودولية مرتبطة بإنجازات علمية",
+      "label_fr": "Prix nationaux et internationaux liés à des réalisations scientifiques",
+      "type": "fixed",
+      "points": 5
+    },
+    {
+      "id": "publications",
+      "label_ar": "نشر مقال بعد الاستفادة السابقة (يخضع لنفس شروط مناقشة الدكتوراه)؛ يجب تسمية المؤسسة في المقال المنشور",
+      "label_fr": "Publications après le dernier bénéfice",
+      "type": "count",
+      "window": "after_last_benefit",
+      "rules": ["author_position_weighting"],
+      "items": [
+        { "id": "classe_a_plus", "scope": "international", "label_fr": "Revue classe A+", "points_per_unit": 20, "reference_recommended": true },
+        { "id": "classe_a", "scope": "international", "label_fr": "Revue classe A", "points_per_unit": 15, "reference_recommended": true },
+        { "id": "classe_b", "scope": "international", "label_fr": "Revue classe B", "points_per_unit": 10, "reference_recommended": true },
+        { "id": "classe_c", "scope": "national", "label_fr": "Revue classe C", "points_per_unit": 5, "cap_units": 2, "reference_recommended": true }
+      ]
+    },
+    {
+      "id": "communications",
+      "label_ar": "مداخلات بعد الاستفادة السابقة، يجب تسمية المؤسسة في المداخلة - دولية (04 مداخلات كحد أقصى)",
+      "label_fr": "Communications après le dernier bénéfice (bloc international plafonné à 4 communications)",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [
+        { "id": "intl_indexee_scopus_wos", "scope": "international", "label_fr": "Manifestation classée (Scopus/WOS)", "points_per_unit": 6, "reference_recommended": true },
+        { "id": "intl_referencee", "scope": "international", "label_ar": "المفهرسة", "label_fr": "Manifestation référencée (indexée dans des bases)", "points_per_unit": 4, "cap_units": 4, "reference_recommended": true },
+        { "id": "intl_non_classee", "scope": "international", "label_fr": "Manifestation non classée", "points_per_unit": 2, "cap_units": 4 },
+        { "id": "nationale", "scope": "national", "label_fr": "Communication nationale", "points_per_unit": 1, "cap_units": 4 }
+      ],
+      "block_caps": [{ "scope": "international", "cap_units": 4 }]
+    },
+    {
+      "id": "livre_isbn",
+      "label_ar": "كتاب محكم بيداغوجي/علمي في التخصص برقم تسلسلي ISBN مصادق عليه من طرف الهيئات العلمية",
+      "label_fr": "Livre évalué avec ISBN approuvé",
+      "type": "fixed",
+      "points": 5,
+      "bonuses": [{ "condition": "en anglais", "points": 2 }],
+      "group": "activites_non_plafonnees"
+    },
+    {
+      "id": "polycopie_pedagogique",
+      "label_ar": "مطبوعة بيداغوجية فردية مصادق عليها من الهيئة العلمية (مستخرج أو مقرر أو إشهاد)",
+      "label_fr": "Polycopié pédagogique individuel approuvé",
+      "type": "fixed",
+      "points": 3,
+      "bonuses": [
+        { "condition": "rédigé en anglais", "points": 2 },
+        { "condition": "utilisé en enseignement (hors module d'anglais)", "points": 2 }
+      ],
+      "group": "activites_non_plafonnees"
+    },
+    {
+      "id": "elearning",
+      "label_ar": "دروس بيداغوجية متوفرة على الخط (e-Learning) - بالنسبة إلى الأستاذ المساعد",
+      "label_fr": "Cours en ligne (e-learning) — pour le maître assistant",
+      "type": "count",
+      "uncapped": true,
+      "rules": ["elearning_conditions"],
+      "items": [
+        { "id": "cours", "label_fr": "Cours", "points_per_unit": 2 },
+        { "id": "td", "label_fr": "Travaux dirigés", "points_per_unit": 1 },
+        { "id": "tp", "label_fr": "Travaux pratiques", "points_per_unit": 1 }
+      ],
+      "bonuses": [{ "condition": "support en anglais (hors module d'anglais)", "points": 2 }],
+      "group": "activites_non_plafonnees"
+    },
+    {
+      "id": "encadrement_master",
+      "label_ar": "تأطير طلبة الماستر",
+      "label_fr": "Encadrement master",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [{ "id": "memoire_master", "points_per_unit": 1, "unit": "mémoire soutenu", "cap_points": 3 }]
+    },
+    {
+      "id": "encadrement_licence",
+      "label_ar": "تأطير طلبة الليسانس",
+      "label_fr": "Encadrement licence",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [{ "id": "sujet_licence", "points_per_unit": 0.5, "unit": "sujet", "cap_points": 3 }]
+    },
+    {
+      "id": "encadrement_arrete_1275",
+      "label_ar": "الإشراف على طالب في إطار القرار الوزاري رقم 1275 المؤرخ في 27 سبتمبر 2022 (مذكرة تخرج مؤسسة ناشئة، مؤسسة مصغرة، مؤسسة فرعية / براءة اختراع)",
+      "label_fr": "Encadrement arrêté 1275 (mémoire startup / brevet)",
+      "type": "count",
+      "window": "after_last_benefit",
+      "items": [{ "id": "projet_1275", "points_per_unit": 2, "unit": "projet", "cap_units": 2 }]
+    },
+    {
+      "id": "poste_superieur",
+      "label_ar": "المنصب العالي (هيكلي/وظيفي)",
+      "label_fr": "Poste supérieur (structurel/fonctionnel)",
+      "type": "fixed",
+      "points": 2
+    }
+  ],
+  "ranking_rules": [
+    {
+      "ar": "طلبة الدكتوراه غير الأجراء يرتبون بالنسبة لزملائهم على مستوى أقسامهم في حدود الإمكانيات المالية المتوفرة",
+      "fr": "Les doctorants non salariés sont classés par rapport à leurs pairs au niveau de leur département, dans la limite du budget disponible."
+    },
+    {
+      "ar": "طلبة الدكتوراه المسجلين في إطار الإشراف المشترك Co-tutelle de thèse يرتبون بالنسبة لزملائهم على مستوى كليتهم/أقسامهم",
+      "fr": "Les doctorants en cotutelle de thèse sont classés par rapport à leurs pairs au niveau de leur faculté/département."
+    },
+    {
+      "ar": "طالبي التربصات الذين تخلوا عن تسجيل سابق في طور الدكتوراه واستفادوا من تسجيل جديد في طور الدكتوراه ليست لهم الأولوية",
+      "fr": "Les candidats ayant abandonné une inscription doctorale antérieure puis bénéficié d'une nouvelle inscription n'ont pas la priorité."
+    }
+  ],
+  "rules": ["author_position_weighting", "counting_window", "institution_transfer"],
+  "notes": [
+    "Le groupe 'activites_non_plafonnees' (livre ISBN, polycopié, e-learning) est annoté dans la grille : 'هذا الصنف من الأنشطة غير مسقف' (catégorie d'activités non plafonnée)."
+  ],
+  "flags": []
+}

@@ -1,0 +1,65 @@
+{
+  "id": "enset-skikda",
+  "nom_fr": "École Normale Supérieure d'Enseignement Technologique de Skikda",
+  "nom_ar": "المدرسة العليا لأساتذة التعليم التكنولوجي - سكيكدة",
+  "sigle": "ENSET-Skikda",
+  "type": "ecole_normale_superieure",
+  "institution_type": "universite",
+  "tutelle": "Ministère de l'Enseignement Supérieur et de la Recherche Scientifique (MESRS)",
+  "adresse": "Cité Frères Bousta, Azzaba – Skikda, Algérie",
+  "site_web": "https://enset-skikda.dz",
+
+  "departements": [
+    { "id": "technologie", "label_fr": "Département de Technologie", "label_ar": "قسم التكنولوجيا" },
+    { "id": "mathematiques-informatique", "label_fr": "Département de Mathématiques et Informatique", "label_ar": "قسم الرياضيات والإعلام الآلي" },
+    { "id": "physique-chimie", "label_fr": "Département de Physique et Chimie", "label_ar": "قسم الفيزياء والكيمياء" },
+    { "id": "sciences-naturelles", "label_fr": "Département des Sciences Naturelles", "label_ar": "قسم العلوم الطبيعية" }
+  ],
+
+  "laboratoires": [
+    { "id": "lpcbm", "label_fr": "Physico-chimie et Biologie des Matériaux (LPCBM)" }
+  ],
+
+  "populations": [
+    "enseignant_chercheur",
+    "maitre_assistant",
+    "doctorant_non_salarie",
+    "personnel_administratif",
+    "personnel_technique"
+  ],
+
+  "grids": {
+    "u1-manifestations-internationales": ["enseignant_chercheur", "maitre_assistant", "doctorant_non_salarie"],
+    "u2-personnel-administratif": ["personnel_administratif", "personnel_technique"],
+    "u3-residences-scientifiques": ["enseignant_chercheur"],
+    "u4-perfectionnement": ["doctorant_non_salarie", "maitre_assistant", "enseignant_chercheur"]
+  },
+
+  "ranking_rules": [
+    {
+      "group_by": [],
+      "source": "Choix de la commission ENSET : toutes les populations (doctorants et maîtres assistants compris) sont classées à l'échelle de l'école."
+    }
+  ],
+
+  "ranking_rules_alternatives": [
+    {
+      "grid": "u4-perfectionnement",
+      "population": "doctorant_non_salarie",
+      "group_by": ["departement"],
+      "source": "Variante conforme à la note de l'annexe u4 (doctorants classés au niveau de leur département) : insérer cette règle en tête de ranking_rules pour l'activer."
+    }
+  ],
+
+  "quotas": {
+    "perfectionnement_enseignants_chercheurs_doctorants": 0.8,
+    "perfectionnement_personnel_administratif_technique": 0.1,
+    "residences_et_manifestations": 0.1
+  },
+
+  "notes": [
+    "École (institution_type 'universite' au sens des grilles) : les grilles centres de recherche (rc5-rc9) ne s'appliquent pas.",
+    "Quotas de l'article 5 de l'arrêté 345 : 90 % perfectionnement (dont 80 % enseignants/doctorants + 10 % PAT), 10 % résidences scientifiques et manifestations indexées.",
+    "Le niveau de classement est paramétrable via ranking_rules (première règle qui matche). La note de l'annexe u4 prévoit le classement des doctorants au département ; la commission ENSET a opté pour un classement à l'échelle de l'école (voir ranking_rules_alternatives pour revenir au département)."
+  ]
+}

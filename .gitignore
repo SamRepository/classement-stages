@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# Données locales / sensibles
+.env
+dev.db
+*.sqlite3
+out/
+declarations/
+uploads/
+justificatifs/
+
+# Excel temporaires
+~$*.xlsx
+
+# Rendus régénérables du décret (très volumineux)
+docs/_pages/
+
+# IDE / outillage
+.vscode/
+.claude/settings.local.json

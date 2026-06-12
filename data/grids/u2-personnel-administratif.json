@@ -1,0 +1,106 @@
+{
+  "id": "u2-personnel-administratif",
+  "source_pages": "14-15",
+  "title_ar": "تحسين المستوى في الخارج - مخصص لفئة الموظفين الإداريين والتقنيين - خاص بالمؤسسات الجامعية والمدارس",
+  "title_fr": "Perfectionnement à l'étranger — personnel administratif et technique — établissements universitaires et écoles",
+  "institution_type": "universite",
+  "mobility_type": "perfectionnement",
+  "population": ["personnel_administratif", "personnel_technique"],
+  "candidate_info": ["nom", "prenom", "date_lieu_naissance", "diplome_universitaire"],
+  "criteria": [
+    {
+      "id": "grade",
+      "label_ar": "الرتبة",
+      "label_fr": "Grade (catégorie statutaire)",
+      "type": "enum",
+      "options": [
+        { "value": "sup_17", "label_fr": "Catégorie supérieure à 17", "points": 12 },
+        { "value": "17", "label_fr": "Catégorie 17", "points": 11.5 },
+        { "value": "16", "label_fr": "Catégorie 16", "points": 11 },
+        { "value": "15", "label_fr": "Catégorie 15", "points": 10.5 },
+        { "value": "14", "label_fr": "Catégorie 14", "points": 10 },
+        { "value": "13", "label_fr": "Catégorie 13", "points": 9.5 },
+        { "value": "12", "label_fr": "Catégorie 12", "points": 9 },
+        { "value": "11", "label_fr": "Catégorie 11", "points": 8.5 },
+        { "value": "10", "label_fr": "Catégorie 10", "points": 8 }
+      ]
+    },
+    {
+      "id": "anciennete",
+      "label_ar": "الأقدمية في القطاع",
+      "label_fr": "Ancienneté dans le secteur",
+      "type": "count",
+      "items": [{ "id": "annee", "points_per_unit": 0.5, "unit": "année", "cap_points": 10 }]
+    },
+    {
+      "id": "langues",
+      "label_ar": "التحكم في اللغات",
+      "label_fr": "Maîtrise des langues",
+      "type": "count",
+      "items": [
+        { "id": "langue_formation", "label_ar": "التحكم في لغة التكوين حسب الوجهة", "label_fr": "Maîtrise de la langue de formation selon la destination", "points_per_unit": 1 },
+        { "id": "inscription_ceil", "label_ar": "التسجيل في المركز المكثف للغات في اللغة الانجليزية (مع ضرورة رفع المستوى خلال السنوات المقبلة)", "label_fr": "Inscription au centre intensif des langues (anglais), avec engagement de progression", "points_per_unit": 2 }
+      ]
+    },
+    {
+      "id": "evaluation_superieur",
+      "label_ar": "تقييم المسؤول المباشر",
+      "label_fr": "Évaluation du supérieur hiérarchique direct",
+      "type": "manual_scores",
+      "items": [
+        { "id": "assiduite", "label_ar": "الحضور", "label_fr": "Assiduité", "cap_points": 3 },
+        { "id": "competence", "label_ar": "الكفاءة في العمل", "label_fr": "Compétence dans le travail", "cap_points": 3 },
+        { "id": "initiative", "label_ar": "المبادرة", "label_fr": "Initiative", "cap_points": 3 },
+        { "id": "disponibilite", "label_ar": "التفرغ", "label_fr": "Disponibilité / dévouement", "cap_points": 3 }
+      ]
+    },
+    {
+      "id": "contribution_1275",
+      "label_ar": "المساهمة في تجسيد آليات القرار الوزاري رقم 1275 المؤرخ في 27 سبتمبر 2022 (مذكرة تخرج مؤسسة ناشئة / براءة اختراع)",
+      "label_fr": "Contribution à la mise en œuvre des mécanismes de l'arrêté 1275 du 27/09/2022 (mémoires startup / brevets étudiants)",
+      "type": "fixed",
+      "points": 1,
+      "is_cap": true
+    },
+    {
+      "id": "structures_accompagnement_vie_universitaire",
+      "label_ar": "شهادة تثبت عمل داخل هيئات المرافقة (مركز تطوير المقاولاتية، CDC، نادي البحث عن الشغل، حاضنة أعمال، CATI) - المشاركة في الحياة الجامعية، عضوية في اللجان الدائمة",
+      "label_fr": "Attestation de travail dans les structures d'accompagnement / participation à la vie universitaire, membre des comités permanents",
+      "type": "count",
+      "items": [{ "id": "attestation", "points_per_unit": 1, "cap_points": 2 }]
+    },
+    {
+      "id": "projets_internationaux",
+      "label_ar": "المشاركة في المشاريع الدولية (شهادة المشاركة)",
+      "label_fr": "Participation aux projets internationaux (attestation de participation)",
+      "type": "capped",
+      "cap_points": 2
+    },
+    {
+      "id": "poste_superieur",
+      "label_ar": "المنصب العالي (هيكلي/وظيفي)",
+      "label_fr": "Poste supérieur (structurel/fonctionnel)",
+      "type": "capped",
+      "cap_points": 2
+    },
+    {
+      "id": "penalite_stages_6ans",
+      "label_ar": "عدد الاستفادات من التربصات المنجزة بالخارج خلال الست سنوات الأخيرة",
+      "label_fr": "Nombre de stages à l'étranger obtenus durant les six dernières années",
+      "type": "formula",
+      "formula": "-5 * n",
+      "variable": "n = nombre de stages obtenus durant les 6 dernières années",
+      "note_ar": "ناقص 05 نقاط لكل تربص"
+    }
+  ],
+  "process": {
+    "classement": "ترتيب الموظف /(عدد الموظفين المترشحين)",
+    "avis": "رأي لجنة الانتقاء للهيئة التابعة للمؤسسة الجامعية: مقبول / مرفوض",
+    "rejet": "justified_rejection"
+  },
+  "rules": ["committee_conflict_of_interest", "international_agreements_only", "justified_rejection"],
+  "notes": [
+    "Fenêtre de la pénalité confirmée : les six dernières années."
+  ],
+  "flags": []
+}

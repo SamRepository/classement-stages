@@ -1,0 +1,53 @@
+{
+  "_comment": "Modèle de profil d'établissement. Copier vers <id>.json et adapter. Les champs marqués (requis) sont nécessaires au moteur ; les autres sont documentaires.",
+
+  "id": "mon-etablissement (requis, = nom du fichier sans .json)",
+  "nom_fr": "Nom complet en français",
+  "nom_ar": "الاسم الكامل بالعربية",
+  "sigle": "SIGLE",
+  "type": "universite | ecole_normale_superieure | ecole_superieure | centre_recherche",
+  "institution_type": "(requis) 'universite' (grilles u1-u4) ou 'centre_recherche' (grilles rc5-rc9)",
+  "tutelle": "MESRS",
+  "adresse": "",
+  "site_web": "",
+
+  "departements": [
+    { "id": "identifiant-stable", "label_fr": "Nom du département", "label_ar": "" }
+  ],
+
+  "facultes": [
+    { "id": "identifiant-stable", "label_fr": "Nom de la faculté (le cas échéant)" }
+  ],
+
+  "populations": [
+    "enseignant_chercheur",
+    "maitre_assistant",
+    "doctorant_non_salarie",
+    "personnel_administratif",
+    "personnel_technique"
+  ],
+
+  "grids": {
+    "_comment": "(requis) grille applicable -> populations concernées",
+    "u1-manifestations-internationales": ["enseignant_chercheur", "maitre_assistant", "doctorant_non_salarie"],
+    "u2-personnel-administratif": ["personnel_administratif", "personnel_technique"],
+    "u3-residences-scientifiques": ["enseignant_chercheur"],
+    "u4-perfectionnement": ["doctorant_non_salarie", "maitre_assistant", "enseignant_chercheur"]
+  },
+
+  "ranking_rules": [
+    {
+      "_comment": "Première règle qui matche (grid et/ou population, omis = joker). group_by liste des clés de candidate.grouping.",
+      "grid": "u4-perfectionnement",
+      "population": "doctorant_non_salarie",
+      "group_by": ["departement"]
+    },
+    { "group_by": [] }
+  ],
+
+  "quotas": {
+    "perfectionnement_enseignants_chercheurs_doctorants": 0.8,
+    "perfectionnement_personnel_administratif_technique": 0.1,
+    "residences_et_manifestations": 0.1
+  }
+}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titre %}Classement des mobilités{% endblock %} — ENSET Skikda</title>
+  <link rel="stylesheet" href="/static/pico.min.css">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+<header class="container">
+  <nav>
+    <ul>
+      <li><strong>Mobilités à l'étranger</strong> <small>arrêté n° 345/2026</small></li>
+    </ul>
+    {% if user %}
+    <ul>
+      {% if user.role == 'enseignant' %}
+        <li><a href="/mon-dossier">Mon dossier</a></li>
+      {% elif user.role == 'commission' %}
+        <li><a href="/commission/dossiers">Dossiers</a></li>
+        <li><a href="/commission/classement">Classement</a></li>
+      {% elif user.role == 'admin' %}
+        <li><a href="/admin/utilisateurs">Utilisateurs</a></li>
+        <li><a href="/admin/benefices">Bénéfices</a></li>
+        <li><a href="/admin/campagne">Campagne</a></li>
+      {% endif %}
+      <li>
+        <form method="post" action="/deconnexion" class="inline-form">
+          <button type="submit" class="secondary outline">Déconnexion ({{ user.prenom }} {{ user.nom }})</button>
+        </form>
+      </li>
+    </ul>
+    {% endif %}
+  </nav>
+</header>
+<main class="container">
+  {% block contenu %}{% endblock %}
+</main>
+</body>
+</html>

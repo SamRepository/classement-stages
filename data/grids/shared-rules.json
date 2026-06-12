@@ -1,0 +1,85 @@
+{
+  "source": {
+    "arrete": "345",
+    "date": "2026-03-09",
+    "ministry": "Ministère de l'Enseignement Supérieur et de la Recherche Scientifique (Algérie)",
+    "objet": "Critères de sélection pour l'admission au programme de mobilité de courte durée à l'étranger (perfectionnement à l'étranger)",
+    "abroge": "Arrêté n° 255 du 25/02/2024",
+    "base_juridique": "Article 40 du décret présidentiel n° 14-196 du 06/07/2014"
+  },
+  "rules": {
+    "author_position_weighting": {
+      "label_fr": "Pondération selon la position de l'auteur dans les publications scientifiques",
+      "label_ar": "مركز المترشح من بين المؤلفين في المقالات العلمية",
+      "weights": { "1": 1.0, "2": 0.9, "3": 0.8, "4": 0.7, "5_et_plus": 0.5 },
+      "applies_to": "publications (et, pour les grilles chercheurs, publications nationales classe C incluses)"
+    },
+    "counting_window": {
+      "label_fr": "Fenêtre de comptabilisation des travaux",
+      "label_ar": "احتساب الأعمال للمترشح يكون ابتداء من تاريخ غلق منصة إيداع الملفات لآخر استفادة",
+      "rule": "Les travaux sont comptés à partir de la date de clôture de la plateforme de dépôt des dossiers de la dernière mobilité obtenue (après dernière استفادة), jusqu'à la clôture du dépôt courant."
+    },
+    "institution_transfer": {
+      "label_fr": "Transfert d'établissement",
+      "label_ar": "تؤخذ بعين الاعتبار جميع الأعمال المذكورة بعد الاستفادة السابقة حتى في حالة تحويل المؤسسة الجامعية أو البحثية",
+      "rule": "Tous les travaux postérieurs à la dernière mobilité sont pris en compte même en cas de changement d'établissement universitaire ou de recherche."
+    },
+    "scopus_wos_dedup": {
+      "label_fr": "Déduplication Scopus / Web of Science",
+      "label_ar": "المنشور العلمي الذي يظهر في نفس الوقت في Scopus و WOS يحسب مرة واحدة بالعلامة القصوى",
+      "rule": "Une publication indexée à la fois dans Scopus et WOS n'est comptée qu'une seule fois, à la valeur maximale.",
+      "applies_to": "grilles chercheurs permanents (annexes 5 et 6)"
+    },
+    "refereeing_proof": {
+      "label_fr": "Preuve de l'expertise d'évaluation (reviewing)",
+      "label_ar": "تثبت الخبرة التحكيمية في المجلات العلمية المصنفة بشهادة تفيد التحكيم الفعلي",
+      "rule": "L'expérience de reviewing dans les revues classées est prouvée par une attestation d'arbitrage effectif."
+    },
+    "committee_conflict_of_interest": {
+      "label_fr": "Conflit d'intérêts du comité de sélection",
+      "label_ar": "لا يمكن أن يكون عضو لجنة الانتقاء يحمل صفة المترشح برسم سنة الانتقاء",
+      "rule": "Un membre du comité de sélection ne peut pas être candidat au titre de l'année de sélection."
+    },
+    "international_agreements_only": {
+      "label_fr": "Cadre conventionnel obligatoire",
+      "label_ar": "يتم تنفيذ التربص قصير المدى في الخارج حصرا في إطار الاتفاقيات الدولية المبرمة",
+      "rule": "Les stages de courte durée à l'étranger s'exécutent exclusivement dans le cadre des accords internationaux conclus."
+    },
+    "justified_rejection": {
+      "label_fr": "Rejet motivé",
+      "label_ar": "أسباب الرفض: يجب أن يكون الرفض مبررا",
+      "rule": "Tout rejet de candidature doit être motivé par écrit."
+    },
+    "elearning_conditions": {
+      "label_fr": "Conditions de validation des cours en ligne (e-learning)",
+      "label_ar": "دروس بيداغوجية متوفرة على الخط",
+      "conditions": [
+        "Le document (cours, TD, TP) doit être déposé en ligne en accès ouvert sur la plateforme d'e-learning de l'établissement, de manière traçable et irréversible, et l'enseignant doit avoir réellement enseigné ou enseigner la matière.",
+        "Le document doit être conforme au cahier des charges des offres de formation.",
+        "Le document ne peut être présenté que par l'enseignant qui l'a réellement créé.",
+        "Le dépôt des corrigés des TD/TP n'est pas obligatoire.",
+        "L'enseignant auteur est seul responsable des contenus mis en ligne (qualité scientifique et pédagogique, propriété intellectuelle, aspects légaux et réglementaires).",
+        "Les documents pédagogiques déjà utilisés dans le dossier d'habilitation universitaire ne sont pas comptés.",
+        "Le nombre de points de cette rubrique n'est pas plafonné.",
+        "Le comité scientifique du département prend les mesures nécessaires pour vérifier ces conditions avant l'attribution des points."
+      ]
+    }
+  },
+  "quotas_article_5": {
+    "perfectionnement": {
+      "share": 0.9,
+      "breakdown": {
+        "enseignants_chercheurs_doctorants": 0.8,
+        "personnel_administratif_technique": 0.1
+      }
+    },
+    "residences_scientifiques_et_manifestations_indexees": { "share": 0.1 },
+    "note_article_6": "L'art. 6 permet à l'établissement de proposer une répartition de l'enveloppe de l'exercice selon ses besoins spécifiques et les demandes, en dérogation de ces quotas (commande `exercice` : les campagnes prioritaires — perfectionnement/doctorants — sont financées d'abord, le reliquat détermine le nombre de résidences/manifestations autorisables)."
+  },
+  "durations_article_12": {
+    "stage_perfectionnement_days": { "min": 15, "max": 30 },
+    "stage_double_diplome_cobadge_months_max": 5,
+    "residence_scientifique_days": { "min": 7, "max": 15 },
+    "manifestation_scientifique_days_max": 7
+  }
+}

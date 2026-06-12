@@ -1,0 +1,41 @@
+{
+  "source": {
+    "liste_interne": "docs/Montant Indemnités de stage de courte duree et de participation manif scient à l etranger.pdf (22 pays)",
+    "journal_officiel": "JORA n° 71 du 28/12/2011, annexe n° 2 (Zone I : pays de l'UE, Japon, Suisse, USA, Corée, Chine, EAU, Koweït, Jordanie, Russie)",
+    "decision": "Liste révisée et confirmée par l'utilisateur le 11/06/2026 : ajout de la Roumanie, du Portugal et de l'Irlande en Zone I (pays UE) ; passage en Zone II de la Grande-Bretagne, de l'Afrique du Sud, de Bahrein, du Canada, du Sultanat d'Oman, du Qatar et de la Russie. (Révise la décision du 10/06/2026 qui plaçait la Russie en Zone I.)"
+  },
+  "zone1": [
+    "France",
+    "Belgique",
+    "Allemagne",
+    "Suisse",
+    "Italie",
+    "Suède",
+    "Japon",
+    "Pays-Bas",
+    "Espagne",
+    "Etats-Unis d'Amérique",
+    "Grèce",
+    "Corée",
+    "Autriche",
+    "Chine",
+    "Emirats Arabes Unis",
+    "Koweit",
+    "Jordanie",
+    "Roumanie",
+    "Portugal",
+    "Irlande"
+  ],
+  "zone2": "Autres pays (dont Grande-Bretagne, Afrique du Sud, Bahrein, Canada, Sultanat d'Oman, Qatar, Russie)",
+  "alias": {
+    "USA": "Etats-Unis d'Amérique",
+    "Etats-Unis": "Etats-Unis d'Amérique",
+    "États-Unis": "Etats-Unis d'Amérique",
+    "République de Corée": "Corée",
+    "Corée du Sud": "Corée",
+    "EAU": "Emirats Arabes Unis",
+    "Émirats Arabes Unis": "Emirats Arabes Unis",
+    "Koweït": "Koweit",
+    "Irlande du Nord": "Grande-Bretagne"
+  }
+}

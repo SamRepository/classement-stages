@@ -1,0 +1,92 @@
+{
+  "candidates": [
+    {
+      "id": "D101",
+      "nom": "Bouzid",
+      "prenom": "Sara",
+      "population": "doctorant_non_salarie",
+      "grouping": { "departement": "technologie" },
+      "benefits": [],
+      "entries": {
+        "inscription_doctorat": { "items": [{ "item": "inscription", "count": 3 }] },
+        "penalite_beneficies_3ans": {},
+        "projet_startup_incubateur": { "applies": true },
+        "publications": {
+          "items": [
+            { "item": "classe_b", "count": 1, "author_position": 1, "date": "2025-11-20" }
+          ]
+        },
+        "communications": {
+          "items": [
+            { "item": "intl_indexee_scopus_wos", "count": 1, "date": "2025-04-18" },
+            { "item": "nationale", "count": 2, "date": "2024-12-05" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "D102",
+      "nom": "Khelifi",
+      "prenom": "Mohamed",
+      "population": "doctorant_non_salarie",
+      "grouping": { "departement": "technologie" },
+      "benefits": [
+        { "date": "2025-02-10", "platform_close_date": "2024-11-30" }
+      ],
+      "entries": {
+        "inscription_doctorat": { "items": [{ "item": "inscription", "count": 4 }] },
+        "penalite_beneficies_3ans": {},
+        "publications": {
+          "items": [
+            { "item": "classe_a", "count": 1, "author_position": 2, "date": "2025-09-01" },
+            { "item": "classe_c", "count": 1, "author_position": 1, "date": "2024-06-10" }
+          ]
+        },
+        "structures_accompagnement": { "items": [{ "item": "attestation", "count": 1 }] }
+      }
+    },
+    {
+      "id": "D103",
+      "nom": "Aissaoui",
+      "prenom": "Rym",
+      "population": "doctorant_non_salarie",
+      "grouping": { "departement": "mathematiques-informatique" },
+      "benefits": [],
+      "entries": {
+        "inscription_doctorat": { "items": [{ "item": "inscription", "count": 2 }] },
+        "penalite_beneficies_3ans": {},
+        "communications": {
+          "items": [
+            { "item": "intl_referencee", "count": 2, "date": "2025-10-14" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "E201",
+      "nom": "Ziani",
+      "prenom": "Hocine",
+      "population": "maitre_assistant",
+      "grouping": { "departement": "physique-chimie" },
+      "benefits": [],
+      "entries": {
+        "penalite_beneficies_3ans": {},
+        "elearning": {
+          "items": [
+            { "item": "cours", "count": 2, "bonus_count": 1 },
+            { "item": "tp", "count": 2 }
+          ]
+        },
+        "polycopie_pedagogique": { "applies": true, "bonuses": [0] },
+        "encadrement_master": {
+          "items": [{ "item": "memoire_master", "count": 2, "date": "2025-06-30" }]
+        },
+        "publications": {
+          "items": [
+            { "item": "classe_c", "count": 1, "author_position": 1, "date": "2025-02-15" }
+          ]
+        }
+      }
+    }
+  ]
+}

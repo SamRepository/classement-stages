@@ -1,0 +1,49 @@
+<div class="element" id="element-{{ e.id }}">
+  <p>
+    <strong>{{ labels.get(e.item_id, e.item_id) if e.item_id else '' }}</strong>
+    {% if e.payload.intitule %} — {{ e.payload.intitule }}{% endif %}
+    <span class="badge {{ e.statut }}">{{ e.statut }}</span><br>
+    <small>
+      {% if e.payload.value is defined and e.payload.value %}valeur : {{ e.payload.value }}{% if e.payload.option_bonus %} (+ bonus demandé){% endif %} · {% endif %}
+      {% if e.payload.applies %}déclaré concerné{% if e.payload.bonuses %} (bonus {{ e.payload.bonuses|join(', ') }}){% endif %} · {% endif %}
+      {% if e.payload.points is defined %}{{ e.payload.points }} pts déclarés · {% endif %}
+      {% if e.payload.count is defined %}quantité : {{ e.payload.count }} · {% endif %}
+      {% if e.payload.date %}date : {{ e.payload.date }} · {% endif %}
+      {% if e.payload.author_position %}position d'auteur : {{ e.payload.author_position }} · {% endif %}
+      {% if e.payload.leader_count %}porteur ×{{ e.payload.leader_count }} · {% endif %}
+      {% if e.payload.bonus_count %}bonus ×{{ e.payload.bonus_count }} · {% endif %}
+      {% if e.payload.doi %}DOI : {{ e.payload.doi }} · {% endif %}
+      {% if e.payload.url %}<a href="{{ e.payload.url }}" target="_blank" rel="noopener">lien externe</a> · {% endif %}
+      {% if e.attachment %}
+        <a href="/fichiers/justificatifs/{{ e.id }}" target="visionneuse">📄 voir le justificatif</a>
+      {% else %}<span class="warning">sans justificatif</span>{% endif %}
+    </small>
+    {% if e.statut == 'rejete' and e.decision_motif %}
+    <br><span class="motif-rejet">Motif du rejet : {{ e.decision_motif }}</span>
+    {% endif %}
+  </p>
+  {% if decidable %}
+  <div class="grid">
+    <form hx-post="/commission/entrees/{{ e.id }}/decision" hx-target="#element-{{ e.id }}" hx-swap="outerHTML">
+      <input type="hidden" name="statut" value="valide">
+      <button type="submit" {% if e.statut == 'valide' %}disabled{% endif %}>Valider</button>
+    </form>
+    <details>
+      <summary role="button" class="secondary outline">Rejeter…</summary>
+      <form hx-post="/commission/entrees/{{ e.id }}/decision" hx-target="#element-{{ e.id }}" hx-swap="outerHTML">
+        <input type="hidden" name="statut" value="rejete">
+        <label>Motif du rejet (obligatoire, art. 14-15)
+          <textarea name="motif" required rows="2"></textarea>
+        </label>
+        <button type="submit" class="secondary">Confirmer le rejet</button>
+      </form>
+    </details>
+    {% if e.statut != 'en_attente' %}
+    <form hx-post="/commission/entrees/{{ e.id }}/decision" hx-target="#element-{{ e.id }}" hx-swap="outerHTML">
+      <input type="hidden" name="statut" value="en_attente">
+      <button type="submit" class="outline">Annuler la décision</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>

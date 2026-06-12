@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titre %}Dossiers — commission{% endblock %}
+{% block contenu %}
+<hgroup>
+  <h1>Dossiers de candidature</h1>
+  <p>{{ grid.title_fr }} — campagne du {{ campaign.campaign_date.strftime('%d/%m/%Y') }}
+     · statut campagne : <span class="badge {{ campaign.statut }}">{{ campaign.statut }}</span></p>
+</hgroup>
+<table>
+  <thead>
+    <tr>
+      <th>Réf.</th><th>Candidat</th><th>Département</th><th>Statut</th>
+      <th>En attente</th><th>Validés</th><th>Rejetés</th><th>Score commission</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for l in lignes %}
+    <tr>
+      <td>{{ l.dossier.candidate_ref }}</td>
+      <td>{{ l.dossier.user.nom }} {{ l.dossier.user.prenom }}</td>
+      <td>{{ l.dossier.departement or '—' }}</td>
+      <td><span class="badge {{ l.dossier.statut }}">{{ l.dossier.statut }}</span></td>
+      <td>{% if l.compte.en_attente %}<span class="badge en_attente">{{ l.compte.en_attente }}</span>{% else %}0{% endif %}</td>
+      <td>{{ l.compte.valide }}</td>
+      <td>{{ l.compte.rejete }}</td>
+      <td>{{ l.score|points if l.score is not none else '—' }}</td>
+      <td><a href="/commission/dossiers/{{ l.dossier.id }}">Examiner</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">Aucun dossier.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p><a href="/commission/classement" role="button">Voir le classement</a></p>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block titre %}Dossier {{ dossier.candidate_ref }}{% endblock %}
+{% block contenu %}
+<hgroup>
+  <h1>{{ dossier.user.nom }} {{ dossier.user.prenom }} — {{ dossier.candidate_ref }}</h1>
+  <p>{{ dossier.departement or 'département non renseigné' }}
+     · <span class="badge {{ dossier.statut }}">{{ dossier.statut }}</span>
+     {% if dossier.pays %} · {{ dossier.pays }}{% if dossier.duree_jours %} ({{ dossier.duree_jours }} j){% endif %}{% endif %}
+     · <a href="/commission/dossiers">← retour à la liste</a></p>
+</hgroup>
+
+{% if not decidable %}
+<mark>{% if dossier.statut == 'brouillon' %}Dossier encore en brouillon : pas de décision possible avant soumission.
+{% else %}Dossier gelé : les décisions sont closes.{% endif %}</mark>
+{% endif %}
+
+<div class="commission-split">
+  <div>
+    <article class="critere">
+      <h3>Historique des bénéfices (saisi par l'administration)</h3>
+      {% if benefits %}
+      <ul>
+        {% for b in benefits %}
+        <li>{{ b.date.strftime('%d/%m/%Y') }}{% if b.platform_close_date %} (clôture plateforme : {{ b.platform_close_date.strftime('%d/%m/%Y') }}){% endif %}</li>
+        {% endfor %}
+      </ul>
+      {% else %}<p>Aucun bénéfice antérieur enregistré.</p>{% endif %}
+    </article>
+
+    {% for section in sections %}
+    <article class="critere">
+      <h3>{{ section.spec.label }}</h3>
+      {% if section.rows %}
+        {% for e in section.rows %}
+          {% with labels = section.labels, decidable = decidable %}
+            {% include "commission/fragments/element.html" %}
+          {% endwith %}
+        {% endfor %}
+      {% else %}
+        <p><small>Rien de déclaré.</small></p>
+      {% endif %}
+    </article>
+    {% endfor %}
+
+    {% if decidable and pending %}
+    <form method="post" action="/commission/dossiers/{{ dossier.id }}/tout-valider"
+          onsubmit="return confirm('Valider les {{ pending }} élément(s) restant(s) ?');">
+      <button type="submit">Valider le reste du dossier ({{ pending }} en attente)</button>
+    </form>
+    {% endif %}
+
+    {% with oob = false %}{% include "commission/fragments/score.html" %}{% endwith %}
+  </div>
+
+  <div>
+    <p><small>Le justificatif sélectionné s'affiche ci-dessous.</small></p>
+    <iframe name="visionneuse" title="Justificatif"></iframe>
+  </div>
+</div>
+{% endblock %}

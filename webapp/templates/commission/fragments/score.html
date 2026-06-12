@@ -1,0 +1,49 @@
+<div id="score-box" {% if oob %}hx-swap-oob="true"{% endif %}>
+  <article>
+    <h3>Score commission</h3>
+    <p class="score-total">{{ breakdown.total|points }} pts</p>
+    {% if pending %}
+    <p><span class="badge en_attente">{{ pending }} élément(s) en attente</span>
+       <small>comptés provisoirement — à valider ou rejeter avant le gel.</small></p>
+    {% endif %}
+    <table>
+      <tbody>
+      {% for line in breakdown.lines %}
+        {% if line.points or line.warnings or line.details %}
+        <tr><td><small>{{ line.label }}</small></td>
+            <td style="text-align:right">{{ line.points|points }}</td></tr>
+        {% endif %}
+      {% endfor %}
+      </tbody>
+    </table>
+
+    {% if exclusions %}
+    <h4>Éléments rejetés (exclus du calcul)</h4>
+    <ul>
+      {% for x in exclusions %}
+      <li class="motif-rejet"><small>{{ x.criterion_id }}{% if x.item_id %} / {{ x.item_id }}{% endif %} —
+          motif : {{ x.motif }}</small></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% set warnings = [] %}
+    {% for line in breakdown.lines %}{% for w in line.warnings %}{% set _ = warnings.append(line.label ~ ' : ' ~ w) %}{% endfor %}{% endfor %}
+    {% if warnings or breakdown.warnings %}
+    <h4>Observations du moteur (traçabilité)</h4>
+    <ul>
+      {% for w in breakdown.warnings %}<li class="warning">{{ w }}</li>{% endfor %}
+      {% for w in warnings %}<li class="warning">{{ w }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+
+    <details>
+      <summary><small>Détail du calcul</small></summary>
+      <ul>
+        {% for line in breakdown.lines %}{% for d in line.details %}
+        <li><small>{{ line.label }} : {{ d }}</small></li>
+        {% endfor %}{% endfor %}
+      </ul>
+    </details>
+  </article>
+</div>

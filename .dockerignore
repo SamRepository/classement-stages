@@ -1,0 +1,17 @@
+.git
+.gitignore
+.pytest_cache
+__pycache__
+*.pyc
+.env
+dev.db
+*.sqlite3
+out/
+declarations/
+uploads/
+docs/
+examples/
+tests/
+scripts/
+.vscode/
+.claude/

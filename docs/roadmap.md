@@ -121,6 +121,6 @@ tout le SI doit converger dans Odoo.
 |---|---|---|
 | 1 | Modèle Excel + import + PV/fiches + budget/exercice | **Réalisée** (10/06/2026) |
 | 1bis | Campagne u3 2026 : convertisseur Odoo→Excel + collecte critères | **En cours** — en attente de l'export Odoo et du choix du mode de collecte |
-| 2 | Application web FastAPI + PostgreSQL sur Coolify, uploads PDF, validation commission, historique persistant | Cible campagne 2027 — démarrage en parallèle de 1bis |
+| 2 | Application web FastAPI + PostgreSQL sur Coolify, uploads PDF, validation commission, historique persistant | **MVP réalisé** (12/06/2026) pour la campagne u3 2026 — `webapp/`, guide : [guide-deploiement-coolify.md](guide-deploiement-coolify.md) ; reste : déploiement effectif + pré-remplissage depuis `declarations/` |
 | 3 | Adaptation du module Odoo 14 « Stages » (3a façade XML-RPC recommandée / 3b intégration native) | Après le socle de la phase 2 |
 | 4 | Notifications, vérification Crossref/Scopus, archivage | Ultérieur |

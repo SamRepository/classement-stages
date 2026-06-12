@@ -1,0 +1,32 @@
+# Développement local avec PostgreSQL (parité avec la production Coolify).
+# Sous Windows sans Docker : DATABASE_URL=sqlite:///./dev.db suffit.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: classement
+      POSTGRES_USER: classement
+      POSTGRES_PASSWORD: classement
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://classement:classement@db/classement
+      SECRET_KEY: secret-de-dev-a-remplacer
+      CAMPAIGN_GRID_ID: u3-residences-scientifiques
+      CAMPAIGN_INSTITUTION_ID: enset-skikda
+      CAMPAIGN_DATE: "2026-06-30"
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      - db
+
+volumes:
+  dbdata:
+  uploads:

@@ -15,6 +15,10 @@ declarations/
 uploads/
 justificatifs/
 
+# Données réelles de candidats (export Odoo et fichiers dérivés) — jamais versionnées
+examples/enset/stages.candidature.sejour.xlsx
+examples/enset/dossier-u3*.xlsx
+
 # Excel temporaires
 ~$*.xlsx
 

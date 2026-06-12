@@ -1,0 +1,29 @@
+<div id="score-box" {% if oob %}hx-swap-oob="true"{% endif %}>
+  <article>
+    <h3>Score provisoire</h3>
+    <p class="score-total">{{ breakdown.total|points }} pts</p>
+    <table>
+      <tbody>
+      {% for line in breakdown.lines %}
+        {% if line.points or line.warnings %}
+        <tr><td><small>{{ line.label }}</small></td>
+            <td style="text-align:right">{{ line.points|points }}</td></tr>
+        {% endif %}
+      {% endfor %}
+      </tbody>
+    </table>
+    {% set warnings = [] %}
+    {% for line in breakdown.lines %}{% for w in line.warnings %}{% set _ = warnings.append(w) %}{% endfor %}{% endfor %}
+    {% if warnings or breakdown.warnings %}
+    <details>
+      <summary class="warning">{{ (warnings + breakdown.warnings)|length }} observation(s)</summary>
+      <ul>
+        {% for w in breakdown.warnings %}<li class="warning">{{ w }}</li>{% endfor %}
+        {% for w in warnings %}<li class="warning">{{ w }}</li>{% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+    <small>Score indicatif calculé à partir de vos déclarations. Le score final est arrêté
+    par la commission après vérification des justificatifs.</small>
+  </article>
+</div>

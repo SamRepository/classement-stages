@@ -103,3 +103,16 @@ def dossier(db_session, campaign, enseignant):
 
 def login(client, email: str, password: str = PASSWORD):
     return client.post("/connexion", data={"email": email, "password": password})
+
+
+PDF_BYTES = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n"
+
+
+@pytest.fixture()
+def upload_dir(tmp_path, monkeypatch):
+    from webapp.config import get_settings
+
+    monkeypatch.setenv("UPLOAD_DIR", str(tmp_path))
+    get_settings.cache_clear()
+    yield tmp_path
+    get_settings.cache_clear()

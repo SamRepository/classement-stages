@@ -1,0 +1,192 @@
+{% set spec = section.spec %}
+{% set rows = section.rows %}
+{% set entry = rows[0] if rows else None %}
+<article class="critere" id="section-{{ spec.criterion_id }}">
+  <h3>{{ spec.label }}</h3>
+
+  {% if spec.widget == 'enum' %}
+    <form hx-post="/mon-dossier/entrees/{{ spec.criterion_id }}" hx-target="#section-{{ spec.criterion_id }}"
+          hx-swap="outerHTML" hx-encoding="multipart/form-data">
+      <label>Votre situation
+        <select name="value" {% if not editable %}disabled{% endif %}>
+          <option value="">— non renseigné —</option>
+          {% for o in spec.options %}
+          <option value="{{ o.value }}" {% if entry and entry.payload.value == o.value %}selected{% endif %}>
+            {{ o.label }} ({{ o.points|points }} pts)
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      {% for o in spec.options if o.bonus_condition %}
+      <label>
+        <input type="checkbox" name="option_bonus" value="1"
+               {% if entry and entry.payload.option_bonus %}checked{% endif %} {% if not editable %}disabled{% endif %}>
+        {{ o.bonus_condition }} (+{{ o.bonus_points|points }} pts — joindre l'engagement écrit)
+      </label>
+      {% endfor %}
+      {% if editable %}
+      <label>Justificatif (PDF{% if entry and entry.attachment %} — remplace le fichier existant{% endif %})
+        <input type="file" name="fichier" accept="application/pdf">
+      </label>
+      <button type="submit">Enregistrer</button>
+      {% endif %}
+    </form>
+
+  {% elif spec.widget == 'fixed' %}
+    <form hx-post="/mon-dossier/entrees/{{ spec.criterion_id }}" hx-target="#section-{{ spec.criterion_id }}"
+          hx-swap="outerHTML" hx-encoding="multipart/form-data">
+      <label>
+        <input type="checkbox" name="applies" value="1"
+               {% if entry and entry.payload.applies %}checked{% endif %} {% if not editable %}disabled{% endif %}>
+        Je suis concerné ({{ spec.points|points }} pts)
+      </label>
+      {% for b in spec.bonuses %}
+      <label>
+        <input type="checkbox" name="bonus" value="{{ b.index }}"
+               {% if entry and b.index in (entry.payload.bonuses or []) %}checked{% endif %} {% if not editable %}disabled{% endif %}>
+        Bonus : {{ b.condition }} (+{{ b.points|points }} pts)
+      </label>
+      {% endfor %}
+      {% if editable %}
+      <label>Justificatif (PDF)
+        <input type="file" name="fichier" accept="application/pdf">
+      </label>
+      <button type="submit">Enregistrer</button>
+      {% endif %}
+    </form>
+
+  {% elif spec.widget in ('fixed_cap', 'capped') %}
+    <form hx-post="/mon-dossier/entrees/{{ spec.criterion_id }}" hx-target="#section-{{ spec.criterion_id }}"
+          hx-swap="outerHTML" hx-encoding="multipart/form-data">
+      <label>Points (plafond {{ spec.cap_points|points }})
+        <input type="number" name="points" step="0.25" min="0" max="{{ spec.cap_points }}"
+               value="{{ entry.payload.points if entry else '' }}" {% if not editable %}disabled{% endif %}>
+      </label>
+      {% if editable %}
+      <label>Justificatif (PDF)
+        <input type="file" name="fichier" accept="application/pdf">
+      </label>
+      <button type="submit">Enregistrer</button>
+      {% endif %}
+    </form>
+
+  {% elif spec.widget == 'count_simple' %}
+    <form hx-post="/mon-dossier/entrees/{{ spec.criterion_id }}" hx-target="#section-{{ spec.criterion_id }}"
+          hx-swap="outerHTML" hx-encoding="multipart/form-data">
+      <div class="grid">
+        <label>Nombre ({{ spec.points_per_unit|points }} pt/unité)
+          <input type="number" name="quantite" min="0" value="{{ entry.payload.count if entry else '' }}"
+                 {% if not editable %}disabled{% endif %}>
+        </label>
+        {% if spec.url_profil %}
+        <label>URL du profil (Scopus / Google Scholar)
+          <input type="url" name="url" value="{{ entry.payload.url if entry else '' }}" {% if not editable %}disabled{% endif %}>
+        </label>
+        {% endif %}
+      </div>
+      {% if editable %}<button type="submit">Enregistrer</button>{% endif %}
+    </form>
+
+  {% elif spec.widget == 'formula' %}
+    <p><em>Calculé automatiquement</em> : {{ spec.variable or spec.formula }}.
+       Le moteur applique la formule <code>{{ spec.formula }}</code> à partir de votre
+       historique de mobilités (voir « Historique » ci-dessus).</p>
+
+  {% elif spec.widget == 'manual' %}
+    <p><em>Apprécié par la commission</em> :
+      {% for i in spec['items'] %}{{ i.label }} (max {{ i.cap_points|points }}){% if not loop.last %}, {% endif %}{% endfor %}.</p>
+
+  {% elif spec.widget == 'count_detail' %}
+    {% if rows %}
+    <table>
+      <thead>
+        <tr>
+          <th>Élément</th><th>Intitulé</th>
+          {% if spec.has_date %}<th>Date</th>{% endif %}
+          {% if spec.has_position %}<th>Position</th>{% endif %}
+          <th>Qté</th><th>Réf.</th><th>Justificatif</th>{% if editable %}<th></th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ r.item_id }}</td>
+          <td>{{ r.payload.intitule or '—' }}</td>
+          {% if spec.has_date %}<td>{{ r.payload.date or '—' }}</td>{% endif %}
+          {% if spec.has_position %}<td>{{ r.payload.author_position or '—' }}</td>{% endif %}
+          <td>{{ r.payload.count or 1 }}</td>
+          <td><small>{{ r.payload.doi or r.payload.url or '—' }}</small></td>
+          <td>
+            {% if r.attachment %}
+              <a href="/fichiers/justificatifs/{{ r.id }}" target="_blank">PDF</a>
+            {% elif editable %}
+              <form hx-post="/mon-dossier/activites/{{ r.id }}/justificatif" hx-target="#section-{{ spec.criterion_id }}"
+                    hx-swap="outerHTML" hx-encoding="multipart/form-data" class="inline-form">
+                <input type="file" name="fichier" accept="application/pdf" required
+                       onchange="this.form.requestSubmit ? htmx.trigger(this.form,'submit') : null">
+              </form>
+            {% else %}—{% endif %}
+          </td>
+          {% if editable %}
+          <td><button class="secondary outline" hx-delete="/mon-dossier/activites/{{ r.id }}"
+                      hx-target="#section-{{ spec.criterion_id }}" hx-swap="outerHTML"
+                      hx-confirm="Supprimer cet élément ?">✕</button></td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p><small>Aucun élément déclaré.</small></p>
+    {% endif %}
+
+    {% if editable %}
+    <details>
+      <summary>Ajouter un élément</summary>
+      <form hx-post="/mon-dossier/activites" hx-target="#section-{{ spec.criterion_id }}"
+            hx-swap="outerHTML" hx-encoding="multipart/form-data">
+        <input type="hidden" name="criterion_id" value="{{ spec.criterion_id }}">
+        <div class="grid">
+          <label>Type d'élément
+            <select name="item" required>
+              {% for i in spec['items'] %}
+              <option value="{{ i.id }}">{{ i.label }} ({{ i.points_per_unit|points }} pt/{{ i.unit }}{% if i.cap_units %}, max {{ i.cap_units }}{% endif %}{% if i.cap_points %}, plafond {{ i.cap_points|points }} pts{% endif %})</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Intitulé (titre de la publication, du projet…)
+            <input name="intitule" placeholder="Pour l'examen par la commission">
+          </label>
+        </div>
+        <div class="grid">
+          {% if spec.has_date %}
+          <label>Date <input type="date" name="date" required></label>
+          {% endif %}
+          {% if spec.has_position %}
+          <label>Position d'auteur <input type="number" name="author_position" min="1" placeholder="1"></label>
+          {% endif %}
+          <label>Quantité <input type="number" name="quantite" min="1" value="1"></label>
+        </div>
+        <div class="grid">
+          <label>DOI <input name="doi" placeholder="10.xxxx/…"></label>
+          <label>URL <input name="url" type="url" placeholder="https://…"></label>
+        </div>
+        {% if spec.has_leader %}
+        <label>Dont porteur de projet (nombre) <input type="number" name="leader_count" min="0"></label>
+        {% endif %}
+        {% if spec.bonuses %}
+        <label>Bonus
+          ({% for b in spec.bonuses %}{{ b.condition }} : +{{ b.points|points }} pts{% if not loop.last %} ; {% endif %}{% endfor %})
+          — nombre d'applications
+          <input type="number" name="bonus_count" min="0">
+        </label>
+        {% endif %}
+        <label>Justificatif (PDF)
+          <input type="file" name="fichier" accept="application/pdf">
+        </label>
+        <button type="submit">Ajouter</button>
+      </form>
+    </details>
+    {% endif %}
+  {% endif %}
+</article>

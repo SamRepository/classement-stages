@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block titre %}Mon dossier{% endblock %}
+{% block contenu %}
+<hgroup>
+  <h1>Mon dossier de candidature</h1>
+  <p>{{ grid.title_fr }} — campagne du {{ campaign.campaign_date.strftime('%d/%m/%Y') }}
+     · Référence : <strong>{{ dossier.candidate_ref }}</strong>
+     · <span class="badge {{ dossier.statut }}">{{ dossier.statut }}</span></p>
+</hgroup>
+
+{% if not editable %}
+<mark>Votre dossier a été soumis{% if dossier.submitted_at %} le {{ dossier.submitted_at.strftime('%d/%m/%Y') }}{% endif %} :
+il est en cours d'examen et ne peut plus être modifié. Pour toute correction, contactez l'administration.</mark>
+{% endif %}
+
+<div class="grid">
+  <div>
+    <article class="critere">
+      <h3>Informations de mobilité</h3>
+      <form method="post" action="/mon-dossier/infos">
+        <div class="grid">
+          <label>Département
+            <select name="departement" {% if not editable %}disabled{% endif %}>
+              <option value="">—</option>
+              {% for d in departements %}
+              <option value="{{ d.id }}" {% if dossier.departement == d.id %}selected{% endif %}>{{ d.label_fr }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Pays de destination
+            <input name="pays" value="{{ dossier.pays or '' }}" {% if not editable %}disabled{% endif %}>
+          </label>
+          <label>Durée (jours)
+            <input name="duree_jours" type="number" min="1" value="{{ dossier.duree_jours or '' }}" {% if not editable %}disabled{% endif %}>
+          </label>
+        </div>
+        <div class="grid">
+          <label>Billet estimé (DA)
+            <input name="billet_estime_da" type="number" step="0.01" value="{{ dossier.billet_estime_da or '' }}" {% if not editable %}disabled{% endif %}>
+          </label>
+          <label>Frais divers estimés (DA)
+            <input name="frais_divers_da" type="number" step="0.01" value="{{ dossier.frais_divers_da or '' }}" {% if not editable %}disabled{% endif %}>
+          </label>
+        </div>
+        {% if editable %}<button type="submit">Enregistrer les informations</button>{% endif %}
+      </form>
+    </article>
+
+    <article class="critere">
+      <h3>Historique de vos mobilités (bénéfices antérieurs)</h3>
+      {% if benefits %}
+      <table>
+        <thead><tr><th>Date de la mobilité</th><th>Clôture de plateforme</th><th>Note</th></tr></thead>
+        <tbody>
+        {% for b in benefits %}
+          <tr><td>{{ b.date.strftime('%d/%m/%Y') }}</td>
+              <td>{{ b.platform_close_date.strftime('%d/%m/%Y') if b.platform_close_date else '—' }}</td>
+              <td>{{ b.note or '' }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>Aucune mobilité antérieure enregistrée.</p>
+      {% endif %}
+      <small>Données gérées par l'administration (elles déterminent la pénalité des bénéfices
+      antérieurs et la fenêtre « après dernier bénéfice »). Signalez toute erreur au service
+      des relations extérieures.</small>
+    </article>
+
+    {% for section in sections %}
+      {% include "enseignant/fragments/section_critere.html" %}
+    {% endfor %}
+
+    {% if editable %}
+    <article>
+      <h3>Soumission</h3>
+      <p>Une fois soumis, votre dossier est gelé et transmis à la commission : vous ne pourrez
+         plus le modifier. Vérifiez chaque élément et son justificatif avant de soumettre.</p>
+      <form method="post" action="/mon-dossier/soumettre"
+            onsubmit="return confirm('Soumettre définitivement votre dossier ?');">
+        <button type="submit">Soumettre mon dossier</button>
+      </form>
+    </article>
+    {% endif %}
+  </div>
+
+  <aside>
+    <div id="score-box" hx-get="/mon-dossier/score" hx-trigger="load"></div>
+  </aside>
+</div>
+{% endblock %}

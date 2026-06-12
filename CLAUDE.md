@@ -83,9 +83,10 @@ ou identifiant. Guide utilisateur : `docs/guide-excel.md`.
 
 ## Économie de contexte (important)
 
-- **Ne jamais relire** `docs/345-1.pdf` ni les rendus `docs/_pages/*.png` (très coûteux
-  en tokens) : les barèmes sont intégralement transcrits dans `data/grids/` et validés
-  (voir `docs/audit-grilles.md`). Idem pour `docs/journal71-1.pdf` → `data/costs/`.
+- **Ne jamais relire** `docs/decret_loi/345-1.pdf` ni les rendus `docs/_pages/*.png`
+  (très coûteux en tokens) : les barèmes sont intégralement transcrits dans
+  `data/grids/` et validés (voir `docs/audit-grilles.md`). Idem pour
+  `docs/decret_loi/journal71-1.pdf` → `data/costs/`.
 - Les classeurs Excel se lisent via `classement.excel_io.read_candidates`, pas en
   inspection cellule par cellule.
 - Le gros œuvre est verrouillé par la suite de tests : pour la maintenance courante,
@@ -94,7 +95,7 @@ ou identifiant. Guide utilisateur : `docs/guide-excel.md`.
 
 ## Source réglementaire
 
-`docs/345-1.pdf` est un **scan arabe sans couche texte**. Pour le relire : rendre les
+`docs/decret_loi/345-1.pdf` est un **scan arabe sans couche texte**. Pour le relire : rendre les
 pages en PNG 300 DPI via PyMuPDF (`fitz`) puis lecture visuelle — `pdftoppm` n'est pas
 disponible sur cette machine, `pypdf`/`pdfplumber` non installés. Rendus existants dans
 `docs/_pages/` (régénérables, supprimables).

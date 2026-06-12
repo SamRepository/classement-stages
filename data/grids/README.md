@@ -2,7 +2,7 @@
 
 Transcription structurée des barèmes annexés à l'arrêté n° 345 (MESRS, Algérie) fixant les
 critères de sélection pour le programme de mobilité de courte durée à l'étranger
-(*perfectionnement à l'étranger*). Source : [docs/345-1.pdf](../../docs/345-1.pdf) (scan, 34 pages).
+(*perfectionnement à l'étranger*). Source : [docs/decret_loi/345-1.pdf](../../docs/decret_loi/345-1.pdf) (scan, 34 pages).
 
 L'arrêté abroge l'arrêté n° 255 du 25/02/2024 et s'applique en vertu de l'article 40 du décret
 présidentiel n° 14-196 du 06/07/2014.

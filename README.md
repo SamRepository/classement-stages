@@ -270,7 +270,7 @@ classement/          # paquet Python : moteur + classement + profils + coûts/bu
 data/grids/          # barèmes de l'arrêté 345 transcrits en JSON + règles transverses
 data/costs/          # indemnités (arrêté du 25/12/2011) + zones I/II
 data/institutions/   # profils d'établissement (enset-skikda + modèle _template)
-docs/345-1.pdf       # arrêté source (scan)
+docs/decret_loi/     # arrêté source (scan) + JORA n° 71 (indemnités)
 docs/roadmap.md      # feuille de route ; docs/audit-grilles.md : audit des grilles
 examples/enset/      # modèles Excel u1-u4 ENSET + exemple rempli + JSON
 scripts/             # génération des exemples Excel, audit des grilles

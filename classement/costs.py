@@ -1,6 +1,6 @@
 """Calcul des coûts de mobilité : indemnités réglementaires, billet plafonné, frais.
 
-Barème : arrêté interministériel du 25/12/2011 (JORA n° 71, docs/journal71-1.pdf),
+Barème : arrêté interministériel du 25/12/2011 (JORA n° 71, docs/decret_loi/journal71-1.pdf),
 transcrit dans data/costs/indemnites.json et validé contre le tableau interne
 « Nouveau » (voir tests/test_costs.py).
 

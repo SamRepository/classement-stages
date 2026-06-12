@@ -22,7 +22,7 @@ du temps à redécouvrir :
 - `column_plan()` comme source unique de vérité du circuit Excel (modèle ↔ import) ;
 - les conventions des grilles (`flags` = incertitude non résolue, `notes` = lecture
   confirmée) et la décision de la commission ENSET (classement à l'échelle de l'école) ;
-- la méthode de relecture du scan arabe `docs/345-1.pdf` (rendu 300 DPI via PyMuPDF).
+- la méthode de relecture du scan arabe `docs/decret_loi/345-1.pdf` (rendu 300 DPI via PyMuPDF).
 
 ### 2. [.claude/settings.json](../.claude/settings.json) — permissions du projet
 

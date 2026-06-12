@@ -2,7 +2,7 @@
 
 Audit du 10/06/2026 : re-vérification des neuf grilles JSON de
 [data/grids/](../data/grids/) contre le scan de l'arrêté n° 345 du 09/03/2026
-([345-1.pdf](345-1.pdf)), incluant les pages relues en haute résolution (300 DPI),
+([345-1.pdf](decret_loi/345-1.pdf)), incluant les pages relues en haute résolution (300 DPI),
 notamment les pages 13, 15, 18, 19, 25 et 29 qui n'avaient été contrôlées qu'en 200 DPI
 lors de la transcription initiale.
 

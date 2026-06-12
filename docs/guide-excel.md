@@ -5,7 +5,7 @@ prépare la campagne (service de la post-graduation / des relations extérieures
 commission. Il couvre la génération du modèle de saisie, le remplissage du classeur,
 l'import avec contrôles, et la production des documents à signer.
 
-Référence réglementaire : arrêté MESRS n° 345 du 09/03/2026 ([345-1.pdf](345-1.pdf)),
+Référence réglementaire : arrêté MESRS n° 345 du 09/03/2026 ([345-1.pdf](decret_loi/345-1.pdf)),
 barèmes transcrits dans [../data/grids/](../data/grids/) (audit de conformité :
 [audit-grilles.md](audit-grilles.md)).
 

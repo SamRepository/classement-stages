@@ -21,7 +21,9 @@ services:
       CAMPAIGN_INSTITUTION_ID: enset-skikda
       CAMPAIGN_DATE: "2026-06-30"
     ports:
-      - "9000:9000"
+      # hôte:conteneur — l'app écoute sur 8000 dans le conteneur (CMD uvicorn) ;
+      # exposée sur le port 9000 local pour ne pas gêner un service sur 8000.
+      - "9000:8000"
     volumes:
       - uploads:/data/uploads
     depends_on:

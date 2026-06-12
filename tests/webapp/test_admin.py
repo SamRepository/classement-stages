@@ -43,21 +43,34 @@ def test_import_xlsx_cree_comptes_et_dossiers(client, db_session, campaign, admi
     assert {"DC-2026-101", "DC-2026-102"} <= refs
 
 
-def test_import_feuille_candidats_circuit_excel(client, db_session, campaign, admin):
-    """La feuille Candidats du dossier u3 (id, email, nom_prenom, departement en
-    libellé) s'importe telle quelle : email = identifiant de connexion (comme Odoo),
-    libellé de département converti en id du profil."""
+def _classeur_u3() -> bytes:
+    """Mini dossier-u3.xlsx : feuille Candidats (avec mobilité) + feuille Historique."""
     wb = Workbook()
     ws = wb.active
-    ws.append(["id", "email", "nom_prenom", "population", "departement"])
+    ws.title = "Candidats"
+    ws.append(["id", "email", "nom_prenom", "population", "departement",
+               "pays_destination", "duree_jours", "billet_estime (DA)"])
     ws.append(["DC/2026/264", "candidat@univ.dz", "MERIMECHE IMENE",
-               "enseignant_chercheur", "Département de Technologie"])
+               "enseignant_chercheur", "Département de Technologie",
+               "Espagne", 10, 92000])
+    hist = wb.create_sheet("Historique")
+    hist.append(["candidat_id", "date_mobilite (AAAA-MM-JJ)", "date_cloture_plateforme (AAAA-MM-JJ)"])
+    hist.append(["DC/2026/264", "2024-09-15", "2024-04-30"])
     buffer = io.BytesIO()
     wb.save(buffer)
+    return buffer.getvalue()
+
+
+def test_import_feuille_candidats_circuit_excel(client, db_session, campaign, admin):
+    """Le dossier u3 issu d'Odoo s'importe tel quel : email = identifiant de
+    connexion (comme Odoo), libellé de département converti en id du profil,
+    mobilité reprise sur le dossier, feuille Historique → table benefits."""
+    from webapp.models import Benefit
 
     login(client, "admin@test.dz")
+    contenu = _classeur_u3()
     r = client.post("/admin/utilisateurs/import",
-                    files={"fichier": ("dossier-u3.xlsx", buffer.getvalue(),
+                    files={"fichier": ("dossier-u3.xlsx", contenu,
                                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")})
     assert r.status_code == 200
     user = db_session.scalar(select(User).where(User.email == "candidat@univ.dz"))
@@ -65,6 +78,22 @@ def test_import_feuille_candidats_circuit_excel(client, db_session, campaign, ad
     dossier = db_session.scalar(select(Dossier).where(Dossier.user_id == user.id))
     assert dossier.candidate_ref == "DC/2026/264"
     assert dossier.departement == "technologie"  # libellé converti en id du profil
+    assert dossier.pays == "Espagne"
+    assert dossier.duree_jours == 10
+    assert dossier.billet_estime_da == 92000.0
+    benefit = db_session.scalar(select(Benefit).where(Benefit.user_id == user.id))
+    assert benefit is not None
+    assert benefit.date.isoformat() == "2024-09-15"
+    assert benefit.platform_close_date.isoformat() == "2024-04-30"
+
+    # Réimport : ni compte ni bénéfice dupliqués.
+    r = client.post("/admin/utilisateurs/import",
+                    files={"fichier": ("dossier-u3.xlsx", contenu,
+                                       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")})
+    assert r.status_code == 200
+    assert "existe déjà" in r.text
+    benefices = list(db_session.scalars(select(Benefit).where(Benefit.user_id == user.id)))
+    assert len(benefices) == 1
 
 
 def test_benefices_ajout_suppression(client, db_session, campaign, admin, enseignant):

@@ -52,13 +52,19 @@ python -m webapp.scripts.seed --admin-email admin@enset-skikda.dz
 
 Puis dans l'interface, connecté en admin :
 
-1. **Utilisateurs** → *Importer des comptes* : fichier CSV/xlsx avec colonnes
-   `email, nom, prénom, référence, département` (export Odoo retravaillé).
+1. **Utilisateurs** → *Importer des comptes* : déposer directement le
+   `dossier-u3.xlsx` produit par `python scripts/import_odoo.py` (export Odoo
+   avec colonne Email). L'import crée en une opération : les comptes (login =
+   e-mail, le même qu'Odoo), les dossiers brouillon (référence, département,
+   pays, durée, billet) et l'historique des bénéfices depuis la feuille
+   Historique (pénalité `3 − n` + fenêtre « après dernier bénéfice »).
    Les mots de passe initiaux s'affichent **une seule fois** → les communiquer
-   individuellement. Chaque enseignant reçoit un dossier brouillon.
-2. **Bénéfices** : saisir l'historique des mobilités de chaque candidat
-   (date + clôture de plateforme). Ces données pilotent la pénalité `3 − n`
-   et la fenêtre « après dernier bénéfice ».
+   individuellement. Un CSV simple (`email, nom, …`) est aussi accepté.
+   L'import est idempotent (réimport sans doublon).
+2. **Bénéfices** : vérifier/compléter l'historique importé (la date de clôture
+   de plateforme de la campagne précédente peut être fixée via
+   `--cloture-precedente` d'import_odoo.py, sinon le moteur se rabat sur la
+   date de mobilité).
 3. **Campagne** : fixer la fenêtre de saisie (ouverture/clôture).
 
 ## 5. Cycle de la campagne

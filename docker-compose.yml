@@ -21,7 +21,7 @@ services:
       CAMPAIGN_INSTITUTION_ID: enset-skikda
       CAMPAIGN_DATE: "2026-06-30"
     ports:
-      - "8000:8000"
+      - "9000:9000"
     volumes:
       - uploads:/data/uploads
     depends_on:

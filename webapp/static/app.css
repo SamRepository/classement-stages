@@ -44,6 +44,18 @@ button.supprimer { color: #b71c1c; border: 1px solid #b71c1c; }
 button.supprimer:hover { background: #b71c1c; color: #fff; }
 tr.edition td { background: #f3f7ff; }
 
+/* Page « Mon dossier » : contenu large + colonne de score étroite.
+   (L'ancien « .grid » moitié-moitié faisait déborder les tableaux larges
+   sous l'encadré du score, qui interceptait les clics — PDF, Modifier,
+   Supprimer devenaient inertes.) */
+.dossier-layout { display: grid; gap: 1rem; }
+@media (min-width: 992px) {
+  .dossier-layout { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+}
+
+/* Tableaux d'activités : défilement horizontal au lieu de déborder la colonne. */
+.table-wrap { overflow-x: auto; }
+
 /* Score */
 #score-box { position: sticky; top: 1rem; }
 .score-total { font-size: 1.6rem; font-weight: 700; }

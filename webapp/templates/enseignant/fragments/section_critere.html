@@ -100,6 +100,7 @@
     {% set editing_id = editing_id|default(None) %}
     {% set ncols = 5 + (1 if spec.has_date else 0) + (1 if spec.has_position else 0) + (1 if editable else 0) %}
     {% if rows %}
+    <div class="table-wrap">
     <table>
       <thead>
         <tr>
@@ -182,6 +183,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
     {% else %}
     <p><small>Aucun élément déclaré.</small></p>
     {% endif %}

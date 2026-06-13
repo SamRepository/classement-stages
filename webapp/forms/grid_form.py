@@ -92,6 +92,11 @@ def build_form_spec(grid: dict) -> list[dict]:
                     for i in criterion.get("items", [])
                 ]
                 section["has_leader"] = any(i["leader_bonus"] for i in section["items"])
+                # DOI/URL pertinents seulement là où une référence est recommandée
+                # (publications, communications indexées/référencées).
+                section["has_reference"] = any(
+                    i["reference_recommended"] for i in section["items"]
+                )
         else:
             section["widget"] = "inconnu"
         sections.append(section)

@@ -102,6 +102,79 @@ def test_suppression_activite(client, db_session, campaign, enseignant, upload_d
     assert not path.exists()
 
 
+def test_modification_activite(client, db_session, campaign, enseignant):
+    login(client, "enseignant@test.dz")
+    client.get("/mon-dossier")
+    client.post("/mon-dossier/activites", data={
+        "criterion_id": "publications", "item": "classe_b", "intitule": "Ancien titre",
+        "date": "2025-01-01", "author_position": "2", "quantite": "1", "doi": "10.1/old",
+    })
+    entry = db_session.scalar(select(Entry))
+
+    # Entrée en édition : formulaire pré-rempli avec les valeurs actuelles.
+    r = client.get(f"/mon-dossier/activites/{entry.id}/edition")
+    assert r.status_code == 200
+    assert "Ancien titre" in r.text
+    assert "Enregistrer les modifications" in r.text
+
+    # Enregistrement des modifications.
+    r = client.post(f"/mon-dossier/activites/{entry.id}/modifier", data={
+        "intitule": "Nouveau titre", "date": "2025-06-06", "author_position": "1",
+        "quantite": "3", "doi": "10.1/new",
+    })
+    assert r.status_code == 200
+    db_session.refresh(entry)
+    assert entry.payload["intitule"] == "Nouveau titre"
+    assert entry.payload["date"] == "2025-06-06"
+    assert entry.payload["author_position"] == 1
+    assert entry.payload["count"] == 3
+    assert entry.payload["doi"] == "10.1/new"
+    assert entry.date_activite.isoformat() == "2025-06-06"
+
+
+def test_modification_reinitialise_decision(client, db_session, campaign, enseignant,
+                                            membre_commission):
+    login(client, "enseignant@test.dz")
+    client.get("/mon-dossier")
+    client.post("/mon-dossier/activites", data={
+        "criterion_id": "publications", "item": "classe_b",
+        "date": "2025-01-01", "quantite": "1",
+    })
+    entry = db_session.scalar(select(Entry))
+    entry.statut = "valide"
+    entry.decided_by = membre_commission.id
+    db_session.commit()
+
+    client.post(f"/mon-dossier/activites/{entry.id}/modifier", data={
+        "intitule": "Corrigé", "date": "2025-01-01", "quantite": "2",
+    })
+    db_session.refresh(entry)
+    assert entry.statut == "en_attente"
+    assert entry.decided_by is None
+
+
+def test_modification_date_obligatoire(client, db_session, campaign, enseignant):
+    login(client, "enseignant@test.dz")
+    client.get("/mon-dossier")
+    client.post("/mon-dossier/activites", data={
+        "criterion_id": "publications", "item": "classe_b",
+        "date": "2025-01-01", "quantite": "1",
+    })
+    entry = db_session.scalar(select(Entry))
+    r = client.post(f"/mon-dossier/activites/{entry.id}/modifier",
+                    data={"intitule": "x", "quantite": "1"})
+    assert r.status_code == 422
+    assert "Date obligatoire" in r.text
+
+
+def test_annulation_edition_rerend_section(client, db_session, campaign, enseignant):
+    login(client, "enseignant@test.dz")
+    client.get("/mon-dossier")
+    r = client.get("/mon-dossier/section/publications")
+    assert r.status_code == 200
+    assert "section-publications" in r.text
+
+
 def test_soumission_gele_les_ecritures(client, db_session, campaign, enseignant):
     login(client, "enseignant@test.dz")
     client.get("/mon-dossier")

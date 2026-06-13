@@ -97,6 +97,8 @@
       {% for i in spec['items'] %}{{ i.label }} (max {{ i.cap_points|points }}){% if not loop.last %}, {% endif %}{% endfor %}.</p>
 
   {% elif spec.widget == 'count_detail' %}
+    {% set editing_id = editing_id|default(None) %}
+    {% set ncols = 5 + (1 if spec.has_date else 0) + (1 if spec.has_position else 0) + (1 if editable else 0) %}
     {% if rows %}
     <table>
       <thead>
@@ -109,6 +111,45 @@
       </thead>
       <tbody>
         {% for r in rows %}
+        {% if editable and editing_id == r.id %}
+        <tr class="edition">
+          <td colspan="{{ ncols }}">
+            <form hx-post="/mon-dossier/activites/{{ r.id }}/modifier"
+                  hx-target="#section-{{ spec.criterion_id }}" hx-swap="outerHTML">
+              <p><strong>Modifier l'élément</strong> — {{ r.item_id }}
+                 <small>(pour changer de type d'élément, supprimez puis ré-ajoutez)</small></p>
+              <div class="grid">
+                <label>Intitulé
+                  <input name="intitule" value="{{ r.payload.intitule or '' }}">
+                </label>
+                {% if spec.has_date %}
+                <label>Date
+                  <input type="date" name="date" value="{{ r.payload.date or '' }}" required>
+                </label>
+                {% endif %}
+                {% if spec.has_position %}
+                <label>Position d'auteur
+                  <input type="number" name="author_position" min="1" value="{{ r.payload.author_position or '' }}">
+                </label>
+                {% endif %}
+                <label>Quantité
+                  <input type="number" name="quantite" min="1" value="{{ r.payload.count or 1 }}">
+                </label>
+              </div>
+              <div class="grid">
+                <label>DOI <input name="doi" value="{{ r.payload.doi or '' }}" placeholder="10.xxxx/…"></label>
+                <label>URL <input name="url" type="url" value="{{ r.payload.url or '' }}" placeholder="https://…"></label>
+              </div>
+              <div class="grid">
+                <button type="submit">Enregistrer les modifications</button>
+                <button type="button" class="secondary outline"
+                        hx-get="/mon-dossier/section/{{ spec.criterion_id }}"
+                        hx-target="#section-{{ spec.criterion_id }}" hx-swap="outerHTML">Annuler</button>
+              </div>
+            </form>
+          </td>
+        </tr>
+        {% else %}
         <tr>
           <td>{{ r.item_id }}</td>
           <td>{{ r.payload.intitule or '—' }}</td>
@@ -128,11 +169,16 @@
             {% else %}—{% endif %}
           </td>
           {% if editable %}
-          <td><button type="button" class="supprimer" hx-delete="/mon-dossier/activites/{{ r.id }}"
-                      hx-target="#section-{{ spec.criterion_id }}" hx-swap="outerHTML"
-                      hx-confirm="Supprimer cet élément ?">✕ Supprimer</button></td>
+          <td class="actions">
+            <button type="button" class="secondary outline" hx-get="/mon-dossier/activites/{{ r.id }}/edition"
+                    hx-target="#section-{{ spec.criterion_id }}" hx-swap="outerHTML">Modifier</button>
+            <button type="button" class="supprimer" hx-delete="/mon-dossier/activites/{{ r.id }}"
+                    hx-target="#section-{{ spec.criterion_id }}" hx-swap="outerHTML"
+                    hx-confirm="Supprimer cet élément ?">✕ Supprimer</button>
+          </td>
           {% endif %}
         </tr>
+        {% endif %}
         {% endfor %}
       </tbody>
     </table>

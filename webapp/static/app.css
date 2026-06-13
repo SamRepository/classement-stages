@@ -36,6 +36,9 @@ button.supprimer {
   white-space: nowrap;
 }
 button.supprimer:hover { background: #b71c1c; color: #fff; }
+td.actions { white-space: nowrap; display: flex; gap: .4rem; }
+td.actions button { margin: 0; }
+tr.edition td { background: #f3f7ff; }
 
 /* Score */
 #score-box { position: sticky; top: 1rem; }

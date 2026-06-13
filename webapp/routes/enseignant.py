@@ -61,12 +61,17 @@ def _render_score(request: Request, db: Session, dossier: Dossier, *, oob: bool)
 
 
 def _section_response(
-    request: Request, db: Session, dossier: Dossier, grid: dict, criterion_id: str
+    request: Request, db: Session, dossier: Dossier, grid: dict, criterion_id: str,
+    *, editing_id: int | None = None,
 ) -> HTMLResponse:
-    """Fragment de la section + fragment du score (hx-swap-oob)."""
+    """Fragment de la section + fragment du score (hx-swap-oob).
+
+    ``editing_id`` : id de l'élément affiché en mode édition (formulaire pré-rempli).
+    """
     section = _find_section(dossier, grid, criterion_id)
     html = templates.get_template("enseignant/fragments/section_critere.html").render(
-        request=request, section=section, editable=dossier.statut == "brouillon"
+        request=request, section=section, editable=dossier.statut == "brouillon",
+        editing_id=editing_id,
     )
     html += _render_score(request, db, dossier, oob=True)
     return HTMLResponse(html)
@@ -315,6 +320,112 @@ async def ajout_activite(
     db.commit()
     db.refresh(dossier)
     return _section_response(request, db, dossier, grid, criterion_id)
+
+
+@router.get("/section/{criterion_id}")
+def fragment_section(
+    criterion_id: str,
+    request: Request,
+    user: User = Depends(require_role("enseignant")),
+    db: Session = Depends(get_db),
+):
+    """Re-rend une section telle quelle (sert au bouton « Annuler » de l'édition)."""
+    _, dossier, grid = _context(db, user)
+    return _section_response(request, db, dossier, grid, criterion_id)
+
+
+def _owned_entry(db: Session, dossier: Dossier, entry_id: int) -> Entry:
+    entry = db.get(Entry, entry_id)
+    if entry is None or entry.dossier_id != dossier.id:
+        raise HTTPException(status_code=404)
+    return entry
+
+
+@router.get("/activites/{entry_id}/edition")
+def editer_activite(
+    entry_id: int,
+    request: Request,
+    user: User = Depends(require_role("enseignant")),
+    db: Session = Depends(get_db),
+):
+    """Affiche la section avec l'élément demandé en formulaire d'édition pré-rempli."""
+    _, dossier, grid = _context(db, user)
+    assert_editable(dossier)
+    entry = _owned_entry(db, dossier, entry_id)
+    return _section_response(request, db, dossier, grid, entry.criterion_id,
+                             editing_id=entry.id)
+
+
+@router.post("/activites/{entry_id}/modifier")
+async def modifier_activite(
+    entry_id: int,
+    request: Request,
+    user: User = Depends(require_role("enseignant")),
+    db: Session = Depends(get_db),
+):
+    """Met à jour un élément déclaré (intitulé, date, position, quantité, DOI/URL).
+
+    Le type d'élément n'est pas modifiable (sinon supprimer + ré-ajouter). Les
+    champs non présents dans le formulaire (ex. porteur de projet, bonus) sont
+    conservés. Toute modification réinitialise une décision antérieure de la
+    commission (l'élément repasse « en attente »).
+    """
+    _, dossier, grid = _context(db, user)
+    assert_editable(dossier)
+    entry = _owned_entry(db, dossier, entry_id)
+    section = _find_section(dossier, grid, entry.criterion_id)
+    spec = section["spec"]
+    if spec["widget"] != "count_detail":
+        raise HTTPException(status_code=422, detail="Ce critère ne se modifie pas par éléments.")
+
+    form = await request.form()
+    payload = dict(entry.payload or {})  # préserve leader_count / bonus_count
+
+    count = _to_int(form.get("quantite"), default=payload.get("count", 1)) or 1
+    if count <= 0:
+        raise HTTPException(status_code=422, detail="La quantité doit être positive.")
+    payload["count"] = count
+
+    intitule = (form.get("intitule") or "").strip()
+    if intitule:
+        payload["intitule"] = intitule
+    else:
+        payload.pop("intitule", None)
+
+    activite_date = _to_date(form.get("date"))
+    if spec["has_date"] and not activite_date:
+        raise HTTPException(
+            status_code=422,
+            detail="Date obligatoire : ce critère ne compte que les éléments postérieurs "
+                   "au dernier bénéfice.",
+        )
+    if activite_date:
+        payload["date"] = activite_date
+    else:
+        payload.pop("date", None)
+
+    if spec["has_position"]:
+        position = _to_int(form.get("author_position"))
+        if position is not None:
+            if position < 1:
+                raise HTTPException(status_code=422, detail="Position d'auteur ≥ 1 attendue.")
+            payload["author_position"] = position
+        else:
+            payload.pop("author_position", None)
+
+    for key in ("doi", "url"):
+        value = (form.get(key) or "").strip()
+        if value:
+            payload[key] = value
+        else:
+            payload.pop(key, None)
+
+    entry.payload = payload
+    entry.date_activite = date.fromisoformat(activite_date) if activite_date else None
+    _reset_decision(entry)
+    db.commit()
+    db.refresh(dossier)
+    return _section_response(request, db, dossier, grid, entry.criterion_id)
 
 
 @router.post("/activites/{entry_id}/justificatif")

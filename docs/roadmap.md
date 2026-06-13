@@ -53,15 +53,16 @@ au pont Odoo → application :
 
 Application **FastAPI + Jinja2/HTMX + SQLAlchemy/PostgreSQL** ([webapp/](../webapp/))
 réutilisant le paquet `classement` tel quel — aucune logique réglementaire dupliquée,
-le moteur est rappelé à chaque calcul. 59 tests dédiés (147 au total), dont la **parité**
+le moteur est rappelé à chaque calcul. 63 tests dédiés (151 au total), dont la **parité**
 dossier web ≡ dict moteur pour chaque type de critère.
 
 **Réalisé** :
 - **Espace enseignant** : connexion par e-mail (le même identifiant qu'Odoo), formulaire
   généré depuis la grille JSON, une ligne par activité avec **justificatif PDF rattaché**,
-  score provisoire recalculé en temps réel (HTMX), soumission = dossier gelé, **rang et
-  score retenus affichés après le gel** (lus depuis le snapshot d'audit, avec rappel que
-  le rang ne vaut pas attribution) ;
+  score provisoire recalculé en temps réel (HTMX), **édition en place et suppression**
+  des activités déclarées, soumission = dossier gelé, **rang et score retenus affichés
+  après le gel** (lus depuis le snapshot d'audit, avec rappel que le rang ne vaut pas
+  attribution) ;
 - **Espace commission** : chaque élément face à son justificatif (visionneuse), **valider /
   rejeter avec motif obligatoire** (art. 14-15, contrainte en base), élément rejeté exclu
   du calcul avec trace, observations du moteur affichées, classement (ex aequo signalés),

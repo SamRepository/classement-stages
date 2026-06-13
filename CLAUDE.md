@@ -93,6 +93,25 @@ ou identifiant. Guide utilisateur : `docs/guide-excel.md`.
   un modèle économique suffit — réserver les modèles premium aux décisions
   d'architecture.
 
+### Navigation par LSP (cclsp) — privilégier aux recherches textuelles
+
+Le serveur MCP **cclsp** (Python via `pylsp`) expose la navigation sémantique. Pour
+**localiser ou suivre un symbole** (fonction, classe, méthode, variable), utiliser ces
+outils plutôt que `grep`/lecture de fichiers entiers — ils renvoient l'emplacement exact
+sans ouvrir tout le fichier (gros gain de tokens sur ce dépôt) :
+
+- `find_definition` — où un symbole est défini (remplace un grep + lecture pour « où est
+  défini `score_candidate` ? »).
+- `find_references` — tous les usages réels d'un symbole (remplace un grep large pour
+  « qui appelle `candidate_cost` ? ») avant de renommer ou modifier une signature.
+- `rename_symbol` — renommage sûr à travers les fichiers (préférer à un
+  `Edit replace_all` qui touche aussi les correspondances textuelles non pertinentes).
+
+`grep`/`Glob` restent adaptés aux recherches **non symboliques** : chaînes de libellés,
+clés JSON des grilles, motifs dans la doc. cclsp est config en scope utilisateur
+(`~/.config/claude/cclsp.json`) ; les outils n'apparaissent qu'après redémarrage de la
+session Claude Code.
+
 ## Source réglementaire
 
 `docs/decret_loi/345-1.pdf` est un **scan arabe sans couche texte**. Pour le relire : rendre les

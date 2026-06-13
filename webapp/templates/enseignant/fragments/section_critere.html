@@ -170,7 +170,7 @@
           </td>
           {% if editable %}
           <td class="actions">
-            <button type="button" class="secondary outline" hx-get="/mon-dossier/activites/{{ r.id }}/edition"
+            <button type="button" class="modifier" hx-get="/mon-dossier/activites/{{ r.id }}/edition"
                     hx-target="#section-{{ spec.criterion_id }}" hx-swap="outerHTML">Modifier</button>
             <button type="button" class="supprimer" hx-delete="/mon-dossier/activites/{{ r.id }}"
                     hx-target="#section-{{ spec.criterion_id }}" hx-swap="outerHTML"

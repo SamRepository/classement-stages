@@ -6,9 +6,27 @@ from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
 
-TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+BASE_DIR = Path(__file__).resolve().parent
+TEMPLATES_DIR = BASE_DIR / "templates"
+STATIC_DIR = BASE_DIR / "static"
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+
+def static_version() -> str:
+    """Empreinte des fichiers statiques (date de modif la plus récente).
+
+    Sert de paramètre ``?v=`` sur les liens CSS/JS : à chaque déploiement, l'URL
+    change et le navigateur recharge la version à jour au lieu d'un cache périmé.
+    """
+    try:
+        latest = max(f.stat().st_mtime for f in STATIC_DIR.glob("*") if f.is_file())
+        return str(int(latest))
+    except ValueError:
+        return "0"
+
+
+templates.env.globals["static_version"] = static_version()
 
 
 def fmt_points(value: float | int | None) -> str:

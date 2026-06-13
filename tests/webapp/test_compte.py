@@ -77,3 +77,11 @@ def test_bandeau_experimental_connexion(client):
     r = client.get("/connexion")
     assert "phase expérimentale" in r.text
     assert "s.sellami@enset-skikda.dz" in r.text
+
+
+def test_static_cache_busting(client):
+    """Les liens CSS/JS portent un ?v= : le navigateur recharge après un déploiement."""
+    r = client.get("/connexion")
+    assert "/static/app.css?v=" in r.text
+    assert "/static/pico.min.css?v=" in r.text
+    assert "/static/htmx.min.js?v=" in r.text

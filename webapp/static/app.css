@@ -25,19 +25,23 @@ small { color: var(--pico-muted-color, #6c757d); }
 tr.non-finance td { opacity: .55; }
 tr.non-finance .badge { opacity: 1; }
 
-/* Bouton de suppression : clairement actif (le style « secondary outline » de Pico
-   paraissait grisé/désactivé). */
-button.supprimer {
-  color: #b71c1c;
-  border: 1px solid #b71c1c;
+/* Boutons d'action des activités : clairement cliquables (le style « secondary
+   outline » de Pico paraissait grisé/désactivé). */
+td.actions { white-space: nowrap; }
+button.modifier, button.supprimer {
+  cursor: pointer;
+  width: auto;
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  margin: 0 0.35rem 0 0;
+  font-size: 0.85rem;
+  border-radius: var(--pico-border-radius, 6px);
   background: transparent;
-  padding: 0.25rem 0.6rem;
-  margin: 0;
-  white-space: nowrap;
 }
+button.modifier { color: #0b5ed7; border: 1px solid #0b5ed7; }
+button.modifier:hover { background: #0b5ed7; color: #fff; }
+button.supprimer { color: #b71c1c; border: 1px solid #b71c1c; }
 button.supprimer:hover { background: #b71c1c; color: #fff; }
-td.actions { white-space: nowrap; display: flex; gap: .4rem; }
-td.actions button { margin: 0; }
 tr.edition td { background: #f3f7ff; }
 
 /* Score */

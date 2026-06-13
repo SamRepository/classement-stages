@@ -53,13 +53,15 @@ au pont Odoo → application :
 
 Application **FastAPI + Jinja2/HTMX + SQLAlchemy/PostgreSQL** ([webapp/](../webapp/))
 réutilisant le paquet `classement` tel quel — aucune logique réglementaire dupliquée,
-le moteur est rappelé à chaque calcul. 47 tests dédiés (135 au total), dont la **parité**
+le moteur est rappelé à chaque calcul. 59 tests dédiés (147 au total), dont la **parité**
 dossier web ≡ dict moteur pour chaque type de critère.
 
 **Réalisé** :
 - **Espace enseignant** : connexion par e-mail (le même identifiant qu'Odoo), formulaire
   généré depuis la grille JSON, une ligne par activité avec **justificatif PDF rattaché**,
-  score provisoire recalculé en temps réel (HTMX), soumission = dossier gelé ;
+  score provisoire recalculé en temps réel (HTMX), soumission = dossier gelé, **rang et
+  score retenus affichés après le gel** (lus depuis le snapshot d'audit, avec rappel que
+  le rang ne vaut pas attribution) ;
 - **Espace commission** : chaque élément face à son justificatif (visionneuse), **valider /
   rejeter avec motif obligatoire** (art. 14-15, contrainte en base), élément rejeté exclu
   du calcul avec trace, observations du moteur affichées, classement (ex aequo signalés),
@@ -74,7 +76,10 @@ dossier web ≡ dict moteur pour chaque type de critère.
   persistants** (pénalités `3-n` et fenêtre calculées automatiquement), journal des
   actions ; migrations Alembic ;
 - **Déploiement** : Dockerfile, docker-compose de dev, variables d'environnement,
-  [guide Coolify pas-à-pas](guide-deploiement-coolify.md).
+  [guide Coolify pas-à-pas](guide-deploiement-coolify.md) ;
+- **Préparation à la mise en service** (13/06/2026) : changement de mot de passe par
+  l'utilisateur connecté, pages d'erreur HTML en français (+ alerte HTMX pour les refus),
+  bandeau « phase expérimentale » avec contact sur la page de connexion.
 
 **Reste à faire** :
 - déploiement effectif sur l'instance Coolify (PostgreSQL + volume `/data/uploads` +

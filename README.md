@@ -292,14 +292,15 @@ aequo sont signalés (`ex_aequo: true`) et laissés à l'arbitrage de la commiss
 python -m pytest -q
 ```
 
-135 tests : le moteur (six types de critères, plafonds, pondération auteur, fenêtres
+147 tests : le moteur (six types de critères, plafonds, pondération auteur, fenêtres
 temporelles, formules, classement, profils d'établissement, coûts/budget) et le circuit
 Excel (modèle, menus en libellés français, import avec rapport d'erreurs, équivalence
 Excel/JSON, exports PV/fiches/HTML), plus l'application web
 ([tests/webapp/](tests/webapp/)) : **parité dossier web ≡ dict moteur** pour chaque type
 de critère, application des rejets avec trace, workflow brouillon/soumis/gelé,
 permissions par rôle, uploads (octets magiques, taille), import de comptes, classement,
-gel, exports et simulation budgétaire commission.
+gel, exports, simulation budgétaire commission, changement de mot de passe, pages
+d'erreur en français et publication du rang à l'enseignant après le gel.
 
 ## Structure du projet
 

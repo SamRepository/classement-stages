@@ -8,7 +8,24 @@
      · <span class="badge {{ dossier.statut }}">{{ dossier.statut }}</span></p>
 </hgroup>
 
-{% if not editable %}
+{% if campaign.statut == 'gelee' %}
+<article>
+  <h3>Résultat du classement</h3>
+  {% if resultat %}
+  <p>Classement gelé{% if campaign.frozen_at %} le {{ campaign.frozen_at.strftime('%d/%m/%Y') }}{% endif %} :
+     vous êtes classé(e) <strong>{{ resultat.rank }}{{ 'ᵉʳ' if resultat.rank == 1 else 'ᵉ' }}
+     sur {{ resultat.taille }}</strong> (groupe : {{ resultat.groupe }})
+     avec un score retenu de <strong>{{ resultat.total|points }} points</strong>{% if resultat.ex_aequo %}
+     <span class="badge en_attente">ex aequo</span>{% endif %}.</p>
+  <p><small>Le rang ne vaut pas décision d'attribution : la liste des bénéficiaires dépend du
+     budget de l'exercice et de la décision de la commission. Les éléments rejetés et leurs
+     motifs (art. 14-15) sont visibles dans les sections ci-dessous.</small></p>
+  {% else %}
+  <p>Le classement de la campagne est gelé ; votre dossier n'y figure pas
+     (dossier non soumis avant la clôture de l'examen).</p>
+  {% endif %}
+</article>
+{% elif not editable %}
 <mark>Votre dossier a été soumis{% if dossier.submitted_at %} le {{ dossier.submitted_at.strftime('%d/%m/%Y') }}{% endif %} :
 il est en cours d'examen et ne peut plus être modifié. Pour toute correction, contactez l'administration.</mark>
 {% endif %}

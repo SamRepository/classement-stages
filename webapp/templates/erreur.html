@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block titre %}Erreur {{ code }}{% endblock %}
+{% block contenu %}
+<article class="connexion">
+  <h1>Erreur {{ code }}</h1>
+  <p class="erreur" role="alert">{{ message }}</p>
+  <p><a href="/" role="button" class="outline">Retour à l'accueil</a></p>
+  <p><small>Si le problème persiste, signalez-le à
+     <a href="mailto:s.sellami@enset-skikda.dz">s.sellami@enset-skikda.dz</a>
+     en décrivant ce que vous faisiez.</small></p>
+</article>
+{% endblock %}

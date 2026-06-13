@@ -19,6 +19,7 @@ from webapp.db import get_db
 from webapp.forms.grid_form import build_form_spec
 from webapp.models import Benefit, Dossier, Entry, User
 from webapp.services.dossier import assert_editable, ensure_dossier, get_campaign, submit_dossier
+from webapp.services.exports import snapshot_rank_for
 from webapp.services.scoring import compute_score, get_grid, get_institution
 from webapp.services.uploads import delete_justificatif, save_justificatif
 from webapp.templating import templates
@@ -80,6 +81,9 @@ def page_dossier(
     campaign, dossier, grid = _context(db, user)
     institution = get_institution(campaign.institution_id)
     benefits = db.query(Benefit).filter(Benefit.user_id == user.id).order_by(Benefit.date).all()
+    resultat = None
+    if campaign.statut == "gelee":
+        resultat = snapshot_rank_for(db, campaign, dossier.candidate_ref)
     return templates.TemplateResponse(
         request,
         "enseignant/dossier.html",
@@ -92,6 +96,7 @@ def page_dossier(
             "benefits": benefits,
             "sections": _sections(dossier, grid),
             "editable": dossier.statut == "brouillon",
+            "resultat": resultat,
         },
     )
 

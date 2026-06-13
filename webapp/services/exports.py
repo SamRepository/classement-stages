@@ -82,6 +82,34 @@ def freeze_campaign(db: Session, campaign: Campaign, user: User) -> RankingSnaps
     return snapshot
 
 
+def snapshot_rank_for(db: Session, campaign: Campaign, candidate_ref: str) -> dict | None:
+    """Rang d'un candidat dans le snapshot du gel (source d'audit, pas de recalcul).
+
+    Retourne {rank, total, ex_aequo, groupe, taille} ou None si le candidat
+    n'est pas classé (dossier jamais soumis) ou si aucun snapshot n'existe.
+    """
+    snapshot = db.scalar(
+        select(RankingSnapshot)
+        .where(RankingSnapshot.campaign_id == campaign.id)
+        .order_by(RankingSnapshot.id.desc())
+    )
+    if snapshot is None:
+        return None
+    for groupe, ranked in (snapshot.payload or {}).get("groups", {}).items():
+        for entry in ranked:
+            if entry.get("candidate_id") == candidate_ref:
+                # clé « grille / population[ / groupe] » : la grille est déjà à l'écran
+                label = groupe.split(" / ", 1)[-1]
+                return {
+                    "rank": entry["rank"],
+                    "total": entry["total"],
+                    "ex_aequo": entry.get("ex_aequo", False),
+                    "groupe": label,
+                    "taille": len(ranked),
+                }
+    return None
+
+
 def export_response(db: Session, campaign: Campaign, kind: str) -> FileResponse:
     """Génère le document demandé et le renvoie en téléchargement."""
     if kind not in EXPORT_KINDS:

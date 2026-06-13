@@ -27,6 +27,7 @@
         <li><a href="/admin/benefices">Bénéfices</a></li>
         <li><a href="/admin/campagne">Campagne</a></li>
       {% endif %}
+      <li><a href="/mon-mot-de-passe">Mot de passe</a></li>
       <li>
         <form method="post" action="/deconnexion" class="inline-form">
           <button type="submit" class="secondary outline">Déconnexion ({{ user.prenom }} {{ user.nom }})</button>
@@ -39,5 +40,12 @@
 <main class="container">
   {% block contenu %}{% endblock %}
 </main>
+<script>
+  // Les erreurs des requêtes HTMX (texte brut en français) sont montrées à l'utilisateur,
+  // sinon un refus (motif manquant, dossier gelé…) resterait invisible.
+  document.body.addEventListener('htmx:responseError', function (e) {
+    alert(e.detail.xhr.responseText || 'Erreur inattendue — réessayez.');
+  });
+</script>
 </body>
 </html>

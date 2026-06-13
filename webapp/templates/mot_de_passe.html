@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titre %}Mot de passe{% endblock %}
+{% block contenu %}
+<article class="connexion">
+  <h1>Changer mon mot de passe</h1>
+  {% if succes %}
+  <p role="alert"><mark>Mot de passe modifié : utilisez-le dès votre prochaine connexion.</mark></p>
+  {% endif %}
+  {% if erreur %}<p class="erreur" role="alert">{{ erreur }}</p>{% endif %}
+  <form method="post" action="/mon-mot-de-passe">
+    <label>Mot de passe actuel
+      <input type="password" name="actuel" required autocomplete="current-password">
+    </label>
+    <label>Nouveau mot de passe
+      <input type="password" name="nouveau" required minlength="8"
+             autocomplete="new-password" aria-describedby="aide-mdp">
+      <small id="aide-mdp">Au moins 8 caractères.</small>
+    </label>
+    <label>Confirmation du nouveau mot de passe
+      <input type="password" name="confirmation" required minlength="8"
+             autocomplete="new-password">
+    </label>
+    <button type="submit">Changer le mot de passe</button>
+  </form>
+</article>
+{% endblock %}

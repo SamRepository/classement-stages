@@ -128,9 +128,9 @@
             {% else %}—{% endif %}
           </td>
           {% if editable %}
-          <td><button class="secondary outline" hx-delete="/mon-dossier/activites/{{ r.id }}"
+          <td><button type="button" class="supprimer" hx-delete="/mon-dossier/activites/{{ r.id }}"
                       hx-target="#section-{{ spec.criterion_id }}" hx-swap="outerHTML"
-                      hx-confirm="Supprimer cet élément ?">✕</button></td>
+                      hx-confirm="Supprimer cet élément ?">✕ Supprimer</button></td>
           {% endif %}
         </tr>
         {% endfor %}

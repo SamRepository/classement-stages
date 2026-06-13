@@ -25,6 +25,18 @@ small { color: var(--pico-muted-color, #6c757d); }
 tr.non-finance td { opacity: .55; }
 tr.non-finance .badge { opacity: 1; }
 
+/* Bouton de suppression : clairement actif (le style « secondary outline » de Pico
+   paraissait grisé/désactivé). */
+button.supprimer {
+  color: #b71c1c;
+  border: 1px solid #b71c1c;
+  background: transparent;
+  padding: 0.25rem 0.6rem;
+  margin: 0;
+  white-space: nowrap;
+}
+button.supprimer:hover { background: #b71c1c; color: #fff; }
+
 /* Score */
 #score-box { position: sticky; top: 1rem; }
 .score-total { font-size: 1.6rem; font-weight: 700; }

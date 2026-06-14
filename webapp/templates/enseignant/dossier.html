@@ -30,8 +30,9 @@
 il est en cours d'examen et ne peut plus être modifié. Pour toute correction, contactez l'administration.</mark>
 {% endif %}
 
-<div class="dossier-layout">
-  <div>
+<div id="score-host" hx-get="/mon-dossier/score" hx-trigger="load"></div>
+
+<div class="dossier-content">
     <article class="critere">
       <h3>Informations de mobilité</h3>
       <form method="post" action="/mon-dossier/infos">
@@ -99,10 +100,5 @@ il est en cours d'examen et ne peut plus être modifié. Pour toute correction, 
       </form>
     </article>
     {% endif %}
-  </div>
-
-  <aside>
-    <div id="score-box" hx-get="/mon-dossier/score" hx-trigger="load"></div>
-  </aside>
 </div>
 {% endblock %}

@@ -35,8 +35,33 @@ def rc6():
     return find_grid("rc6-chercheurs-stages")
 
 
+@pytest.fixture(scope="module")
+def u3():
+    return find_grid("u3-residences-scientifiques")
+
+
 def _line(breakdown, criterion_id):
     return next(l for l in breakdown.lines if l.criterion_id == criterion_id)
+
+
+def test_prix_forfaitaire_plafonne_malgre_plusieurs(u3, shared):
+    """Plusieurs prix/brevets : score plafonné au forfait (10 pts), non cumulé."""
+    candidate = {"id": "X", "benefits": [], "entries": {"prix_distinctions": {"items": [
+        {"item": "prix", "count": 1, "date": "2025-01-01"},
+        {"item": "prix", "count": 1, "date": "2025-03-01"},
+    ]}}}
+    b = score_candidate(u3, candidate, shared, CAMPAIGN)
+    assert _line(b, "prix_distinctions").points == 10
+
+
+def test_encadrement_projet_labelise_forfaitaire(u3, shared):
+    """Plusieurs projets labellisés : score plafonné au forfait (5 pts)."""
+    candidate = {"id": "X", "entries": {"encadrement_projet_labelise": {"items": [
+        {"item": "projet_labelise", "count": 1},
+        {"item": "projet_labelise", "count": 1},
+    ]}}}
+    b = score_candidate(u3, candidate, shared, CAMPAIGN)
+    assert _line(b, "encadrement_projet_labelise").points == 5
 
 
 def test_enum_rank(u1, shared):

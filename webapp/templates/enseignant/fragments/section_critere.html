@@ -98,7 +98,8 @@
 
   {% elif spec.widget == 'count_detail' %}
     {% set editing_id = editing_id|default(None) %}
-    {% set ncols = 4 + (1 if spec.has_date else 0) + (1 if spec.has_position else 0) + (1 if spec.has_reference else 0) + (1 if editable else 0) %}
+    {% set show_ref = spec.has_reference or spec.url_label %}
+    {% set ncols = 4 + (1 if spec.has_date else 0) + (1 if spec.has_position else 0) + (1 if show_ref else 0) + (1 if editable else 0) %}
     {% if rows %}
     <div class="table-wrap">
     <table>
@@ -107,7 +108,7 @@
           <th>Élément</th><th>Intitulé</th>
           {% if spec.has_date %}<th>Date</th>{% endif %}
           {% if spec.has_position %}<th>Position</th>{% endif %}
-          <th>Qté</th>{% if spec.has_reference %}<th>Réf.</th>{% endif %}<th>Justificatif</th>{% if editable %}<th></th>{% endif %}
+          <th>Qté</th>{% if show_ref %}<th>Réf.</th>{% endif %}<th>Justificatif</th>{% if editable %}<th></th>{% endif %}
         </tr>
       </thead>
       <tbody>
@@ -137,10 +138,10 @@
                   <input type="number" name="quantite" min="1" value="{{ r.payload.count or 1 }}">
                 </label>
               </div>
-              {% if spec.has_reference %}
+              {% if show_ref %}
               <div class="grid">
-                <label>DOI <input name="doi" value="{{ r.payload.doi or '' }}" placeholder="10.xxxx/…"></label>
-                <label>URL <input name="url" type="url" value="{{ r.payload.url or '' }}" placeholder="https://…"></label>
+                {% if spec.has_reference %}<label>DOI <input name="doi" value="{{ r.payload.doi or '' }}" placeholder="10.xxxx/…"></label>{% endif %}
+                <label>{{ spec.url_label or 'URL' }} <input name="url" type="url" value="{{ r.payload.url or '' }}" placeholder="https://…"></label>
               </div>
               {% endif %}
               <div class="grid">
@@ -159,7 +160,7 @@
           {% if spec.has_date %}<td>{{ r.payload.date or '—' }}</td>{% endif %}
           {% if spec.has_position %}<td>{{ r.payload.author_position or '—' }}</td>{% endif %}
           <td>{{ r.payload.count or 1 }}</td>
-          {% if spec.has_reference %}<td><small>{{ r.payload.doi or r.payload.url or '—' }}</small></td>{% endif %}
+          {% if show_ref %}<td><small>{% if r.payload.url %}<a href="{{ r.payload.url }}" target="_blank">lien</a>{% else %}{{ r.payload.doi or '—' }}{% endif %}</small></td>{% endif %}
           <td>
             {% if r.attachment %}
               <a href="/fichiers/justificatifs/{{ r.id }}" target="_blank">PDF</a>
@@ -217,10 +218,10 @@
           {% endif %}
           <label>Quantité <input type="number" name="quantite" min="1" value="1"></label>
         </div>
-        {% if spec.has_reference %}
+        {% if show_ref %}
         <div class="grid">
-          <label>DOI <input name="doi" placeholder="10.xxxx/…"></label>
-          <label>URL <input name="url" type="url" placeholder="https://…"></label>
+          {% if spec.has_reference %}<label>DOI <input name="doi" placeholder="10.xxxx/…"></label>{% endif %}
+          <label>{{ spec.url_label or 'URL' }} <input name="url" type="url" placeholder="https://…"></label>
         </div>
         {% endif %}
         {% if spec.has_leader %}

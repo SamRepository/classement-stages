@@ -1,29 +1,30 @@
 <div id="score-box" {% if oob %}hx-swap-oob="true"{% endif %}>
-  <article>
-    <h3>Score provisoire</h3>
-    <p class="score-total">{{ breakdown.total|points }} pts</p>
-    <table>
-      <tbody>
-      {% for line in breakdown.lines %}
-        {% if line.points or line.warnings %}
-        <tr><td><small>{{ line.label }}</small></td>
-            <td style="text-align:right">{{ line.points|points }}</td></tr>
+  {% set warnings = [] %}
+  {% for line in breakdown.lines %}{% for w in line.warnings %}{% set _ = warnings.append(w) %}{% endfor %}{% endfor %}
+  {% set toutes = warnings + breakdown.warnings %}
+  <div class="score-bar">
+    <span class="score-total">Score provisoire&nbsp;: {{ breakdown.total|points }} pts</span>
+    <details class="score-details">
+      <summary>Détail du calcul{% if toutes %} · <span class="warning">{{ toutes|length }} observation(s)</span>{% endif %}</summary>
+      <div class="score-panel">
+        <table>
+          <tbody>
+          {% for line in breakdown.lines %}
+            {% if line.points or line.warnings %}
+            <tr><td><small>{{ line.label }}</small></td>
+                <td style="text-align:right">{{ line.points|points }}</td></tr>
+            {% endif %}
+          {% endfor %}
+          </tbody>
+        </table>
+        {% if toutes %}
+        <ul>
+          {% for w in toutes %}<li class="warning">{{ w }}</li>{% endfor %}
+        </ul>
         {% endif %}
-      {% endfor %}
-      </tbody>
-    </table>
-    {% set warnings = [] %}
-    {% for line in breakdown.lines %}{% for w in line.warnings %}{% set _ = warnings.append(w) %}{% endfor %}{% endfor %}
-    {% if warnings or breakdown.warnings %}
-    <details>
-      <summary class="warning">{{ (warnings + breakdown.warnings)|length }} observation(s)</summary>
-      <ul>
-        {% for w in breakdown.warnings %}<li class="warning">{{ w }}</li>{% endfor %}
-        {% for w in warnings %}<li class="warning">{{ w }}</li>{% endfor %}
-      </ul>
+        <small>Score indicatif calculé à partir de vos déclarations. Le score final est arrêté
+        par la commission après vérification des justificatifs.</small>
+      </div>
     </details>
-    {% endif %}
-    <small>Score indicatif calculé à partir de vos déclarations. Le score final est arrêté
-    par la commission après vérification des justificatifs.</small>
-  </article>
+  </div>
 </div>

@@ -87,6 +87,17 @@ Point restant ouvert :
 
 - Les critères d'égalité (tie-breaking) ne sont pas définis par l'arrêté.
 
+## Évolutions post-validation
+
+- **u3 (14/06/2026, décision commission)** : `prix_distinctions` (10 pts) et
+  `encadrement_projet_labelise` (5 pts) passent de `fixed` à `count` avec
+  `points_per_unit = cap_points = forfait`. Objectif : permettre la saisie de
+  **plusieurs** prix/brevets ou projets labellisés (chacun avec son justificatif),
+  **sans changer le score** — le plafond ramène le total au forfait initial. Non
+  propagé à u1/u4 (libellés/points différents, hors campagne déployée).
+- **u3** : `elearning` reçoit `url_label_fr` (« Lien du cours (Moodle) ») — champ
+  d'affichage seulement, aucun impact sur le barème.
+
 ## Reproduction de la transcription
 
 Le PDF est un scan sans couche texte. Les pages ont été rendues en PNG (200 et 300 DPI,

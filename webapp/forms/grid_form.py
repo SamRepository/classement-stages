@@ -97,6 +97,9 @@ def build_form_spec(grid: dict) -> list[dict]:
                 section["has_reference"] = any(
                     i["reference_recommended"] for i in section["items"]
                 )
+                # Champ URL dédié (ex. lien Moodle du cours en ligne) : libellé venant
+                # de la grille, indépendant du DOI.
+                section["url_label"] = criterion.get("url_label_fr")
         else:
             section["widget"] = "inconnu"
         sections.append(section)

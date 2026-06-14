@@ -20,3 +20,17 @@ def test_doi_url_seulement_publications_communications():
     assert _section(grid, "projet_international")["has_reference"] is False
     assert _section(grid, "encadrement_doctoral")["has_reference"] is False
     assert _section(grid, "cours_tronc_commun")["has_reference"] is False
+
+
+def test_prix_et_encadrement_multi_lignes():
+    """Prix et encadrement projet labellisé : saisie multi-lignes (count_detail)."""
+    grid = "u3-residences-scientifiques"
+    assert _section(grid, "prix_distinctions")["widget"] == "count_detail"
+    assert _section(grid, "encadrement_projet_labelise")["widget"] == "count_detail"
+
+
+def test_elearning_url_moodle():
+    """Cours en ligne : champ URL dédié (Moodle), sans DOI."""
+    s = _section("u3-residences-scientifiques", "elearning")
+    assert s["url_label"] == "Lien du cours (Moodle)"
+    assert s["has_reference"] is False

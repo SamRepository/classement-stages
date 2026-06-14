@@ -44,21 +44,31 @@ button.supprimer { color: #b71c1c; border: 1px solid #b71c1c; }
 button.supprimer:hover { background: #b71c1c; color: #fff; }
 tr.edition td { background: #f3f7ff; }
 
-/* Page « Mon dossier » : contenu large + colonne de score étroite.
-   (L'ancien « .grid » moitié-moitié faisait déborder les tableaux larges
-   sous l'encadré du score, qui interceptait les clics — PDF, Modifier,
-   Supprimer devenaient inertes.) */
-.dossier-layout { display: grid; gap: 1rem; }
-@media (min-width: 992px) {
-  .dossier-layout { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
-}
+/* Page « Mon dossier » : contenu pleine largeur (les tableaux d'activités ont
+   toute la place) ; le score n'est plus une colonne latérale étroite mais une
+   barre épinglée en haut. */
+.dossier-content { width: 100%; }
 
-/* Tableaux d'activités : défilement horizontal au lieu de déborder la colonne. */
+/* Tableaux d'activités : défilement horizontal de secours si plus large que la page. */
 .table-wrap { overflow-x: auto; }
 
-/* Score */
-#score-box { position: sticky; top: 1rem; }
-.score-total { font-size: 1.6rem; font-weight: 700; }
+/* Barre de score : épinglée en haut, score bien en évidence, détail repliable
+   et défilant. Pleine largeur -> n'empiète pas sur les tableaux (pas de clics
+   interceptés comme avec l'ancienne colonne flottante). */
+#score-box {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--pico-background-color, #fff);
+  border-bottom: 2px solid #0b5ed7;
+  margin-bottom: 1.25rem;
+  padding: .5rem 0;
+}
+.score-bar { display: flex; align-items: baseline; gap: 1.25rem; flex-wrap: wrap; }
+.score-total { font-size: 1.5rem; font-weight: 800; color: #0b5ed7; }
+.score-details summary { cursor: pointer; }
+.score-panel { max-height: 55vh; overflow-y: auto; margin-top: .5rem; }
+.score-panel table { margin-bottom: .5rem; }
 
 /* Vue commission : deux colonnes (dossier | PDF) */
 .commission-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }

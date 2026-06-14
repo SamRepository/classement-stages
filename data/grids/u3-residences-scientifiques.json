@@ -28,7 +28,7 @@
       "formula": "3 - n",
       "variable": "n = nombre de bénéfices durant les 3 dernières années"
     },
-    { "id": "prix_distinctions", "label_ar": "جوائز دولية و/أو وطنية مرتبطة بإنجازات علمية، براءة اختراع", "label_fr": "Prix internationaux/nationaux liés à des réalisations scientifiques, brevet", "type": "fixed", "window": "after_last_benefit", "points": 10 },
+    { "id": "prix_distinctions", "label_ar": "جوائز دولية و/أو وطنية مرتبطة بإنجازات علمية، براءة اختراع", "label_fr": "Prix internationaux/nationaux liés à des réalisations scientifiques, brevet", "type": "count", "window": "after_last_benefit", "items": [{ "id": "prix", "label_fr": "Prix / brevet", "points_per_unit": 10, "cap_points": 10, "unit": "prix" }] },
     {
       "id": "publications",
       "label_ar": "نشر مقال بعد الاستفادة السابقة (يخضع لنفس شروط مناقشة الدكتوراه)؛ يجب تسمية المؤسسة في المقال المنشور",
@@ -57,7 +57,7 @@
       ]
     },
     { "id": "projet_international", "label_ar": "مشروع دولي (PRIMA، Erasmus+...الخ)", "label_fr": "Projet international", "type": "count", "items": [{ "id": "projet_intl", "points_per_unit": 10, "unit": "projet" }] },
-    { "id": "projet_national", "label_ar": "مشروع تطوير تكنولوجي مع شريك اجتماعي-اقتصادي / مشروع في إطار البرنامج الوطني للبحث PNR-PRFU", "label_fr": "Projet techno avec partenaire socio-économique / projet PNR-PRFU", "type": "count", "items": [{ "id": "projet_national", "points_per_unit": 5, "unit": "projet" }] },
+    { "id": "projet_national", "label_ar": "مشروع تطوير تكنولوجي مع شريك اجتماعي-اقتصادي / مشروع في إطار البرنامج الوطني للبحث PNR-PRFU", "label_fr": "Projet national techno avec partenaire socio-économique / projet PNR-PRFU", "type": "count", "items": [{ "id": "projet_national", "points_per_unit": 5, "unit": "projet" }] },
     {
       "id": "encadrement_doctoral",
       "label_ar": "الإشراف على أطروحات الدكتوراه",
@@ -71,7 +71,7 @@
       ]
     },
     { "id": "encadrement_arrete_1275", "label_ar": "الإشراف على طالب في إطار القرار الوزاري رقم 1275 المؤرخ في 27 سبتمبر 2022", "label_fr": "Encadrement arrêté 1275 (mémoire startup / brevet)", "type": "count", "items": [{ "id": "projet_1275", "points_per_unit": 2, "unit": "projet", "cap_units": 2 }] },
-    { "id": "encadrement_projet_labelise", "label_ar": "الإشراف على مشروع حصل على وسم لابل، مشروع مبتكر، مشروع مؤسسة ناشئة", "label_fr": "Encadrement projet labellisé / innovant / startup", "type": "fixed", "points": 5 },
+    { "id": "encadrement_projet_labelise", "label_ar": "الإشراف على مشروع حصل على وسم لابل، مشروع مبتكر، مشروع مؤسسة ناشئة", "label_fr": "Encadrement projet labellisé / innovant / startup", "type": "count", "items": [{ "id": "projet_labelise", "label_fr": "Projet labellisé / innovant / startup", "points_per_unit": 5, "cap_points": 5, "unit": "projet" }] },
     { "id": "encadrement_master", "label_ar": "تأطير طلبة الماستر", "label_fr": "Encadrement master", "type": "count", "window": "after_last_benefit", "items": [{ "id": "memoire_master", "points_per_unit": 1, "cap_points": 3 }] },
     { "id": "encadrement_licence", "label_ar": "تأطير طلبة الليسانس", "label_fr": "Encadrement licence", "type": "count", "window": "after_last_benefit", "items": [{ "id": "sujet_licence", "points_per_unit": 0.5, "cap_points": 3 }] },
     { "id": "cours_tronc_commun", "label_ar": "تدريس محاضرة في جذع مشترك", "label_fr": "Cours magistral en tronc commun", "type": "count", "items": [{ "id": "cours_tc", "points_per_unit": 4, "cap_units": 2 }] },
@@ -91,7 +91,7 @@
     { "id": "structures_accompagnement", "label_ar": "شهادة تثبت عمل داخل هيئات المرافقة", "label_fr": "Attestation de travail dans les structures d'accompagnement", "type": "count", "items": [{ "id": "attestation", "points_per_unit": 1, "cap_points": 2 }] },
     { "id": "citations_scopus", "label_ar": "اقتباسات Scopus للمؤسسة في المقال", "label_fr": "Citations Scopus de l'établissement (nombre depuis le dernier bénéfice + URL du profil Scopus / Google Scholar)", "type": "count", "window": "after_last_benefit", "excel": { "saisie_simple": true, "url_profil": true }, "items": [{ "id": "citation", "points_per_unit": 0.1 }] },
     { "id": "polycopie_pedagogique", "label_ar": "مطبوعة بيداغوجية فردية مصادق عليها", "label_fr": "Polycopié pédagogique individuel approuvé", "type": "fixed", "points": 3, "bonuses": [{ "condition": "en anglais", "points": 2 }, { "condition": "utilisé en enseignement (hors module d'anglais)", "points": 2 }] },
-    { "id": "elearning", "label_ar": "دروس بيداغوجية متوفرة على الخط (e-Learning)", "label_fr": "Cours en ligne", "type": "count", "uncapped": true, "rules": ["elearning_conditions"], "items": [{ "id": "cours", "label_fr": "Cours", "points_per_unit": 2 }, { "id": "td", "label_fr": "Travaux dirigés", "points_per_unit": 1 }, { "id": "tp", "label_fr": "Travaux pratiques", "points_per_unit": 1 }], "bonuses": [{ "condition": "support en anglais", "points": 2 }] },
+    { "id": "elearning", "label_ar": "دروس بيداغوجية متوفرة على الخط (e-Learning)", "label_fr": "Cours en ligne", "type": "count", "uncapped": true, "url_label_fr": "Lien du cours (Moodle)", "rules": ["elearning_conditions"], "items": [{ "id": "cours", "label_fr": "Cours", "points_per_unit": 2 }, { "id": "td", "label_fr": "Travaux dirigés", "points_per_unit": 1 }, { "id": "tp", "label_fr": "Travaux pratiques", "points_per_unit": 1 }], "bonuses": [{ "condition": "support en anglais", "points": 2 }] },
     { "id": "chapterbook", "label_ar": "Chapterbook محكم في قاعدة بيانات دولية", "label_fr": "Chapitre d'ouvrage international", "type": "fixed", "points": 5 },
     { "id": "livre_isbn", "label_ar": "كتاب محكم بيداغوجي/علمي برقم ISBN", "label_fr": "Livre évalué avec ISBN", "type": "fixed", "points": 5, "bonuses": [{ "condition": "en anglais", "points": 2 }] },
     {

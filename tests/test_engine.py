@@ -64,6 +64,21 @@ def test_encadrement_projet_labelise_forfaitaire(u3, shared):
     assert _line(b, "encadrement_projet_labelise").points == 5
 
 
+def test_citations_agregees_sans_avertissement_fenetre(u3, shared):
+    """Citations Scopus (saisie agrégée) : pas d'avertissement « non datée », même
+    avec un bénéfice antérieur — l'enseignant reporte déjà le nombre depuis le
+    dernier bénéfice, il n'y a pas de date par unité."""
+    candidate = {
+        "id": "X",
+        "benefits": [{"date": "2024-01-01", "platform_close_date": "2024-02-01"}],
+        "entries": {"citations_scopus": {"items": [{"item": "citation", "count": 120}]}},
+    }
+    b = score_candidate(u3, candidate, shared, CAMPAIGN)
+    line = _line(b, "citations_scopus")
+    assert line.points == pytest.approx(12.0)  # 120 × 0,1
+    assert not any("non datée" in w for w in line.warnings)
+
+
 def test_enum_rank(u1, shared):
     candidate = {"id": "X", "entries": {"rang_scientifique": {"value": "professeur"}}}
     b = score_candidate(u1, candidate, shared, CAMPAIGN)

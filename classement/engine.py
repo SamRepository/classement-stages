@@ -255,7 +255,14 @@ def _score_count(
         return line
     items_def = {i["id"]: i for i in criterion.get("items", [])}
     weighting_active = "author_position_weighting" in criterion.get("rules", [])
-    window_filter = criterion.get("window") == "after_last_benefit" and last_close
+    # La fenêtre est filtrée par date d'élément, sauf en saisie agrégée
+    # (`saisie_simple`, ex. citations Scopus) : l'enseignant reporte déjà un nombre
+    # « depuis le dernier bénéfice », il n'y a pas de date par unité à vérifier.
+    window_filter = (
+        criterion.get("window") == "after_last_benefit"
+        and last_close
+        and not criterion.get("excel", {}).get("saisie_simple")
+    )
 
     units: list[dict] = []  # une entrée par unité comptée
     bonus_points = 0.0

@@ -117,8 +117,20 @@ Le mot de passe admin généré s'affiche — **le noter immédiatement** (ou pa
    (`email, nom, …`) est aussi accepté.
 2. **Utilisateurs → Créer un compte** : les membres de la **commission**
    (rôle *commission*).
-3. **Bénéfices** : contrôle visuel de l'historique importé.
-4. **Campagne** : fixer la fenêtre d'ouverture/clôture de la saisie.
+3. **Bénéfices → Importer l'historique** : déposer le fichier produit par
+   `python scripts/extract_historique.py --source <export-sejours-odoo.xlsx>`
+   (feuille *Historique* : colonnes `email`, `date_mobilite`, `date_cloture`).
+   Le rattachement se fait **par e-mail** (idempotent) ; les lignes sans compte
+   correspondant sont listées (e-mails à réconcilier). Le script conserve les
+   séjours jusqu'à l'année de coupure (`--cutoff-year`, défaut 2025) et exclut
+   la session en cours. Sans historique disponible, le candidat peut saisir
+   `n` lui-même et la commission l'ajuste. Contrôle visuel possible en
+   sélectionnant un enseignant.
+4. **Campagne** : fixer la fenêtre d'ouverture/clôture de la saisie et choisir
+   le **repère de la fenêtre « après dernier bénéfice »** (activités) :
+   *clôture de plateforme (fin de session)* ou *date de mobilité (départ)* par
+   bénéfice, ou une **date de clôture uniforme** pour tous (ex. clôture de la
+   plateforme Odoo), prioritaire si renseignée.
 5. **Recette finale** : se connecter avec un compte enseignant réel, saisir un
    dossier complet avec quelques PDF, comparer le score provisoire au barème —
    puis distribuer les accès aux autres candidats.

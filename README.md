@@ -54,15 +54,22 @@ logique réglementaire dupliquée. Trois espaces :
 
 - **Enseignant** : connexion par e-mail (le même identifiant que le portail Odoo),
   formulaire généré depuis la grille JSON, une ligne par activité avec son **justificatif
-  PDF**, score provisoire en temps réel, soumission = dossier gelé ;
+  PDF**, **édition et suppression en place** des activités, score provisoire affiché en
+  barre épinglée, soumission = dossier gelé, **rang publié après le gel** ; si l'historique
+  des bénéfices n'est pas encore importé, possibilité de **saisir directement le nombre de
+  bénéfices `n`** (vérifié ensuite par la commission) ;
 - **Commission** : chaque élément déclaré face à son justificatif, **valider / rejeter
-  avec motif obligatoire** (art. 14-15), recalcul immédiat, classement avec ex aequo
-  signalés, **gel** (bloqué tant qu'un élément reste en attente, instantané d'audit en
-  base), exports PV / fiches / HTML ;
+  avec motif obligatoire** (art. 14-15), recalcul immédiat, **ajustement de `n`** sur le
+  critère de pénalité, classement avec ex aequo signalés, **simulation budgétaire**
+  (enveloppe, plafond billet, ordre de financement), **gel** (bloqué tant qu'un élément
+  reste en attente, instantané d'audit en base), exports PV / fiches / HTML ;
 - **Admin** : import des comptes et dossiers **directement depuis `dossier-u3.xlsx`**
   (produit par [scripts/import_odoo.py](scripts/import_odoo.py) : comptes, mobilité et
-  historique des bénéfices en une opération idempotente), gestion de la campagne,
-  réouverture de dossiers.
+  historique des bénéfices en une opération idempotente), **import dédié de l'historique
+  des bénéfices** (feuille « Historique » rattachée par e-mail, produite par
+  [scripts/extract_historique.py](scripts/extract_historique.py)), réglage du **repère de
+  la fenêtre « après dernier bénéfice »** (clôture de plateforme, date de mobilité, ou
+  date de clôture uniforme), gestion de la campagne, réouverture de dossiers.
 
 Démarrage local (SQLite par défaut) :
 
@@ -300,7 +307,10 @@ Excel/JSON, exports PV/fiches/HTML), plus l'application web
 de critère, application des rejets avec trace, workflow brouillon/soumis/gelé,
 permissions par rôle, uploads (octets magiques, taille), import de comptes, classement,
 gel, exports, simulation budgétaire commission, changement de mot de passe, pages
-d'erreur en français et publication du rang à l'enseignant après le gel.
+d'erreur en français, publication du rang à l'enseignant après le gel, édition en place
+des activités, saisie/ajustement du nombre de bénéfices `n`, import de l'historique des
+bénéfices par e-mail et repère de fenêtre configurable (clôture par bénéfice / date de
+mobilité / date uniforme).
 
 ## Structure du projet
 
@@ -313,7 +323,7 @@ data/institutions/   # profils d'établissement (enset-skikda + modèle _templat
 docs/decret_loi/     # arrêté source (scan) + JORA n° 71 (indemnités)
 docs/roadmap.md      # feuille de route ; guide-deploiement-coolify.md ; guide-excel.md
 examples/enset/      # modèles Excel u1-u4 ENSET + exemple rempli + JSON
-scripts/             # import Odoo, génération des exemples Excel, audit des grilles
+scripts/             # import Odoo, extraction de l'historique des bénéfices, exemples Excel, audit des grilles
 tests/               # suite pytest (moteur + tests/webapp/)
 Dockerfile           # image de production (migrations au démarrage) ; docker-compose.yml : dev
 ```

@@ -141,6 +141,23 @@ def _assemble_from_db(db: Session, dossier: Dossier, *, mode: Mode) -> Assembled
     return assemble_candidate(dossier, dossier.entries, benefits, grid, mode=mode)
 
 
+def _window_reference(candidate: dict, campaign: Campaign) -> str:
+    """Repère de la fenêtre « après dernier bénéfice » à appliquer au candidat.
+
+    Si la campagne fixe une **date de clôture uniforme**, elle sert de repère
+    unique pour tous les candidats ayant au moins un bénéfice (le moteur honore
+    ``last_benefit_platform_close_date`` en mode ``cloture``). Sinon on garde le
+    mode par bénéfice de la campagne (``cloture`` = clôture de plateforme,
+    ``mobilite`` = date de mobilité/départ).
+    """
+    if campaign.window_global_close_date and candidate.get("benefits"):
+        candidate["last_benefit_platform_close_date"] = (
+            campaign.window_global_close_date.isoformat()
+        )
+        return "cloture"
+    return campaign.window_reference
+
+
 def compute_score(
     db: Session, dossier: Dossier, *, mode: Mode
 ) -> tuple[ScoreBreakdown, list[dict]]:
@@ -152,7 +169,7 @@ def compute_score(
         assembled.candidate,
         get_shared_rules(),
         campaign.campaign_date,
-        campaign.window_reference,
+        _window_reference(assembled.candidate, campaign),
     )
     return breakdown, assembled.exclusions
 
@@ -193,7 +210,7 @@ def compute_ranking(
             assembled.candidate,
             get_shared_rules(),
             campaign.campaign_date,
-            campaign.window_reference,
+            _window_reference(assembled.candidate, campaign),
         )
         candidates.append(assembled.candidate)
         breakdowns.append(breakdown)

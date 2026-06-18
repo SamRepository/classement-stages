@@ -109,6 +109,47 @@ def test_benefices_ajout_suppression(client, db_session, campaign, admin, enseig
     assert db_session.scalar(select(Benefit)) is None
 
 
+def test_import_benefices_par_email(client, db_session, campaign, admin, enseignant):
+    login(client, "admin@test.dz")
+    csv = b"email,date,cloture\nenseignant@test.dz,2024-05-10,2024-06-30\n"
+    r = client.post("/admin/benefices/import",
+                    files={"fichier": ("hist.csv", csv, "text/csv")})
+    assert r.status_code == 200
+    assert "1 b" in r.text  # « 1 bénéfice(s) importé(s) »
+    benefits = list(db_session.scalars(select(Benefit).where(Benefit.user_id == enseignant.id)))
+    assert len(benefits) == 1
+    assert benefits[0].date.isoformat() == "2024-05-10"
+    assert benefits[0].platform_close_date.isoformat() == "2024-06-30"
+    # Idempotent : un réimport ne duplique pas.
+    r = client.post("/admin/benefices/import",
+                    files={"fichier": ("hist.csv", csv, "text/csv")})
+    assert "0 b" in r.text
+    assert len(list(db_session.scalars(select(Benefit)))) == 1
+
+
+def test_import_benefices_email_inconnu_ignore(client, db_session, campaign, admin):
+    login(client, "admin@test.dz")
+    csv = b"email,date\ninconnu@test.dz,2024-05-10\n"
+    r = client.post("/admin/benefices/import",
+                    files={"fichier": ("h.csv", csv, "text/csv")})
+    assert r.status_code == 200
+    assert "0 b" in r.text
+    assert "aucun compte" in r.text
+    assert db_session.scalar(select(Benefit)) is None
+
+
+def test_campagne_fenetre_uniforme(client, db_session, campaign, admin):
+    login(client, "admin@test.dz")
+    r = client.post("/admin/campagne", data={
+        "statut": "ouverte", "campaign_date": "2026-06-30",
+        "window_reference": "mobilite", "window_global_close_date": "2025-12-31",
+    })
+    assert r.status_code == 303
+    db_session.expire_all()
+    assert campaign.window_reference == "mobilite"
+    assert campaign.window_global_close_date.isoformat() == "2025-12-31"
+
+
 def test_cloture_campagne(client, db_session, campaign, admin):
     login(client, "admin@test.dz")
     r = client.post("/admin/campagne", data={"statut": "cloturee",

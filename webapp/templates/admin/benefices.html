@@ -5,6 +5,30 @@
 <p><small>Ces données font foi : elles déterminent la pénalité « bénéfices antérieurs »
    (3 − n) et la fenêtre « après dernier bénéfice » de chaque candidat.</small></p>
 
+<article>
+  <h3>Importer l'historique (rattachement par e-mail)</h3>
+  <p><small>Classeur .xlsx (feuille « Historique ») ou .csv avec les colonnes
+     <strong>email</strong>, <strong>date</strong> (de mobilité) et, en option,
+     <strong>cloture</strong> (de plateforme). Idempotent : un bénéfice déjà présent
+     n'est pas dupliqué. Fichier produit par
+     <code>scripts/extract_historique.py</code>.</small></p>
+  <form method="post" action="/admin/benefices/import" enctype="multipart/form-data">
+    <div class="grid">
+      <input type="file" name="fichier" accept=".xlsx,.csv" required>
+      <button type="submit">Importer</button>
+    </div>
+  </form>
+  {% if import_count is not none %}
+  <p><mark>{{ import_count }} bénéfice(s) importé(s).</mark></p>
+  {% if import_messages %}
+  <details>
+    <summary>{{ import_messages|length }} ligne(s) ignorée(s)</summary>
+    <ul>{% for m in import_messages %}<li class="warning">{{ m }}</li>{% endfor %}</ul>
+  </details>
+  {% endif %}
+  {% endif %}
+</article>
+
 <form method="get" action="/admin/benefices">
   <label>Enseignant
     <select name="user_id" onchange="this.form.submit()">

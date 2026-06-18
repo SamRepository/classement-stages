@@ -12,6 +12,7 @@ import pytest
 from classement.engine import score_candidate
 from webapp.models import Benefit, Entry
 from webapp.services.scoring import (
+    _window_reference,
     assemble_candidate,
     compute_ranking,
     compute_score,
@@ -26,6 +27,27 @@ CAMPAIGN_DATE = date(2026, 6, 30)
 
 def _score_manual(candidate: dict):
     return score_candidate(GRID, candidate, RULES, CAMPAIGN_DATE, "cloture")
+
+
+def test_window_reference_uniforme(campaign):
+    """Date de clôture uniforme : repère unique pour les candidats ayant bénéficié."""
+    campaign.window_global_close_date = date(2025, 12, 31)
+    avec = {"benefits": [{"date": "2024-05-10"}]}
+    assert _window_reference(avec, campaign) == "cloture"
+    assert avec["last_benefit_platform_close_date"] == "2025-12-31"
+    # Sans bénéfice : pas de fenêtre imposée, on garde le mode de la campagne.
+    sans = {"benefits": []}
+    assert _window_reference(sans, campaign) == campaign.window_reference
+    assert "last_benefit_platform_close_date" not in sans
+
+
+def test_window_reference_par_benefice(campaign):
+    """Sans date uniforme : on garde le repère par bénéfice de la campagne."""
+    campaign.window_global_close_date = None
+    campaign.window_reference = "mobilite"
+    cand = {"benefits": [{"date": "2024-05-10"}]}
+    assert _window_reference(cand, campaign) == "mobilite"
+    assert "last_benefit_platform_close_date" not in cand
 
 
 def _add_entries(db, dossier, rows):

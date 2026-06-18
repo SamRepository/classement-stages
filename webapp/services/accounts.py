@@ -185,6 +185,85 @@ def import_accounts(
     return created, skipped
 
 
+def import_benefits(db: Session, filename: str, content: bytes) -> tuple[int, list[str]]:
+    """Import dédié de l'historique des bénéfices, **rattaché par e-mail**.
+
+    Lit la feuille « Historique » (ou la feuille active) d'un .xlsx, ou un .csv.
+    Colonnes reconnues (mot-clé, insensible casse/accents) : e-mail, date (de
+    mobilité), clôture (de plateforme). Les bénéfices sont rattachés à
+    l'utilisateur par e-mail (identifiant stable), indépendamment des références
+    de dossier. Idempotent : un bénéfice déjà présent (même utilisateur, même
+    date) n'est pas dupliqué. Retourne (nb importés, messages).
+    """
+    name = (filename or "").lower()
+    if name.endswith(".xlsx"):
+        from openpyxl import load_workbook
+
+        wb = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+        ws = wb["Historique"] if "Historique" in wb.sheetnames else wb.active
+        rows = [list(row) for row in ws.iter_rows(values_only=True)]
+    elif name.endswith(".csv"):
+        text = content.decode("utf-8-sig", errors="replace")
+        dialect = csv.Sniffer().sniff(text.splitlines()[0], delimiters=";,\t")
+        rows = [list(r) for r in csv.reader(io.StringIO(text), dialect)]
+    else:
+        raise HTTPException(status_code=422, detail="Format attendu : .csv ou .xlsx.")
+
+    if len(rows) < 2:
+        raise HTTPException(status_code=422, detail="Fichier vide.")
+
+    header = [_normalize(str(h or "")) for h in rows[0]]
+    idx = {"email": None, "date": None, "cloture": None}
+    for i, h in enumerate(header):
+        if "mail" in h and idx["email"] is None:
+            idx["email"] = i
+        elif "cloture" in h and idx["cloture"] is None:
+            idx["cloture"] = i
+        elif "date" in h and idx["date"] is None:
+            idx["date"] = i
+    if idx["email"] is None or idx["date"] is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Colonnes « email » et « date » introuvables dans le fichier.",
+        )
+
+    def cell(row: list, key: str):
+        i = idx[key]
+        return row[i] if i is not None and i < len(row) else None
+
+    messages: list[str] = []
+    count = 0
+    for index, row in enumerate(rows[1:], start=2):
+        email = str(cell(row, "email") or "").strip().lower()
+        if not email:
+            continue
+        user = db.scalar(select(User).where(User.email == email))
+        if user is None:
+            messages.append(f"Ligne {index} : aucun compte pour {email!r}, ignorée.")
+            continue
+        date_mobilite = _coerce_date(cell(row, "date"))
+        if date_mobilite is None:
+            messages.append(f"Ligne {index} : date invalide pour {email!r}, ignorée.")
+            continue
+        deja = db.scalar(
+            select(Benefit).where(
+                Benefit.user_id == user.id, Benefit.date == date_mobilite
+            )
+        )
+        if deja:
+            continue
+        db.add(Benefit(
+            user_id=user.id,
+            date=date_mobilite,
+            platform_close_date=_coerce_date(cell(row, "cloture")),
+            source="import",
+            note="Import historique",
+        ))
+        count += 1
+    db.commit()
+    return count, messages
+
+
 def _import_benefits(
     db: Session, campaign: Campaign, history: list[list], messages: list[str]
 ) -> int:

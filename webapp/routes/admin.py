@@ -14,7 +14,7 @@ from webapp.auth import require_role
 from webapp.db import get_db
 from webapp.models import Benefit, Dossier, User
 from webapp.security import generate_password, hash_password
-from webapp.services.accounts import import_accounts
+from webapp.services.accounts import import_accounts, import_benefits
 from webapp.services.dossier import get_campaign, log_event, reopen_dossier
 from webapp.templating import templates
 
@@ -110,6 +110,18 @@ def reinitialiser_motdepasse(
 # ---------------------------------------------------------------------------
 
 
+def _page_benefices(request: Request, db: Session, user: User, cible: User | None = None, **extra):
+    enseignants = list(
+        db.scalars(select(User).where(User.role == "enseignant").order_by(User.nom))
+    )
+    contexte = {
+        "user": user, "enseignants": enseignants, "cible": cible,
+        "benefits": cible.benefits if cible else [],
+        "import_count": None, "import_messages": [], **extra,
+    }
+    return templates.TemplateResponse(request, "admin/benefices.html", contexte)
+
+
 @router.get("/benefices")
 def benefices(
     request: Request,
@@ -117,16 +129,21 @@ def benefices(
     user: User = ADMIN,
     db: Session = Depends(get_db),
 ):
-    enseignants = list(
-        db.scalars(select(User).where(User.role == "enseignant").order_by(User.nom))
-    )
     cible = db.get(User, user_id) if user_id else None
-    return templates.TemplateResponse(
-        request,
-        "admin/benefices.html",
-        {"user": user, "enseignants": enseignants, "cible": cible,
-         "benefits": cible.benefits if cible else []},
-    )
+    return _page_benefices(request, db, user, cible)
+
+
+@router.post("/benefices/import")
+async def importer_benefices(request: Request, user: User = ADMIN, db: Session = Depends(get_db)):
+    form = await request.form()
+    fichier = form.get("fichier")
+    if not (isinstance(fichier, UploadFile) and fichier.filename):
+        raise HTTPException(status_code=422, detail="Aucun fichier fourni.")
+    count, messages = import_benefits(db, fichier.filename, await fichier.read())
+    log_event(db, user, "import_benefices",
+              detail=f"{fichier.filename} : {count} importé(s), {len(messages)} ignoré(s)")
+    db.commit()
+    return _page_benefices(request, db, user, import_count=count, import_messages=messages)
 
 
 @router.post("/benefices")
@@ -209,7 +226,22 @@ async def maj_campagne(request: Request, user: User = ADMIN, db: Session = Depen
     camp.date_ouverture = _dt("date_ouverture")
     camp.date_cloture = _dt("date_cloture")
     camp.statut = statut
-    log_event(db, user, "maj_campagne", detail=f"statut={statut}")
+
+    # Repère de la fenêtre « après dernier bénéfice » pour les activités.
+    wref = form.get("window_reference") or camp.window_reference
+    if wref not in ("cloture", "mobilite"):
+        raise HTTPException(status_code=422, detail=f"Repère de fenêtre inconnu : {wref!r}.")
+    camp.window_reference = wref
+    raw_global = (form.get("window_global_close_date") or "").strip()
+    if raw_global:
+        try:
+            camp.window_global_close_date = date.fromisoformat(raw_global)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Date de clôture uniforme invalide.")
+    else:
+        camp.window_global_close_date = None
+
+    log_event(db, user, "maj_campagne", detail=f"statut={statut} fenetre={wref}")
     db.commit()
     return RedirectResponse("/admin/campagne", status_code=303)
 

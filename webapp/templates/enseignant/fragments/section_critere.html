@@ -88,9 +88,30 @@
     </form>
 
   {% elif spec.widget == 'formula' %}
-    <p><em>Calculé automatiquement</em> : {{ spec.variable or spec.formula }}.
-       Le moteur applique la formule <code>{{ spec.formula }}</code> à partir de votre
-       historique de mobilités (voir « Historique » ci-dessus).</p>
+    <p><em>Normalement calculé automatiquement</em> à partir de votre historique de
+       mobilités (section « Historique » ci-dessus), via la formule
+       <code>{{ spec.formula }}</code>. {{ spec.variable }}.</p>
+    {% if editable %}
+    <form hx-post="/mon-dossier/entrees/{{ spec.criterion_id }}" hx-target="#section-{{ spec.criterion_id }}"
+          hx-swap="outerHTML" hx-encoding="multipart/form-data">
+      <p><small>Si votre historique n'est pas encore enregistré par l'administration, saisissez
+         directement la valeur ci-dessous : elle sera <strong>vérifiée et ajustée si besoin par la
+         commission</strong>. Laissez vide pour conserver le calcul automatique.</small></p>
+      <label>n — {{ spec.variable }}
+        <input type="number" name="n" min="0" step="1"
+               value="{% if entry and 'n' in entry.payload %}{{ entry.payload.n }}{% endif %}">
+      </label>
+      {% if spec.needs_N %}
+      <label>N <input type="number" name="N" min="0" step="1"
+                      value="{% if entry and 'N' in entry.payload %}{{ entry.payload.N }}{% endif %}"></label>
+      {% endif %}
+      <button type="submit">Enregistrer</button>
+    </form>
+    {% if entry and 'n' in entry.payload %}
+    <p><small class="warning">Valeur saisie : n = {{ entry.payload.n }}{% if entry and 'N' in entry.payload %}, N = {{ entry.payload.N }}{% endif %}
+       (remplace le calcul automatique ; videz le champ et enregistrez pour revenir à l'historique).</small></p>
+    {% endif %}
+    {% endif %}
 
   {% elif spec.widget == 'manual' %}
     <p><em>Apprécié par la commission</em> :

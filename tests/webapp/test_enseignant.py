@@ -175,6 +175,31 @@ def test_annulation_edition_rerend_section(client, db_session, campaign, enseign
     assert "section-publications" in r.text
 
 
+def test_saisie_n_formule_et_retour_auto(client, db_session, campaign, enseignant):
+    """Le candidat peut saisir n directement (faute d'historique) ; champ vide = auto."""
+    login(client, "enseignant@test.dz")
+    client.get("/mon-dossier")
+    r = client.post("/mon-dossier/entrees/penalite_beneficies_3ans", data={"n": "2"})
+    assert r.status_code == 200
+    entry = db_session.scalar(
+        select(Entry).where(Entry.criterion_id == "penalite_beneficies_3ans")
+    )
+    assert entry.payload == {"n": 2}
+    # Champ vide => suppression de l'entrée => retour au calcul automatique.
+    r = client.post("/mon-dossier/entrees/penalite_beneficies_3ans", data={"n": ""})
+    assert r.status_code == 200
+    assert db_session.scalar(
+        select(Entry).where(Entry.criterion_id == "penalite_beneficies_3ans")
+    ) is None
+
+
+def test_n_formule_negatif_refuse(client, db_session, campaign, enseignant):
+    login(client, "enseignant@test.dz")
+    client.get("/mon-dossier")
+    r = client.post("/mon-dossier/entrees/penalite_beneficies_3ans", data={"n": "-1"})
+    assert r.status_code == 422
+
+
 def test_soumission_gele_les_ecritures(client, db_session, campaign, enseignant):
     login(client, "enseignant@test.dz")
     client.get("/mon-dossier")

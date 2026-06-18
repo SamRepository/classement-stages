@@ -57,12 +57,15 @@ def _render_score(request: Request, db: Session, dossier: Dossier, *, oob: bool)
 def _render_element(request: Request, db: Session, entry: Entry, *, with_score: bool) -> HTMLResponse:
     grid = get_grid(entry.dossier.campaign.grid_id)
     labels: dict[str, str] = {}
+    is_formula = False
     for spec in build_form_spec(grid):
         if spec["criterion_id"] == entry.criterion_id:
             labels = {i["id"]: i["label"] for i in spec.get("items", [])}
+            is_formula = spec["widget"] == "formula"
             break
     html = templates.get_template("commission/fragments/element.html").render(
-        request=request, e=entry, labels=labels, decidable=_decidable(entry.dossier)
+        request=request, e=entry, labels=labels, decidable=_decidable(entry.dossier),
+        is_formula=is_formula,
     )
     if with_score:
         html += _render_score(request, db, entry.dossier, oob=True)
@@ -179,6 +182,71 @@ async def decision(
     log_event(db, user, f"decision_{statut}", entry.dossier,
               detail=f"entry={entry.id} {entry.criterion_id}/{entry.item_id or '-'}"
                      + (f" motif={motif}" if motif else ""))
+    db.commit()
+    db.refresh(entry)
+    return _render_element(request, db, entry, with_score=True)
+
+
+@router.post("/entrees/{entry_id}/ajuster")
+async def ajuster_formule(
+    entry_id: int,
+    request: Request,
+    user: User = COMMISSION,
+    db: Session = Depends(get_db),
+):
+    """Ajuste la valeur n (et N) d'un critère formule, puis la valide.
+
+    Sert au premier exercice : le candidat saisit n (faute d'historique Odoo),
+    la commission le vérifie et le corrige. Champ vide => n supprimé => retour
+    au calcul automatique depuis l'historique des bénéfices.
+    """
+    entry = db.get(Entry, entry_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Élément introuvable.")
+    if not _decidable(entry.dossier):
+        raise HTTPException(
+            status_code=403,
+            detail="Ajustement impossible : dossier non soumis ou classement gelé.",
+        )
+    grid = get_grid(entry.dossier.campaign.grid_id)
+    criterion = next((c for c in grid.get("criteria", []) if c["id"] == entry.criterion_id), None)
+    if criterion is None or criterion.get("type") != "formula":
+        raise HTTPException(status_code=422, detail="Ce critère n'est pas une formule.")
+
+    form = await request.form()
+    payload = dict(entry.payload or {})
+
+    def _int_field(name: str) -> int | None:
+        raw = form.get(name)
+        if raw is None or not str(raw).strip():
+            return None
+        try:
+            value = int(str(raw).strip())
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"{name} doit être un entier.")
+        if value < 0:
+            raise HTTPException(status_code=422, detail=f"{name} doit être ≥ 0.")
+        return value
+
+    n = _int_field("n")
+    if n is None:
+        payload.pop("n", None)
+    else:
+        payload["n"] = n
+    if "N" in (criterion.get("formula") or ""):
+        big_n = _int_field("N")
+        if big_n is None:
+            payload.pop("N", None)
+        else:
+            payload["N"] = big_n
+
+    entry.payload = payload
+    entry.statut = "valide"
+    entry.decided_by = user.id
+    entry.decided_at = datetime.now(timezone.utc)
+    entry.decision_motif = None
+    log_event(db, user, "ajustement_formule", entry.dossier,
+              detail=f"entry={entry.id} {entry.criterion_id} n={payload.get('n', 'auto')}")
     db.commit()
     db.refresh(entry)
     return _render_element(request, db, entry, with_score=True)

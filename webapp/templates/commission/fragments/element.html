@@ -8,6 +8,7 @@
       {% if e.payload.applies %}déclaré concerné{% if e.payload.bonuses %} (bonus {{ e.payload.bonuses|join(', ') }}){% endif %} · {% endif %}
       {% if e.payload.points is defined %}{{ e.payload.points }} pts déclarés · {% endif %}
       {% if e.payload.count is defined %}quantité : {{ e.payload.count }} · {% endif %}
+      {% if 'n' in e.payload %}n saisi : {{ e.payload.n }}{% if 'N' in e.payload %}, N : {{ e.payload.N }}{% endif %} · {% endif %}
       {% if e.payload.date %}date : {{ e.payload.date }} · {% endif %}
       {% if e.payload.author_position %}position d'auteur : {{ e.payload.author_position }} · {% endif %}
       {% if e.payload.leader_count %}porteur ×{{ e.payload.leader_count }} · {% endif %}
@@ -45,5 +46,17 @@
     </form>
     {% endif %}
   </div>
+  {% if is_formula %}
+  <details>
+    <summary role="button" class="secondary outline">Ajuster n…</summary>
+    <form hx-post="/commission/entrees/{{ e.id }}/ajuster" hx-target="#element-{{ e.id }}" hx-swap="outerHTML">
+      <label>n (corrige la valeur saisie ; vide = calcul automatique depuis l'historique)
+        <input type="number" name="n" min="0" step="1"
+               value="{% if 'n' in e.payload %}{{ e.payload.n }}{% endif %}">
+      </label>
+      <button type="submit" class="secondary">Enregistrer et valider</button>
+    </form>
+  </details>
+  {% endif %}
   {% endif %}
 </div>

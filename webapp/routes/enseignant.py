@@ -26,7 +26,7 @@ from webapp.templating import templates
 
 router = APIRouter(prefix="/mon-dossier")
 
-SINGLE_WIDGETS = {"enum", "fixed", "fixed_cap", "capped", "count_simple"}
+SINGLE_WIDGETS = {"enum", "fixed", "fixed_cap", "capped", "count_simple", "formula"}
 
 
 def _context(db: Session, user: User):
@@ -203,6 +203,23 @@ def _single_payload(spec: dict, form) -> tuple[dict | None, str | None]:
         if url:
             payload["url"] = url
         return payload, spec["item_id"]
+    if widget == "formula":
+        # Saisie directe de n (et N si la formule en a besoin), en l'absence
+        # d'historique des bénéfices. Vide => suppression => calcul automatique.
+        raw_n = form.get("n")
+        if raw_n is None or not str(raw_n).strip():
+            return None, None
+        n = _to_int(raw_n)
+        if n < 0:
+            raise HTTPException(status_code=422, detail="n doit être ≥ 0.")
+        payload = {"n": n}
+        if spec.get("needs_N"):
+            big_n = _to_int(form.get("N"))
+            if big_n is not None:
+                if big_n < 0:
+                    raise HTTPException(status_code=422, detail="N doit être ≥ 0.")
+                payload["N"] = big_n
+        return payload, None
     raise HTTPException(status_code=422, detail=f"Saisie non supportée pour {widget!r}.")
 
 

@@ -80,6 +80,50 @@ def test_tout_valider(client, db_session, campaign, dossier_soumis, membre_commi
     assert statuts == {"valide"}
 
 
+def test_ajuster_n_formule(client, db_session, campaign, dossier, membre_commission):
+    """La commission corrige le n saisi par le candidat et le valide."""
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="penalite_beneficies_3ans",
+                         payload={"n": 0}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "commission@test.dz")
+    entry = db_session.scalar(
+        select(Entry).where(Entry.criterion_id == "penalite_beneficies_3ans")
+    )
+    r = client.post(f"/commission/entrees/{entry.id}/ajuster", data={"n": "2"})
+    assert r.status_code == 200
+    db_session.refresh(entry)
+    assert entry.payload["n"] == 2
+    assert entry.statut == "valide"
+    assert entry.decided_by == membre_commission.id
+
+
+def test_ajuster_n_vide_revient_auto(client, db_session, campaign, dossier, membre_commission):
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="penalite_beneficies_3ans",
+                         payload={"n": 5}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "commission@test.dz")
+    entry = db_session.scalar(
+        select(Entry).where(Entry.criterion_id == "penalite_beneficies_3ans")
+    )
+    r = client.post(f"/commission/entrees/{entry.id}/ajuster", data={"n": ""})
+    assert r.status_code == 200
+    db_session.refresh(entry)
+    assert "n" not in entry.payload  # calcul automatique restauré
+
+
+def test_ajuster_refuse_critere_non_formule(client, db_session, campaign, dossier, membre_commission):
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="rang_scientifique",
+                         payload={"value": "professeur"}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "commission@test.dz")
+    entry = db_session.scalar(select(Entry).where(Entry.criterion_id == "rang_scientifique"))
+    r = client.post(f"/commission/entrees/{entry.id}/ajuster", data={"n": "2"})
+    assert r.status_code == 422
+
+
 def test_decision_sur_brouillon_refusee(client, db_session, campaign, dossier, membre_commission):
     db_session.add(Entry(dossier_id=dossier.id, criterion_id="rang_scientifique",
                          payload={"value": "mca"}))

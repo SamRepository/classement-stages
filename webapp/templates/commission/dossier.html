@@ -32,7 +32,7 @@
       <h3>{{ section.spec.label }}</h3>
       {% if section.rows %}
         {% for e in section.rows %}
-          {% with labels = section.labels, decidable = decidable %}
+          {% with labels = section.labels, decidable = decidable, is_formula = (section.spec.widget == 'formula') %}
             {% include "commission/fragments/element.html" %}
           {% endwith %}
         {% endfor %}

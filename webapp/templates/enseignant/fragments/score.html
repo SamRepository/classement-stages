@@ -7,12 +7,19 @@
     <details class="score-details">
       <summary>Détail du calcul{% if toutes %} · <span class="warning">{{ toutes|length }} observation(s)</span>{% endif %}</summary>
       <div class="score-panel">
+        {% set formula_ids = formula_ids|default([]) %}
         <table>
           <tbody>
           {% for line in breakdown.lines %}
-            {% if line.points or line.warnings %}
-            <tr><td><small>{{ line.label }}</small></td>
-                <td style="text-align:right">{{ line.points|points }}</td></tr>
+            {% if line.points or line.warnings or line.criterion_id in formula_ids %}
+            <tr>
+              <td><small>{{ line.label }}</small>
+                {% if line.criterion_id in formula_ids and line.details %}
+                <br><small><em>{{ line.details|join(' · ') }}</em></small>
+                {% endif %}
+              </td>
+              <td style="text-align:right">{{ line.points|points }}</td>
+            </tr>
             {% endif %}
           {% endfor %}
           </tbody>

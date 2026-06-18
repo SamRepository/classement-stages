@@ -30,6 +30,7 @@
       </label>
       <button type="submit">Enregistrer</button>
       {% endif %}
+      {% include "enseignant/fragments/justif_link.html" %}
     </form>
 
   {% elif spec.widget == 'fixed' %}
@@ -53,6 +54,7 @@
       </label>
       <button type="submit">Enregistrer</button>
       {% endif %}
+      {% include "enseignant/fragments/justif_link.html" %}
     </form>
 
   {% elif spec.widget in ('fixed_cap', 'capped') %}
@@ -68,6 +70,7 @@
       </label>
       <button type="submit">Enregistrer</button>
       {% endif %}
+      {% include "enseignant/fragments/justif_link.html" %}
     </form>
 
   {% elif spec.widget == 'count_simple' %}

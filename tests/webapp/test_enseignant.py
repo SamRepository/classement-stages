@@ -200,6 +200,31 @@ def test_n_formule_negatif_refuse(client, db_session, campaign, enseignant):
     assert r.status_code == 422
 
 
+def test_score_affiche_benefices_anterieurs(client, db_session, campaign, enseignant):
+    """La ligne « Bénéfices antérieurs » figure dans le détail même à 0 pt, avec n."""
+    login(client, "enseignant@test.dz")
+    client.get("/mon-dossier")
+    client.post("/mon-dossier/entrees/penalite_beneficies_3ans", data={"n": "3"})
+    r = client.get("/mon-dossier/score")
+    assert "Bénéfices antérieurs" in r.text  # affichée même si 3 − 3 = 0 pt
+    assert "n = 3" in r.text                  # la valeur de n est visible
+
+
+def test_justificatif_lien_apres_upload_single(client, db_session, campaign, enseignant, upload_dir):
+    """Critère à entrée unique (rang) : confirmation + lien PDF après dépôt."""
+    login(client, "enseignant@test.dz")
+    client.get("/mon-dossier")
+    r = client.post(
+        "/mon-dossier/entrees/rang_scientifique",
+        data={"value": "professeur"},
+        files={"fichier": ("rang.pdf", PDF_BYTES, "application/pdf")},
+    )
+    assert r.status_code == 200
+    assert "Justificatif déposé" in r.text
+    entry = db_session.scalar(select(Entry).where(Entry.criterion_id == "rang_scientifique"))
+    assert f"/fichiers/justificatifs/{entry.id}" in r.text
+
+
 def test_soumission_gele_les_ecritures(client, db_session, campaign, enseignant):
     login(client, "enseignant@test.dz")
     client.get("/mon-dossier")

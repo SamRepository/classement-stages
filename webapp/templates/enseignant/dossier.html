@@ -85,7 +85,12 @@ il est en cours d'examen et ne peut plus être modifié. Pour toute correction, 
       des relations extérieures.</small>
     </article>
 
-    {% for section in sections %}
+    {# Critères « formule » (pénalité de bénéfices) : juste après l'historique, dont ils découlent #}
+    {% for section in sections if section.spec.widget == 'formula' %}
+      {% include "enseignant/fragments/section_critere.html" %}
+    {% endfor %}
+
+    {% for section in sections if section.spec.widget != 'formula' %}
       {% include "enseignant/fragments/section_critere.html" %}
     {% endfor %}
 

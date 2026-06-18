@@ -55,8 +55,12 @@ def _find_section(dossier: Dossier, grid: dict, criterion_id: str) -> dict:
 
 def _render_score(request: Request, db: Session, dossier: Dossier, *, oob: bool) -> str:
     breakdown, _ = compute_score(db, dossier, mode="declare")
+    grid = get_grid(dossier.campaign.grid_id)
+    # Critères « formule » (pénalité de bénéfices) : toujours affichés dans le détail,
+    # même à 0 point, avec le n et le calcul.
+    formula_ids = {c["id"] for c in grid.get("criteria", []) if c.get("type") == "formula"}
     return templates.get_template("enseignant/fragments/score.html").render(
-        request=request, breakdown=breakdown, oob=oob
+        request=request, breakdown=breakdown, oob=oob, formula_ids=formula_ids
     )
 
 

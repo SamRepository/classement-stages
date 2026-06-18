@@ -53,7 +53,7 @@ au pont Odoo → application :
 
 Application **FastAPI + Jinja2/HTMX + SQLAlchemy/PostgreSQL** ([webapp/](../webapp/))
 réutilisant le paquet `classement` tel quel — aucune logique réglementaire dupliquée,
-le moteur est rappelé à chaque calcul. 77 tests dédiés (168 au total), dont la **parité**
+le moteur est rappelé à chaque calcul. 79 tests dédiés (170 au total), dont la **parité**
 dossier web ≡ dict moteur pour chaque type de critère.
 
 **Réalisé** :

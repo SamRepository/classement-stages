@@ -97,6 +97,9 @@ Point restant ouvert :
   propagé à u1/u4 (libellés/points différents, hors campagne déployée).
 - **u3** : `elearning` reçoit `url_label_fr` (« Lien du cours (Moodle) ») — champ
   d'affichage seulement, aucun impact sur le barème.
+- **u1, u3 (19/06/2026)** : libellé de `citations_scopus` raccourci à « Citations Scopus
+  de l'établissement (nombre depuis le dernier bénéfice) » — l'URL du profil se saisit
+  dans son propre champ, la mention était redondante. Sans impact sur le barème.
 
 ## Reproduction de la transcription
 

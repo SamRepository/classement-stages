@@ -9,11 +9,20 @@ from webapp.db import get_db
 from webapp.models import User
 
 
-def _redirect_to_login(request: Request) -> HTTPException:
+# Pages accessibles malgré un mot de passe temporaire (sinon : boucle de
+# redirection sur la page de changement, ou impossibilité de se déconnecter).
+_EXEMPT_CHANGEMENT = {"/mon-mot-de-passe", "/deconnexion"}
+
+
+def _redirect(request: Request, destination: str, *, status_code: int = 303) -> HTTPException:
     # Les requêtes HTMX reçoivent un en-tête de redirection côté client.
     if request.headers.get("HX-Request"):
-        return HTTPException(status_code=401, headers={"HX-Redirect": "/connexion"})
-    return HTTPException(status_code=303, headers={"Location": "/connexion"})
+        return HTTPException(status_code=401, headers={"HX-Redirect": destination})
+    return HTTPException(status_code=status_code, headers={"Location": destination})
+
+
+def _redirect_to_login(request: Request) -> HTTPException:
+    return _redirect(request, "/connexion")
 
 
 def current_user(
@@ -26,6 +35,9 @@ def current_user(
     if user is None or not user.actif:
         request.session.clear()
         raise _redirect_to_login(request)
+    # Mot de passe temporaire : tout est verrouillé tant qu'il n'est pas changé.
+    if user.must_change_password and request.url.path not in _EXEMPT_CHANGEMENT:
+        raise _redirect(request, "/mon-mot-de-passe")
     return user
 
 

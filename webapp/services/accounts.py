@@ -155,7 +155,8 @@ def import_accounts(
             continue
         password = generate_password()
         user = User(email=email, password_hash=hash_password(password),
-                    nom=nom or email.split("@")[0], prenom=cell("prenom"), role="enseignant")
+                    nom=nom or email.split("@")[0], prenom=cell("prenom"), role="enseignant",
+                    must_change_password=True)
         db.add(user)
         db.flush()
         departement = resolve_departement(cell("departement"))

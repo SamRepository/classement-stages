@@ -67,7 +67,8 @@ def logout(request: Request):
 @router.get("/mon-mot-de-passe")
 def password_form(request: Request, user: User = Depends(current_user)):
     return templates.TemplateResponse(
-        request, "mot_de_passe.html", {"user": user, "erreur": None, "succes": False}
+        request, "mot_de_passe.html",
+        {"user": user, "erreur": None, "succes": False, "force": user.must_change_password},
     )
 
 
@@ -91,14 +92,16 @@ def password_change(
         return templates.TemplateResponse(
             request,
             "mot_de_passe.html",
-            {"user": user, "erreur": erreur, "succes": False},
+            {"user": user, "erreur": erreur, "succes": False, "force": user.must_change_password},
             status_code=422,
         )
     user.password_hash = hash_password(nouveau)
+    user.must_change_password = False  # le mot de passe n'est plus temporaire
     log_event(db, user, "changement_mot_de_passe")
     db.commit()
     return templates.TemplateResponse(
-        request, "mot_de_passe.html", {"user": user, "erreur": None, "succes": True}
+        request, "mot_de_passe.html",
+        {"user": user, "erreur": None, "succes": True, "force": False},
     )
 
 

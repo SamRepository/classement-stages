@@ -3,6 +3,11 @@
 {% block contenu %}
 <article class="connexion">
   <h1>Changer mon mot de passe</h1>
+  {% if force and not succes %}
+  <p role="alert"><mark>Votre mot de passe est provisoire : choisissez-en un nouveau pour
+     accéder à l'application. Saisissez le mot de passe reçu par e-mail comme « mot de passe
+     actuel ».</mark></p>
+  {% endif %}
   {% if succes %}
   <p role="alert"><mark>Mot de passe modifié : utilisez-le dès votre prochaine connexion.</mark></p>
   {% endif %}

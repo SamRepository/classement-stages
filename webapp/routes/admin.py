@@ -16,6 +16,7 @@ from webapp.models import Benefit, Dossier, User
 from webapp.security import generate_password, hash_password
 from webapp.services.accounts import import_accounts, import_benefits
 from webapp.services.dossier import get_campaign, log_event, reopen_dossier
+from webapp.services.mailer import notify_new_accounts
 from webapp.templating import templates
 
 router = APIRouter(prefix="/admin")
@@ -25,7 +26,8 @@ ADMIN = Depends(require_role("admin"))
 
 def _page_utilisateurs(request: Request, db: Session, user: User, **extra):
     users = list(db.scalars(select(User).order_by(User.role, User.nom)))
-    contexte = {"user": user, "users": users, "nouveaux": [], "ignores": [], **extra}
+    contexte = {"user": user, "users": users, "nouveaux": [], "ignores": [],
+                "envoi": None, **extra}
     return templates.TemplateResponse(request, "admin/utilisateurs.html", contexte)
 
 
@@ -48,14 +50,14 @@ async def creer_utilisateur(request: Request, user: User = ADMIN, db: Session = 
         raise HTTPException(status_code=422, detail=f"{email} existe déjà.")
     password = generate_password()
     nouveau = User(email=email, password_hash=hash_password(password), nom=nom,
-                   prenom=(form.get("prenom") or "").strip(), role=role)
+                   prenom=(form.get("prenom") or "").strip(), role=role,
+                   must_change_password=True)
     db.add(nouveau)
     log_event(db, user, "creation_compte", detail=f"{email} ({role})")
     db.commit()
-    return _page_utilisateurs(
-        request, db, user,
-        nouveaux=[{"email": email, "nom": nom, "prenom": nouveau.prenom, "password": password}],
-    )
+    created = [{"email": email, "nom": nom, "prenom": nouveau.prenom, "password": password}]
+    envoi = notify_new_accounts(created)
+    return _page_utilisateurs(request, db, user, nouveaux=created, envoi=envoi)
 
 
 @router.post("/utilisateurs/import")
@@ -68,10 +70,12 @@ async def importer_utilisateurs(
         raise HTTPException(status_code=422, detail="Aucun fichier fourni.")
     campaign = get_campaign(db)
     created, skipped = import_accounts(db, campaign, fichier.filename, await fichier.read())
+    envoi = notify_new_accounts(created)
     log_event(db, user, "import_comptes",
-              detail=f"{fichier.filename} : {len(created)} créé(s), {len(skipped)} ignoré(s)")
+              detail=f"{fichier.filename} : {len(created)} créé(s), {len(skipped)} ignoré(s), "
+                     f"{envoi['envoyes']} e-mail(s) envoyé(s)")
     db.commit()
-    return _page_utilisateurs(request, db, user, nouveaux=created, ignores=skipped)
+    return _page_utilisateurs(request, db, user, nouveaux=created, ignores=skipped, envoi=envoi)
 
 
 @router.post("/utilisateurs/{user_id}/basculer-actif")
@@ -96,13 +100,13 @@ def reinitialiser_motdepasse(
         raise HTTPException(status_code=404)
     password = generate_password()
     cible.password_hash = hash_password(password)
+    cible.must_change_password = True
     log_event(db, user, "reinit_motdepasse", detail=cible.email)
     db.commit()
-    return _page_utilisateurs(
-        request, db, user,
-        nouveaux=[{"email": cible.email, "nom": cible.nom, "prenom": cible.prenom,
-                   "password": password}],
-    )
+    created = [{"email": cible.email, "nom": cible.nom, "prenom": cible.prenom,
+                "password": password}]
+    envoi = notify_new_accounts(created)
+    return _page_utilisateurs(request, db, user, nouveaux=created, envoi=envoi)
 
 
 # ---------------------------------------------------------------------------

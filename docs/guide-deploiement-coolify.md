@@ -63,9 +63,29 @@ Onglet **Environment Variables** :
 | `CAMPAIGN_INSTITUTION_ID` | `enset-skikda` |
 | `CAMPAIGN_DATE` | date de référence de la campagne, ex. `2026-06-30` |
 | `CAMPAIGN_WINDOW_REFERENCE` | `cloture` (ou `mobilite`, décision commission) |
+| `BASE_URL` | URL publique sans barre finale, ex. `https://stages.enset-skikda.dz` |
 
 `UPLOAD_DIR=/data/uploads` et `MAX_UPLOAD_MB=10` sont les valeurs par défaut
 du Dockerfile.
+
+### Envoi des identifiants par e-mail (optionnel)
+
+Pour que l'admin envoie les comptes par e-mail (sinon les mots de passe restent
+affichés dans l'admin, à communiquer à la main) :
+
+| Variable | Valeur |
+|---|---|
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_USER` | `stages@enset-skikda.dz` |
+| `SMTP_PASSWORD` | **mot de passe d'application** Google (16 car.), pas le mot de passe du compte |
+| `SMTP_FROM` | `stages@enset-skikda.dz` |
+| `SMTP_STARTTLS` | `1` |
+
+Le mot de passe d'application s'obtient sur la boîte Workspace après activation
+de la validation en 2 étapes (Compte Google → Sécurité → Mots de passe des
+applications). Tant que `SMTP_HOST`/`SMTP_USER`/`SMTP_PASSWORD` ne sont pas tous
+renseignés, l'application reste en mode hors-ligne (aucun envoi).
 
 ## Étape 5 — Volume persistant (justificatifs PDF)
 

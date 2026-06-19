@@ -6,13 +6,27 @@
 {% if nouveaux %}
 <article>
   <h3>Comptes créés / mots de passe réinitialisés</h3>
-  <p class="warning"><strong>Notez ces mots de passe maintenant</strong> : ils ne seront plus
-     affichés (communication individuelle à chaque intéressé).</p>
+  {% if envoi and envoi.configure %}
+    <p role="alert"><mark>{{ envoi.envoyes }} e-mail(s) envoyé(s) avec les identifiants.</mark>
+       {% if envoi.echecs %}<strong>{{ envoi.echecs }} échec(s)</strong> : communiquez
+       manuellement les mots de passe des lignes en échec ci-dessous.{% endif %}</p>
+  {% else %}
+    <p class="warning"><strong>Envoi e-mail non configuré</strong> : notez ces mots de passe
+       maintenant (ils ne seront plus affichés) et communiquez-les individuellement.</p>
+  {% endif %}
   <table>
-    <thead><tr><th>Email</th><th>Nom</th><th>Prénom</th><th>Mot de passe initial</th></tr></thead>
+    <thead><tr><th>Email</th><th>Nom</th><th>Prénom</th><th>Mot de passe initial</th><th>Envoi</th></tr></thead>
     <tbody>
       {% for n in nouveaux %}
-      <tr><td>{{ n.email }}</td><td>{{ n.nom }}</td><td>{{ n.prenom }}</td><td><code>{{ n.password }}</code></td></tr>
+      <tr>
+        <td>{{ n.email }}</td><td>{{ n.nom }}</td><td>{{ n.prenom }}</td>
+        <td><code>{{ n.password }}</code></td>
+        <td>
+          {% if n.envoye %}✓ envoyé
+          {% elif n.erreur %}<span title="{{ n.erreur }}">✗ échec</span>
+          {% else %}— manuel{% endif %}
+        </td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>

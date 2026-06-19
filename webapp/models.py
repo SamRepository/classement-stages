@@ -22,6 +22,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -72,6 +73,10 @@ class User(Base):
     prenom: Mapped[str] = mapped_column(String(120), default="")
     role: Mapped[str] = mapped_column(String(20), default="enseignant")
     actif: Mapped[bool] = mapped_column(default=True)
+    # Vrai pour un compte dont le mot de passe est temporaire (généré par
+    # l'admin et communiqué par e-mail) : la connexion force alors le changement.
+    # Faux par défaut → les comptes existants ne sont jamais perturbés.
+    must_change_password: Mapped[bool] = mapped_column(default=False, server_default=text("0"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     benefits: Mapped[list["Benefit"]] = relationship(

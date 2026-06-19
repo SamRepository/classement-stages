@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide de l'enseignant — Portail « Mon dossier »</title>
+<style>
+  :root{
+    --bleu:#1e40af; --bleu2:#3b82f6; --bleu-clair:#eff6ff;
+    --orange:#c2410c; --orange-clair:#fff7ed;
+    --vert:#047857; --vert-clair:#ecfdf5;
+    --ambre:#b45309; --ambre-clair:#fffbeb;
+    --gris:#475569; --gris-clair:#f1f5f9; --bord:#cbd5e1;
+    --texte:#1f2937;
+  }
+  *{box-sizing:border-box}
+  html{font-size:15px}
+  body{
+    font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--texte); line-height:1.6; margin:0; background:#f8fafc;
+  }
+  .page{
+    max-width:900px; margin:24px auto; background:#fff; padding:48px 56px;
+    box-shadow:0 1px 12px rgba(0,0,0,.08); border-radius:6px;
+  }
+  h1{font-size:2rem; color:var(--bleu); margin:.2em 0}
+  h2{font-size:1.5rem; color:var(--bleu); border-bottom:3px solid var(--bleu2);
+     padding-bottom:.25em; margin-top:2.2em}
+  h3{font-size:1.15rem; color:var(--bleu); margin-top:1.6em}
+  a{color:var(--bleu2)}
+  code{background:var(--gris-clair); padding:.1em .35em; border-radius:4px;
+       font-family:"Cascadia Code",Consolas,monospace; font-size:.9em}
+  /* Cartouche d'en-tête / pied imprimés */
+  .barre-outils{position:sticky; top:0; background:var(--bleu); color:#fff;
+     padding:10px 18px; display:flex; gap:14px; align-items:center;
+     justify-content:space-between; z-index:10}
+  .barre-outils button{background:#fff; color:var(--bleu); border:0;
+     padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer}
+  .barre-outils small{opacity:.85}
+  /* Couverture */
+  .couverture{text-align:center; padding:40px 0 28px; border-bottom:2px solid var(--bord)}
+  .couverture .sous{color:var(--gris); font-size:1.1rem}
+  .logo-ligne{color:var(--bleu2); font-weight:700; letter-spacing:.08em;
+     text-transform:uppercase; font-size:.85rem}
+  .refs{display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:24px}
+  .ref-carte{flex:1 1 280px; max-width:360px; border:1px solid var(--bord);
+     border-radius:8px; padding:16px; text-align:left; background:var(--bleu-clair)}
+  .ref-carte b{display:block; color:var(--bleu)}
+  /* Encadrés */
+  .note,.attention,.astuce,.etapes{border-radius:8px; padding:14px 18px; margin:18px 0}
+  .note{background:var(--bleu-clair); border-left:5px solid var(--bleu2)}
+  .attention{background:var(--orange-clair); border-left:5px solid var(--orange)}
+  .astuce{background:var(--vert-clair); border-left:5px solid var(--vert)}
+  .note b,.attention b,.astuce b{display:block; margin-bottom:.2em}
+  .attention b{color:var(--orange)} .astuce b{color:var(--vert)} .note b{color:var(--bleu)}
+  /* Étapes numérotées */
+  ol.etapes{counter-reset:etape; list-style:none; padding-left:0}
+  ol.etapes>li{counter-increment:etape; position:relative; padding:8px 0 8px 48px; margin:6px 0;
+     border-bottom:1px dashed var(--bord)}
+  ol.etapes>li:last-child{border-bottom:0}
+  ol.etapes>li::before{content:counter(etape); position:absolute; left:0; top:6px;
+     width:32px; height:32px; background:var(--bleu); color:#fff; border-radius:50%;
+     display:flex; align-items:center; justify-content:center; font-weight:700}
+  /* Emplacements de captures d'écran */
+  figure.capture{margin:18px 0; border:2px dashed var(--bleu2); border-radius:8px;
+     background:repeating-linear-gradient(45deg,#fff,#fff 12px,#f5f9ff 12px,#f5f9ff 24px);
+     overflow:hidden}
+  figure.capture img{display:block; width:100%; height:auto; background:#fff}
+  figure.capture figcaption{font-size:.85rem; color:var(--gris); padding:8px 12px;
+     background:#fff; border-top:1px dashed var(--bord)}
+  figure.capture figcaption .slot{color:var(--orange); font-weight:600}
+  .placeholder{display:flex; align-items:center; justify-content:center; min-height:170px;
+     color:var(--bleu2); font-weight:600; text-align:center; padding:20px}
+  /* Sommaire */
+  .sommaire{background:var(--gris-clair); border-radius:8px; padding:18px 28px}
+  .sommaire ol{margin:0; padding-left:1.2em}
+  .sommaire li{margin:.3em 0}
+  /* Tableaux */
+  table{border-collapse:collapse; width:100%; margin:14px 0; font-size:.95rem}
+  th,td{border:1px solid var(--bord); padding:8px 10px; text-align:left; vertical-align:top}
+  th{background:var(--bleu-clair); color:var(--bleu)}
+  .pilule{display:inline-block; background:var(--bleu); color:#fff; border-radius:12px;
+     padding:1px 10px; font-size:.8rem; font-weight:600}
+  .menu-demo{display:inline-block; border:1px solid var(--bord); border-radius:6px;
+     padding:3px 10px; margin:2px; background:#fff; font-size:.9rem}
+  footer{margin-top:40px; padding-top:18px; border-top:2px solid var(--bord);
+     color:var(--gris); font-size:.9rem}
+
+  @media print{
+    body{background:#fff}
+    .page{box-shadow:none; margin:0; max-width:none; padding:0 12mm}
+    .barre-outils{display:none}
+    h2{page-break-after:avoid} h3{page-break-after:avoid}
+    figure.capture,.note,.attention,.astuce,table{page-break-inside:avoid}
+    .saut-page{page-break-before:always}
+    a{color:var(--texte); text-decoration:none}
+  }
+  @page{margin:18mm 14mm; size:A4}
+</style>
+</head>
+<body>
+
+<div class="barre-outils">
+  <small>Guide de l'enseignant — Portail « Mon dossier »</small>
+  <button onclick="window.print()">🖨️ Imprimer / Exporter en PDF</button>
+</div>
+
+<div class="page">
+
+  <!-- ============ COUVERTURE ============ -->
+  <section class="couverture">
+    <div class="logo-ligne">ENSET-Skikda · Service des relations extérieures</div>
+    <h1>Guide de l'enseignant</h1>
+    <p class="sous">Portail <strong>« Mon dossier »</strong> — déposer et soumettre sa
+       candidature à la mobilité à l'étranger</p>
+    <p class="sous"><small>Arrêté MESRS n° 345 du 09/03/2026 · Application en phase
+       expérimentale</small></p>
+
+    <div class="refs">
+      <div class="ref-carte">
+        <b>📊 Grille de classement officielle</b>
+        <span>Le barème détaillé des points par critère.</span><br>
+        <a href="https://drive.google.com/file/d/1o6PBnoB3NsZdFtrZYZms8BraWm-lzXvG/view?usp=drivesdk"
+           target="_blank" rel="noopener">Ouvrir la grille (Google Drive)</a>
+      </div>
+      <div class="ref-carte">
+        <b>📜 Décret / arrêté officiel</b>
+        <span>Le texte réglementaire de référence (n° 345/2026).</span><br>
+        <a href="https://drive.google.com/file/d/1Asmp4RSE7bDlH7X_IPsmEwxAZyUZ3I6j/view?usp=drivesdk"
+           target="_blank" rel="noopener">Ouvrir l'arrêté (Google Drive)</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SOMMAIRE ============ -->
+  <h2>Sommaire</h2>
+  <div class="sommaire">
+    <ol>
+      <li><a href="#connexion">Se connecter au portail (authentification)</a></li>
+      <li><a href="#menus">Découvrir l'interface et les menus</a></li>
+      <li><a href="#motdepasse">Changer son mot de passe</a></li>
+      <li><a href="#dossier">Ouvrir « Mon dossier » et comprendre l'en-tête</a></li>
+      <li><a href="#infos">Renseigner les informations de mobilité</a></li>
+      <li><a href="#criteres">Saisir les différents critères</a></li>
+      <li><a href="#justificatifs">Joindre les justificatifs (PDF)</a></li>
+      <li><a href="#score">Suivre son score provisoire</a></li>
+      <li><a href="#soumettre">Soumettre son dossier <span class="pilule">étape clé</span></a></li>
+      <li><a href="#apres">Après la soumission &amp; résultat du classement</a></li>
+      <li><a href="#aide">Aide, contacts et références officielles</a></li>
+    </ol>
+  </div>
+
+  <div class="note">
+    <b>En bref</b>
+    Connectez-vous → complétez votre dossier critère par critère → joignez un
+    justificatif PDF pour chaque élément → vérifiez votre score provisoire →
+    <strong>soumettez</strong>. Tant que vous n'avez pas soumis, votre dossier reste
+    modifiable (statut <em>brouillon</em>).
+  </div>
+
+  <!-- ============ 1. CONNEXION ============ -->
+  <h2 id="connexion" class="saut-page">1. Se connecter au portail (authentification)</h2>
+  <p>Votre compte est créé par l'administration. Vous recevez une
+     <strong>adresse électronique</strong> et un <strong>mot de passe</strong> initial.</p>
+
+  <ol class="etapes">
+    <li>Ouvrez l'adresse du portail dans votre navigateur, puis la page
+        <strong>Connexion</strong>.</li>
+    <li>Saisissez votre <strong>adresse électronique</strong> (celle communiquée par
+        l'administration).</li>
+    <li>Saisissez votre <strong>mot de passe</strong>.</li>
+    <li>Cliquez sur <span class="menu-demo">Se connecter</span>.</li>
+  </ol>
+
+  <figure class="capture">
+    <img src="guide-assets/01-connexion.png" alt="Page de connexion : champs adresse électronique et mot de passe, bouton Se connecter.">
+    <div class="placeholder">Capture à insérer — page de connexion</div>
+    <figcaption><span class="slot">Capture : guide-assets/01-connexion.png</span> — page de
+      connexion (à annoter sous Excalidraw : flécher les deux champs et le bouton).</figcaption>
+  </figure>
+
+  <div class="attention">
+    <b>En cas de problème d'accès</b>
+    Si le message « Adresse électronique ou mot de passe incorrect » s'affiche, vérifiez
+    la saisie. Mot de passe oublié ou compte inactif : contactez le service des relations
+    extérieures (voir <a href="#aide">§ 11</a>).
+  </div>
+  <div class="astuce">
+    <b>Bon réflexe</b>
+    Changez votre mot de passe initial dès la première connexion (voir <a href="#motdepasse">§ 3</a>).
+  </div>
+
+  <!-- ============ 2. MENUS ============ -->
+  <h2 id="menus">2. Découvrir l'interface et les menus</h2>
+  <p>Une fois connecté(e), la barre de navigation en haut de page vous donne accès à&nbsp;:</p>
+  <table>
+    <thead><tr><th>Menu</th><th>À quoi il sert</th></tr></thead>
+    <tbody>
+      <tr><td><span class="menu-demo">Mon dossier</span></td>
+          <td>Le cœur du portail : saisir vos critères, joindre vos justificatifs,
+              suivre votre score et soumettre.</td></tr>
+      <tr><td><span class="menu-demo">Mot de passe</span></td>
+          <td>Changer votre mot de passe à tout moment.</td></tr>
+      <tr><td><span class="menu-demo">Aide</span></td>
+          <td>Ouvre ce guide d'utilisation.</td></tr>
+      <tr><td><span class="menu-demo">Déconnexion (Prénom Nom)</span></td>
+          <td>Fermer votre session en toute sécurité.</td></tr>
+    </tbody>
+  </table>
+
+  <figure class="capture">
+    <img src="guide-assets/02-menus.png" alt="Barre de navigation avec les menus Mon dossier, Mot de passe, Aide et Déconnexion.">
+    <div class="placeholder">Capture à insérer — barre de navigation (menus)</div>
+    <figcaption><span class="slot">Capture : guide-assets/02-menus.png</span> — barre de
+      menus en haut de page.</figcaption>
+  </figure>
+
+  <!-- ============ 3. MOT DE PASSE ============ -->
+  <h2 id="motdepasse">3. Changer son mot de passe</h2>
+  <ol class="etapes">
+    <li>Cliquez sur le menu <span class="menu-demo">Mot de passe</span>.</li>
+    <li>Saisissez votre <strong>mot de passe actuel</strong>.</li>
+    <li>Saisissez un <strong>nouveau mot de passe</strong> (au moins 8 caractères).</li>
+    <li>Confirmez-le à l'identique, puis cliquez sur
+        <span class="menu-demo">Changer le mot de passe</span>.</li>
+  </ol>
+  <figure class="capture">
+    <img src="guide-assets/03-mot-de-passe.png" alt="Formulaire de changement de mot de passe : actuel, nouveau, confirmation.">
+    <div class="placeholder">Capture à insérer — changer le mot de passe</div>
+    <figcaption><span class="slot">Capture : guide-assets/03-mot-de-passe.png</span> —
+      formulaire de changement de mot de passe.</figcaption>
+  </figure>
+  <div class="note"><b>Confirmation</b> Un message « Mot de passe modifié » confirme
+    l'opération. Utilisez le nouveau mot de passe dès la connexion suivante.</div>
+
+  <!-- ============ 4. MON DOSSIER ============ -->
+  <h2 id="dossier" class="saut-page">4. Ouvrir « Mon dossier » et comprendre l'en-tête</h2>
+  <p>Le menu <span class="menu-demo">Mon dossier</span> affiche votre dossier de
+     candidature. L'en-tête rappelle&nbsp;:</p>
+  <ul>
+    <li>la <strong>grille</strong> appliquée et la <strong>date de campagne</strong>&nbsp;;</li>
+    <li>votre <strong>référence de dossier</strong>&nbsp;;</li>
+    <li>le <strong>statut</strong> : <span class="pilule">brouillon</span> (modifiable) ou
+        <span class="pilule">soumis</span> (verrouillé).</li>
+  </ul>
+  <figure class="capture">
+    <img src="guide-assets/04-entete-dossier.png" alt="En-tête du dossier : grille, date de campagne, référence et statut.">
+    <div class="placeholder">Capture à insérer — en-tête du dossier</div>
+    <figcaption><span class="slot">Capture : guide-assets/04-entete-dossier.png</span> —
+      en-tête « Mon dossier de candidature ».</figcaption>
+  </figure>
+
+  <!-- ============ 5. INFOS MOBILITE ============ -->
+  <h2 id="infos">5. Renseigner les informations de mobilité</h2>
+  <p>La première section, <strong>« Informations de mobilité »</strong>, décrit votre
+     projet&nbsp;: département, pays de destination, durée, et coûts estimés (billet,
+     frais divers).</p>
+  <ol class="etapes">
+    <li>Choisissez votre <strong>département</strong> dans la liste.</li>
+    <li>Indiquez le <strong>pays de destination</strong> et la <strong>durée</strong> en jours.</li>
+    <li>Renseignez le <strong>billet estimé</strong> et les <strong>frais divers</strong> (en DA).</li>
+    <li>Cliquez sur <span class="menu-demo">Enregistrer les informations</span>.</li>
+  </ol>
+  <figure class="capture">
+    <img src="guide-assets/05-infos-mobilite.png" alt="Formulaire des informations de mobilité.">
+    <div class="placeholder">Capture à insérer — informations de mobilité</div>
+    <figcaption><span class="slot">Capture : guide-assets/05-infos-mobilite.png</span> —
+      section « Informations de mobilité ».</figcaption>
+  </figure>
+  <div class="note"><b>Historique des bénéfices</b> Juste en dessous, la section
+    « Historique de vos mobilités » est <strong>gérée par l'administration</strong>. Elle
+    sert à calculer la pénalité des bénéfices antérieurs. Signalez toute erreur (voir
+    <a href="#aide">§ 11</a>) ; vous ne pouvez pas la modifier vous-même.</div>
+
+  <!-- ============ 6. CRITERES ============ -->
+  <h2 id="criteres" class="saut-page">6. Saisir les différents critères</h2>
+  <p>Chaque critère de la grille apparaît dans son propre encadré. Selon le critère, la
+     saisie prend l'une des formes suivantes. Le <strong>nombre de points</strong> de
+     chaque option provient de la
+     <a href="https://drive.google.com/file/d/1o6PBnoB3NsZdFtrZYZms8BraWm-lzXvG/view?usp=drivesdk"
+        target="_blank" rel="noopener">grille officielle</a>.</p>
+
+  <table>
+    <thead><tr><th>Type de critère</th><th>Comment le remplir</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Situation à choisir</strong><br><small>(ex. rang du diplôme)</small></td>
+          <td>Sélectionnez votre situation dans la liste déroulante ; les points
+              s'affichent à côté de chaque option.</td></tr>
+      <tr><td><strong>Forfait « concerné »</strong></td>
+          <td>Cochez la case si le critère vous concerne ; cochez les bonus applicables.</td></tr>
+      <tr><td><strong>Saisie de points (plafonné)</strong></td>
+          <td>Entrez un nombre de points, dans la limite du plafond indiqué.</td></tr>
+      <tr><td><strong>Comptage simple</strong></td>
+          <td>Entrez une quantité (ex. nombre de citations) ; parfois l'URL d'un profil.</td></tr>
+      <tr><td><strong>Saisie par éléments</strong><br><small>(publications, communications…)</small></td>
+          <td>Ajoutez une ligne par élément (intitulé, date, position d'auteur, DOI/URL…),
+              chacune avec son justificatif.</td></tr>
+      <tr><td><strong>Formule automatique</strong><br><small>(pénalité de bénéfices)</small></td>
+          <td>Normalement calculé à partir de votre historique. Saisie manuelle possible
+              si l'historique n'est pas encore enregistré (sera vérifié par la commission).</td></tr>
+      <tr><td><strong>Apprécié par la commission</strong></td>
+          <td>Aucune saisie : ce critère est noté directement par la commission.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.1 Critère « situation à choisir »</h3>
+  <p>Choisissez l'option correspondant à votre cas, joignez le justificatif PDF, puis
+     <span class="menu-demo">Enregistrer</span>.</p>
+  <figure class="capture">
+    <img src="guide-assets/06-critere-situation.png" alt="Critère à liste déroulante avec points et champ justificatif.">
+    <div class="placeholder">Capture à insérer — critère « situation »</div>
+    <figcaption><span class="slot">Capture : guide-assets/06-critere-situation.png</span> —
+      critère à liste déroulante (+ éventuel bonus à cocher).</figcaption>
+  </figure>
+
+  <h3>6.2 Critère « saisie par éléments »</h3>
+  <p>Pour les publications, communications, etc., chaque élément est une ligne du tableau.</p>
+  <ol class="etapes">
+    <li>Dépliez <span class="menu-demo">Ajouter un élément</span>.</li>
+    <li>Choisissez le <strong>type d'élément</strong> et saisissez son <strong>intitulé</strong>.</li>
+    <li>Complétez les champs demandés : <strong>date</strong> (obligatoire pour certains
+        critères), <strong>position d'auteur</strong>, <strong>quantité</strong>, DOI/URL.</li>
+    <li>Joignez le <strong>justificatif (PDF)</strong>, puis cliquez sur
+        <span class="menu-demo">Ajouter</span>.</li>
+  </ol>
+  <figure class="capture">
+    <img src="guide-assets/07-ajouter-element.png" alt="Formulaire d'ajout d'un élément : type, intitulé, date, position, quantité, justificatif.">
+    <div class="placeholder">Capture à insérer — ajouter un élément</div>
+    <figcaption><span class="slot">Capture : guide-assets/07-ajouter-element.png</span> —
+      formulaire « Ajouter un élément » déplié.</figcaption>
+  </figure>
+  <figure class="capture">
+    <img src="guide-assets/08-tableau-elements.png" alt="Tableau des éléments déclarés avec boutons Modifier et Supprimer.">
+    <div class="placeholder">Capture à insérer — tableau des éléments</div>
+    <figcaption><span class="slot">Capture : guide-assets/08-tableau-elements.png</span> —
+      tableau des éléments (boutons <em>Modifier</em> / <em>Supprimer</em>).</figcaption>
+  </figure>
+  <div class="attention"><b>Date obligatoire</b> Certains critères ne comptent que les
+    éléments <strong>postérieurs à votre dernier bénéfice</strong> de mobilité : la date est
+    alors exigée. Sans date valide, l'élément ne peut pas être enregistré.</div>
+
+  <!-- ============ 7. JUSTIFICATIFS ============ -->
+  <h2 id="justificatifs" class="saut-page">7. Joindre les justificatifs (PDF)</h2>
+  <p>Chaque déclaration doit être appuyée par une <strong>preuve au format PDF</strong>
+     (attestation, page de garde de la publication, programme du colloque…).</p>
+  <ol class="etapes">
+    <li>Dans le critère concerné, utilisez le champ <strong>Justificatif (PDF)</strong>.</li>
+    <li>Sélectionnez votre fichier <strong>PDF</strong> (les autres formats sont refusés).</li>
+    <li>Enregistrez : un lien <span class="menu-demo">PDF</span> apparaît ; cliquez dessus
+        pour vérifier le document joint.</li>
+    <li>Pour remplacer un justificatif, re-déposez simplement un nouveau fichier.</li>
+  </ol>
+  <figure class="capture">
+    <img src="guide-assets/09-justificatif.png" alt="Champ de dépôt d'un justificatif PDF et lien vers le fichier joint.">
+    <div class="placeholder">Capture à insérer — joindre un justificatif</div>
+    <figcaption><span class="slot">Capture : guide-assets/09-justificatif.png</span> —
+      dépôt d'un justificatif et lien <em>PDF</em>.</figcaption>
+  </figure>
+  <div class="astuce"><b>Conseil</b> Donnez à vos PDF un nom clair (ex.
+    <code>publication_titre_2025.pdf</code>) et vérifiez qu'ils sont lisibles avant de
+    les déposer.</div>
+
+  <!-- ============ 8. SCORE ============ -->
+  <h2 id="score">8. Suivre son score provisoire</h2>
+  <p>En haut du dossier, une barre <strong>« Score provisoire »</strong> se met à jour à
+     chaque saisie. Dépliez <span class="menu-demo">Détail du calcul</span> pour voir le
+     point par critère et d'éventuelles <strong>observations</strong> (éléments non datés,
+     plafonds atteints…).</p>
+  <figure class="capture">
+    <img src="guide-assets/10-score.png" alt="Barre de score provisoire et détail du calcul déplié.">
+    <div class="placeholder">Capture à insérer — score provisoire</div>
+    <figcaption><span class="slot">Capture : guide-assets/10-score.png</span> — barre de
+      score et détail du calcul.</figcaption>
+  </figure>
+  <div class="attention"><b>Score indicatif</b> Ce score est calculé à partir de vos
+    <em>déclarations</em>. Le <strong>score final est arrêté par la commission</strong>
+    après vérification des justificatifs.</div>
+
+  <!-- ============ 9. SOUMETTRE ============ -->
+  <h2 id="soumettre" class="saut-page">9. Soumettre son dossier <span class="pilule">étape clé</span></h2>
+  <p>La soumission transmet votre dossier à la commission. <strong>C'est l'étape la plus
+     importante&nbsp;: sans soumission, votre candidature n'est pas prise en compte.</strong></p>
+  <ol class="etapes">
+    <li>Vérifiez <strong>chaque critère</strong> et la présence de <strong>chaque
+        justificatif</strong>.</li>
+    <li>Contrôlez votre <strong>score provisoire</strong> et les observations éventuelles.</li>
+    <li>En bas de page, cliquez sur <span class="menu-demo">Soumettre mon dossier</span>.</li>
+    <li>Confirmez dans la fenêtre <em>« Soumettre définitivement votre dossier ? »</em>.</li>
+  </ol>
+  <figure class="capture">
+    <img src="guide-assets/11-soumettre.png" alt="Section Soumission avec le bouton Soumettre mon dossier.">
+    <div class="placeholder">Capture à insérer — section Soumission</div>
+    <figcaption><span class="slot">Capture : guide-assets/11-soumettre.png</span> —
+      section « Soumission » et confirmation.</figcaption>
+  </figure>
+  <div class="attention"><b>Action définitive</b> Une fois soumis, le dossier est
+    <strong>verrouillé</strong> (statut <span class="pilule">soumis</span>) et ne peut plus
+    être modifié. Pour toute correction après soumission, contactez l'administration.</div>
+
+  <!-- ============ 10. APRES ============ -->
+  <h2 id="apres">10. Après la soumission &amp; résultat du classement</h2>
+  <p>Votre dossier passe « en cours d'examen ». Lorsque la campagne est close et le
+     classement <strong>gelé</strong>, votre dossier affiche votre <strong>rang</strong>,
+     la <strong>taille du groupe</strong> et le <strong>score retenu</strong>.</p>
+  <div class="note"><b>Important</b> Le rang ne vaut pas décision d'attribution : la liste
+    des bénéficiaires dépend du budget de l'exercice et de la décision de la commission.
+    Les éléments éventuellement rejetés et leurs motifs (art. 14-15) restent consultables
+    dans vos sections.</div>
+  <figure class="capture">
+    <img src="guide-assets/12-resultat.png" alt="Encadré Résultat du classement avec rang, taille du groupe et score retenu.">
+    <div class="placeholder">Capture à insérer — résultat du classement</div>
+    <figcaption><span class="slot">Capture : guide-assets/12-resultat.png</span> —
+      encadré « Résultat du classement » (campagne gelée).</figcaption>
+  </figure>
+
+  <!-- ============ 11. AIDE ============ -->
+  <h2 id="aide">11. Aide, contacts et références officielles</h2>
+  <ul>
+    <li><strong>Assistance / signalement d'anomalie&nbsp;:</strong>
+        <a href="mailto:s.sellami@enset-skikda.dz">s.sellami@enset-skikda.dz</a></li>
+    <li><strong>Problème d'accès, comptes, historique des bénéfices&nbsp;:</strong>
+        service des relations extérieures.</li>
+  </ul>
+  <div class="refs">
+    <div class="ref-carte">
+      <b>📊 Grille de classement officielle</b>
+      <a href="https://drive.google.com/file/d/1o6PBnoB3NsZdFtrZYZms8BraWm-lzXvG/view?usp=drivesdk"
+         target="_blank" rel="noopener">Ouvrir la grille (Google Drive)</a>
+    </div>
+    <div class="ref-carte">
+      <b>📜 Arrêté MESRS n° 345 du 09/03/2026</b>
+      <a href="https://drive.google.com/file/d/1Asmp4RSE7bDlH7X_IPsmEwxAZyUZ3I6j/view?usp=drivesdk"
+         target="_blank" rel="noopener">Ouvrir l'arrêté (Google Drive)</a>
+    </div>
+  </div>
+
+  <footer>
+    <p>Portail « Mon dossier » — Classement des candidats à la mobilité à l'étranger
+       (arrêté MESRS n° 345 du 09/03/2026). ENSET-Skikda. Document d'aide à l'usage des
+       enseignants — application en phase expérimentale.</p>
+  </footer>
+
+</div>
+<script>
+  // Affiche l'emplacement pointillé tant que la capture n'est pas fournie ;
+  // dès qu'une image existe dans guide-assets/, elle remplace le repère.
+  document.querySelectorAll('figure.capture img').forEach(function (img) {
+    var ph = img.nextElementSibling; // le <div class="placeholder">
+    var hidePlaceholder = function () { if (ph) ph.style.display = 'none'; };
+    var hideImage = function () { img.style.display = 'none'; };
+    if (img.complete) { img.naturalWidth > 0 ? hidePlaceholder() : hideImage(); }
+    img.addEventListener('load', hidePlaceholder);
+    img.addEventListener('error', hideImage);
+  });
+</script>
+</body>
+</html>

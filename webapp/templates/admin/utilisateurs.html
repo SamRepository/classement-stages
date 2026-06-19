@@ -69,26 +69,44 @@
   </article>
 </div>
 
-<table>
-  <thead><tr><th>Email</th><th>Nom</th><th>Rôle</th><th>Actif</th><th></th></tr></thead>
-  <tbody>
-    {% for u in users %}
-    <tr>
-      <td>{{ u.email }}</td>
-      <td>{{ u.nom }} {{ u.prenom }}</td>
-      <td>{{ u.role }}</td>
-      <td>{{ 'oui' if u.actif else 'non' }}</td>
-      <td>
-        <form method="post" action="/admin/utilisateurs/{{ u.id }}/basculer-actif" class="inline-form">
-          <button class="secondary outline">{{ 'Désactiver' if u.actif else 'Réactiver' }}</button>
-        </form>
-        <form method="post" action="/admin/utilisateurs/{{ u.id }}/motdepasse" class="inline-form"
-              onsubmit="return confirm('Réinitialiser le mot de passe de {{ u.email }} ?');">
-          <button class="secondary outline">Réinit. mot de passe</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<h3>Comptes</h3>
+<p><small>Cochez des comptes puis « Envoyer les identifiants » pour leur transmettre
+   par e-mail un <strong>nouveau mot de passe provisoire</strong> (à changer à la première
+   connexion). L'ancien mot de passe cesse alors d'être valable. Sans configuration SMTP,
+   les mots de passe sont affichés pour communication manuelle.</small></p>
+
+<form method="post" action="/admin/utilisateurs/envoyer-identifiants">
+  <table>
+    <thead>
+      <tr>
+        <th><input type="checkbox" onclick="document.querySelectorAll('input[name=user_ids]').forEach(c => c.checked = this.checked)"
+                   aria-label="Tout sélectionner"></th>
+        <th>Email</th><th>Nom</th><th>Rôle</th><th>Actif</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td><input type="checkbox" name="user_ids" value="{{ u.id }}"></td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.nom }} {{ u.prenom }}</td>
+        <td>{{ u.role }}</td>
+        <td>{{ 'oui' if u.actif else 'non' }}</td>
+        <td>
+          <button class="secondary outline"
+                  formaction="/admin/utilisateurs/{{ u.id }}/basculer-actif">
+            {{ 'Désactiver' if u.actif else 'Réactiver' }}
+          </button>
+          <button class="secondary outline"
+                  formaction="/admin/utilisateurs/{{ u.id }}/motdepasse"
+                  onclick="return confirm('Générer un nouveau mot de passe pour {{ u.email }} et l\'envoyer par e-mail ?');">
+            Réinit. + envoyer
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <button type="submit">Envoyer les identifiants aux comptes sélectionnés</button>
+</form>
 {% endblock %}

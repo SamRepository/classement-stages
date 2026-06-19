@@ -142,6 +142,31 @@ def test_compte_existant_non_perturbe(client, db_session, dossier):
 # --- intégration import -----------------------------------------------------
 
 
+def test_envoi_groupe_regenere_et_marque(client, db_session, campaign, admin, enseignant,
+                                          membre_commission):
+    login(client, "admin@test.dz")
+    ancien_hash = enseignant.password_hash
+    r = client.post(
+        "/admin/utilisateurs/envoyer-identifiants",
+        data={"user_ids": [str(enseignant.id), str(membre_commission.id)]},
+    )
+    assert r.status_code == 200
+    for cible in (enseignant, membre_commission):
+        db_session.refresh(cible)
+        assert cible.must_change_password is True
+    # Nouveau mot de passe provisoire → l'ancien hash a changé.
+    assert enseignant.password_hash != ancien_hash
+    # Deux comptes traités, affichés pour communication (SMTP hors-ligne en test).
+    assert r.text.count("<code>") == 2
+
+
+def test_envoi_groupe_sans_selection_refuse(client, db_session, campaign, admin):
+    login(client, "admin@test.dz")
+    r = client.post("/admin/utilisateurs/envoyer-identifiants", data={})
+    assert r.status_code == 422
+    assert "Aucun compte" in r.text
+
+
 def test_import_marque_must_change_password(client, db_session, campaign, admin, monkeypatch):
     for key in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD"):
         monkeypatch.delenv(key, raising=False)

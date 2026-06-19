@@ -109,6 +109,31 @@ def reinitialiser_motdepasse(
     return _page_utilisateurs(request, db, user, nouveaux=created, envoi=envoi)
 
 
+@router.post("/utilisateurs/envoyer-identifiants")
+async def envoyer_identifiants(request: Request, user: User = ADMIN, db: Session = Depends(get_db)):
+    """Envoi groupé : (ré)génère un mot de passe provisoire pour chaque compte
+    sélectionné et le communique par e-mail (ou l'affiche si SMTP hors-ligne).
+
+    Le mot de passe stocké étant haché (irrécupérable), chaque envoi produit un
+    nouveau mot de passe provisoire ; l'ancien cesse alors d'être valable.
+    """
+    form = await request.form()
+    ids = [int(v) for v in form.getlist("user_ids") if str(v).isdigit()]
+    if not ids:
+        raise HTTPException(status_code=422, detail="Aucun compte sélectionné.")
+    created: list[dict] = []
+    for cible in db.scalars(select(User).where(User.id.in_(ids))):
+        password = generate_password()
+        cible.password_hash = hash_password(password)
+        cible.must_change_password = True
+        created.append({"email": cible.email, "nom": cible.nom, "prenom": cible.prenom,
+                        "password": password})
+    log_event(db, user, "envoi_identifiants_groupe", detail=f"{len(created)} compte(s)")
+    db.commit()
+    envoi = notify_new_accounts(created)
+    return _page_utilisateurs(request, db, user, nouveaux=created, envoi=envoi)
+
+
 # ---------------------------------------------------------------------------
 # Historique des bénéfices
 # ---------------------------------------------------------------------------

@@ -5,6 +5,10 @@
 .connexion { max-width: 28rem; margin: 3rem auto; }
 small { color: var(--pico-muted-color, #6c757d); }
 
+/* Pied de page du portail */
+.site-footer { margin-top: 2.5rem; padding: 1rem 0; border-top: 1px solid var(--pico-muted-border-color, #ddd); text-align: center; }
+.site-footer small { color: var(--pico-muted-color, #6c757d); }
+
 /* Logo ENSET dans l'en-tête */
 header nav { align-items: center; }
 .marque { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; color: inherit; }

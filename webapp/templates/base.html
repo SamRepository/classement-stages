@@ -46,6 +46,10 @@
 <main class="container">
   {% block contenu %}{% endblock %}
 </main>
+<footer class="container site-footer">
+  <small>© {{ current_year() }} — Skikda | Developed and maintained by Dr. Samir SELLAMI |
+    Contact : <a href="mailto:s.sellami@enset-skikda.dz">s.sellami@enset-skikda.dz</a></small>
+</footer>
 <script>
   // Les erreurs des requêtes HTMX (texte brut en français) sont montrées à l'utilisateur,
   // sinon un refus (motif manquant, dossier gelé…) resterait invisible.

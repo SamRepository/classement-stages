@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
@@ -27,6 +28,7 @@ def static_version() -> str:
 
 
 templates.env.globals["static_version"] = static_version()
+templates.env.globals["current_year"] = lambda: datetime.now().year
 
 
 def fmt_points(value: float | int | None) -> str:

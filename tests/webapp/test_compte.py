@@ -76,7 +76,7 @@ def test_erreur_htmx_en_texte_brut(client, enseignant, campaign):
 def test_bandeau_experimental_connexion(client):
     r = client.get("/connexion")
     assert "phase expérimentale" in r.text
-    assert "s.sellami@enset-skikda.dz" in r.text
+    assert "stages@enset-skikda.dz" in r.text
 
 
 def test_static_cache_busting(client):

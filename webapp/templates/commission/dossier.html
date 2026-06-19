@@ -16,6 +16,8 @@
 
 <div class="commission-split">
   <div>
+    {% with oob = false %}{% include "commission/fragments/score.html" %}{% endwith %}
+
     <article class="critere">
       <h3>Historique des bénéfices (saisi par l'administration)</h3>
       {% if benefits %}
@@ -48,8 +50,6 @@
       <button type="submit">Valider le reste du dossier ({{ pending }} en attente)</button>
     </form>
     {% endif %}
-
-    {% with oob = false %}{% include "commission/fragments/score.html" %}{% endwith %}
   </div>
 
   <div>

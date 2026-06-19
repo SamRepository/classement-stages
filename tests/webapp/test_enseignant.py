@@ -225,6 +225,22 @@ def test_justificatif_lien_apres_upload_single(client, db_session, campaign, ens
     assert f"/fichiers/justificatifs/{entry.id}" in r.text
 
 
+def test_justificatif_lien_fixed(client, db_session, campaign, enseignant, upload_dir):
+    """Critère Oui/Non (poste supérieur, chapitre d'ouvrage, livre ISBN…) :
+    même confirmation + lien PDF que le rang."""
+    login(client, "enseignant@test.dz")
+    client.get("/mon-dossier")
+    r = client.post(
+        "/mon-dossier/entrees/poste_superieur",
+        data={"applies": "1"},
+        files={"fichier": ("p.pdf", PDF_BYTES, "application/pdf")},
+    )
+    assert r.status_code == 200
+    assert "Justificatif déposé" in r.text
+    entry = db_session.scalar(select(Entry).where(Entry.criterion_id == "poste_superieur"))
+    assert f"/fichiers/justificatifs/{entry.id}" in r.text
+
+
 def test_soumission_gele_les_ecritures(client, db_session, campaign, enseignant):
     login(client, "enseignant@test.dz")
     client.get("/mon-dossier")

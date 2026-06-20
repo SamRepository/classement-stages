@@ -8,14 +8,39 @@
 .connexion { max-width: 28rem; margin: 3rem auto; }
 small { color: var(--pico-muted-color, #6c757d); }
 
+/* Date de fermeture de la plateforme (en-tête Mon dossier) */
+.cloture-info { background: #fff3cd; color: #664d03; border: 1px solid #ffe69c; border-radius: 8px; padding: .5rem .9rem; margin: 0 0 1rem; display: inline-block; }
+
 /* Pied de page du portail */
 .site-footer { margin-top: 2.5rem; padding: 1rem 0; border-top: 1px solid var(--pico-muted-border-color, #ddd); text-align: center; }
 .site-footer small { color: var(--pico-muted-color, #6c757d); }
 
-/* Logo ENSET dans l'en-tête */
-header nav { align-items: center; }
-.marque { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; color: inherit; }
-.logo-enset { height: 46px; width: auto; }
+/* En-tête / navigation responsive (logo ENSET + menu) */
+.site-nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: nowrap; position: relative; }
+.marque { display: inline-flex; align-items: center; gap: .6rem; text-decoration: none; color: inherit; min-width: 0; }
+.marque-txt { display: inline-flex; flex-direction: column; line-height: 1.15; }
+.logo-enset { height: 46px; width: auto; flex: 0 0 auto; }
+
+.nav-burger { display: none; cursor: pointer; background: transparent; border: 0; color: inherit; font-size: 1.7rem; line-height: 1; padding: .1rem .55rem; width: auto; margin: 0; }
+.nav-links { display: flex; align-items: center; gap: 1rem; margin: 0; padding: 0; list-style: none; flex-wrap: wrap; }
+.nav-links li { margin: 0; }
+
+@media (max-width: 768px) {
+  .logo-enset { height: 38px; }
+  .marque-txt strong { font-size: .95rem; }
+  .nav-burger { display: inline-block; }
+  .nav-links { display: none; }
+  .site-nav.open .nav-links {
+    display: flex; flex-direction: column; align-items: flex-start; gap: .35rem;
+    position: absolute; right: 0; top: calc(100% + .4rem); z-index: 1000; min-width: 230px;
+    background: var(--pico-background-color, #fff);
+    border: 1px solid var(--pico-muted-border-color, #ddd); border-radius: 10px;
+    padding: .6rem .85rem; box-shadow: 0 8px 24px rgba(0, 0, 0, .16);
+  }
+  .site-nav.open .nav-links li { width: 100%; }
+  .site-nav.open .nav-links li .inline-form,
+  .site-nav.open .nav-links li button[type="submit"] { width: 100%; }
+}
 
 /* Sections de critères (espace enseignant et commission) */
 .critere { margin-bottom: 1.5rem; padding: 1rem 1.25rem; border: 1px solid var(--pico-muted-border-color, #ddd); border-radius: 8px; }

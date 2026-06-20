@@ -8,6 +8,9 @@
      · <span class="badge {{ dossier.statut }}">{{ dossier.statut }}</span></p>
 </hgroup>
 
+<p class="cloture-info">⏳ Fermeture de la plateforme (clôture des dépôts) :
+  <strong>{% if campaign.date_cloture %}{{ campaign.date_cloture.strftime('%d/%m/%Y à %H:%M') }}{% else %}à préciser par l'administration{% endif %}</strong></p>
+
 {% if campaign.statut == 'gelee' %}
 <article>
   <h3>Résultat du classement</h3>

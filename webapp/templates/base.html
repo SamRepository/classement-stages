@@ -10,17 +10,14 @@
 </head>
 <body>
 <header class="container">
-  <nav>
-    <ul>
-      <li>
-        <a href="/" class="marque">
-          <img src="/static/logo_ENSET.png?v={{ static_version }}" alt="ENSET-Skikda" class="logo-enset">
-          <span><strong>Mobilités à l'étranger</strong> <small>arrêté n° 345/2026</small></span>
-        </a>
-      </li>
-    </ul>
+  <nav class="site-nav">
+    <a href="/" class="marque">
+      <img src="/static/logo_ENSET.png?v={{ static_version }}" alt="ENSET-Skikda" class="logo-enset">
+      <span class="marque-txt"><strong>Mobilités à l'étranger</strong> <small>arrêté n° 345/2026</small></span>
+    </a>
     {% if user %}
-    <ul>
+    <button type="button" class="nav-burger" aria-label="Ouvrir le menu" aria-expanded="false">☰</button>
+    <ul class="nav-links">
       {% if user.role == 'enseignant' %}
         <li><a href="/mon-dossier">Mon dossier</a></li>
       {% elif user.role == 'commission' %}
@@ -58,6 +55,17 @@
   document.body.addEventListener('htmx:responseError', function (e) {
     alert(e.detail.xhr.responseText || 'Erreur inattendue — réessayez.');
   });
+
+  // Menu responsive : le bouton ☰ ouvre/ferme la liste des liens sur mobile.
+  (function () {
+    var burger = document.querySelector('.nav-burger');
+    var nav = document.querySelector('.site-nav');
+    if (!burger || !nav) return;
+    burger.addEventListener('click', function () {
+      var open = nav.classList.toggle('open');
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  })();
 </script>
 </body>
 </html>

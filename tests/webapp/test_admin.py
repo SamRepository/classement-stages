@@ -21,6 +21,22 @@ def test_creation_compte_et_connexion(client, db_session, campaign, admin):
     assert nouveau.role == "enseignant"
 
 
+def test_liste_comptes_triable(client, db_session, campaign, admin):
+    db_session.add_all([
+        User(email="zoe@test.dz", password_hash="x", nom="Zoe", role="enseignant"),
+        User(email="amir@test.dz", password_hash="x", nom="Amir", role="commission"),
+    ])
+    db_session.commit()
+    login(client, "admin@test.dz")
+    # Les en-têtes proposent le tri par email et par rôle.
+    page = client.get("/admin/utilisateurs")
+    assert "/admin/utilisateurs?tri=email" in page.text
+    assert "/admin/utilisateurs?tri=role" in page.text
+    # Tri par email : amir@ apparaît avant zoe@ dans le HTML.
+    par_email = client.get("/admin/utilisateurs?tri=email").text
+    assert par_email.index("amir@test.dz") < par_email.index("zoe@test.dz")
+
+
 def test_import_xlsx_cree_comptes_et_dossiers(client, db_session, campaign, admin):
     wb = Workbook()
     ws = wb.active

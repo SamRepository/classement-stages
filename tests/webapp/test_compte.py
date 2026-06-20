@@ -8,8 +8,9 @@ def test_changement_mot_de_passe(client, db_session, enseignant, campaign):
     r = client.post("/mon-mot-de-passe", data={
         "actuel": PASSWORD, "nouveau": "nouveau-secret", "confirmation": "nouveau-secret",
     })
-    assert r.status_code == 200
-    assert "Mot de passe modifié" in r.text
+    # Succès : retour direct à l'espace de travail (pas de maintien sur la page).
+    assert r.status_code == 303
+    assert r.headers["location"] == "/mon-dossier"
     # L'ancien mot de passe ne fonctionne plus, le nouveau oui.
     client.post("/deconnexion")
     assert login(client, "enseignant@test.dz", PASSWORD).status_code == 401

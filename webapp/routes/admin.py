@@ -24,16 +24,22 @@ router = APIRouter(prefix="/admin")
 ADMIN = Depends(require_role("admin"))
 
 
-def _page_utilisateurs(request: Request, db: Session, user: User, **extra):
-    users = list(db.scalars(select(User).order_by(User.role, User.nom)))
+def _page_utilisateurs(request: Request, db: Session, user: User, *, tri: str = "role", **extra):
+    order = User.email if tri == "email" else (User.role, User.nom)
+    if tri != "email":
+        tri = "role"
+    stmt = select(User).order_by(*(order if isinstance(order, tuple) else (order,)))
+    users = list(db.scalars(stmt))
     contexte = {"user": user, "users": users, "nouveaux": [], "ignores": [],
-                "envoi": None, **extra}
+                "envoi": None, "tri": tri, **extra}
     return templates.TemplateResponse(request, "admin/utilisateurs.html", contexte)
 
 
 @router.get("/utilisateurs")
-def utilisateurs(request: Request, user: User = ADMIN, db: Session = Depends(get_db)):
-    return _page_utilisateurs(request, db, user)
+def utilisateurs(
+    request: Request, tri: str = "role", user: User = ADMIN, db: Session = Depends(get_db)
+):
+    return _page_utilisateurs(request, db, user, tri=tri)
 
 
 @router.post("/utilisateurs")

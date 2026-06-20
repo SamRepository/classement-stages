@@ -125,7 +125,9 @@ def test_changement_leve_le_verrou(client, db_session, dossier):
     r = client.post("/mon-mot-de-passe", data={
         "actuel": PASSWORD, "nouveau": "nouveau-secret", "confirmation": "nouveau-secret",
     })
-    assert r.status_code == 200
+    # Redirection vers l'espace de travail, plus de maintien sur la page mot de passe.
+    assert r.status_code == 303
+    assert r.headers["location"] == "/mon-dossier"
     db_session.refresh(enseignant)
     assert enseignant.must_change_password is False
     # L'accès au dossier n'est plus intercepté.

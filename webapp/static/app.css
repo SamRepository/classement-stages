@@ -1,6 +1,9 @@
 /* Ajustements au-dessus de pico.css */
 .inline-form { display: inline; margin: 0; }
 .inline-form button { padding: 0.25rem 0.75rem; margin: 0; }
+/* Boutons d'action de la liste des comptes : côte à côte, compacts. */
+.cellule-actions { display: flex; gap: .5rem; flex-wrap: nowrap; }
+.cellule-actions button { width: auto; margin: 0; padding: .25rem .75rem; white-space: nowrap; }
 .erreur { color: #b71c1c; font-weight: 600; }
 .connexion { max-width: 28rem; margin: 3rem auto; }
 small { color: var(--pico-muted-color, #6c757d); }

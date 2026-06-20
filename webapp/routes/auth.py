@@ -99,10 +99,8 @@ def password_change(
     user.must_change_password = False  # le mot de passe n'est plus temporaire
     log_event(db, user, "changement_mot_de_passe")
     db.commit()
-    return templates.TemplateResponse(
-        request, "mot_de_passe.html",
-        {"user": user, "erreur": None, "succes": True, "force": False},
-    )
+    # Retour direct à l'espace de travail (et non maintien sur la page mot de passe).
+    return RedirectResponse(HOME_BY_ROLE.get(user.role, "/"), status_code=303)
 
 
 @router.get("/sante")

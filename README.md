@@ -67,9 +67,13 @@ logique réglementaire dupliquée. Trois espaces :
   (produit par [scripts/import_odoo.py](scripts/import_odoo.py) : comptes, mobilité et
   historique des bénéfices en une opération idempotente), **import dédié de l'historique
   des bénéfices** (feuille « Historique » rattachée par e-mail, produite par
-  [scripts/extract_historique.py](scripts/extract_historique.py)), réglage du **repère de
-  la fenêtre « après dernier bénéfice »** (clôture de plateforme, date de mobilité, ou
-  date de clôture uniforme), gestion de la campagne, réouverture de dossiers.
+  [scripts/extract_historique.py](scripts/extract_historique.py)), **envoi des identifiants
+  par e-mail** (à la création, à l'import, à la réinitialisation, ou **en lot** par cases à
+  cocher : chaque compte reçoit un mot de passe provisoire **à changer à la première
+  connexion** ; sans configuration SMTP, les mots de passe restent affichés pour
+  communication manuelle), réglage du **repère de la fenêtre « après dernier bénéfice »**
+  (clôture de plateforme, date de mobilité, ou date de clôture uniforme), gestion de la
+  campagne, réouverture de dossiers.
 
 Démarrage local (SQLite par défaut) :
 
@@ -81,6 +85,19 @@ python -m uvicorn webapp.main:app --reload
 
 Déploiement : Dockerfile + PostgreSQL + volume pour les pièces jointes — guide pas-à-pas
 Coolify : **[docs/guide-deploiement-coolify.md](docs/guide-deploiement-coolify.md)**.
+
+**Envoi des comptes par e-mail** (optionnel) : renseigner `SMTP_HOST`, `SMTP_PORT`,
+`SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_STARTTLS` et `BASE_URL` (voir
+[.env.example](.env.example) et la section dédiée du guide Coolify). Cible prévue : boîte
+Google Workspace `stages@enset-skikda.dz` via `smtp.gmail.com:587` STARTTLS avec un **mot
+de passe d'application** (la 2FA doit être active ; le mot de passe du compte est refusé
+par Google). Tant que ces variables ne sont pas toutes renseignées, l'application reste en
+**mode hors-ligne** : aucun e-mail n'est envoyé — ni au démarrage, ni au déploiement —,
+l'envoi est **toujours** une action manuelle de l'admin. Vérifier la configuration avec :
+
+```powershell
+python -m webapp.scripts.test_email votre-adresse@exemple.dz
+```
 
 ## Circuit Excel (phase 1 — recommandé pour la commission)
 
@@ -299,18 +316,20 @@ aequo sont signalés (`ex_aequo: true`) et laissés à l'arbitrage de la commiss
 python -m pytest -q
 ```
 
-171 tests : le moteur (six types de critères, plafonds, pondération auteur, fenêtres
+182 tests : le moteur (six types de critères, plafonds, pondération auteur, fenêtres
 temporelles, formules, classement, profils d'établissement, coûts/budget) et le circuit
 Excel (modèle, menus en libellés français, import avec rapport d'erreurs, équivalence
 Excel/JSON, exports PV/fiches/HTML), plus l'application web
 ([tests/webapp/](tests/webapp/)) : **parité dossier web ≡ dict moteur** pour chaque type
 de critère, application des rejets avec trace, workflow brouillon/soumis/gelé,
-permissions par rôle, uploads (octets magiques, taille), import de comptes, classement,
-gel, exports, simulation budgétaire commission, changement de mot de passe, pages
-d'erreur en français, publication du rang à l'enseignant après le gel, édition en place
-des activités, saisie/ajustement du nombre de bénéfices `n`, import de l'historique des
-bénéfices par e-mail et repère de fenêtre configurable (clôture par bénéfice / date de
-mobilité / date uniforme).
+permissions par rôle, uploads (octets magiques, taille), import de comptes, **envoi des
+identifiants par e-mail** (mode hors-ligne, envoi groupé) et **changement de mot de passe
+forcé** à la première connexion sans perturber les comptes existants, classement, gel,
+exports, simulation budgétaire commission, changement de mot de passe, pages d'erreur en
+français, publication du rang à l'enseignant après le gel, édition en place des activités,
+saisie/ajustement du nombre de bénéfices `n`, import de l'historique des bénéfices par
+e-mail et repère de fenêtre configurable (clôture par bénéfice / date de mobilité / date
+uniforme).
 
 ## Structure du projet
 

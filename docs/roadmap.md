@@ -72,7 +72,10 @@ dossier web ≡ dict moteur pour chaque type de critère.
   seule, mêmes règles que la CLI `budget`) ;
 - **Espace admin** : import de comptes **directement depuis `dossier-u3.xlsx`** (comptes +
   dossiers + mobilité + historique des bénéfices en une opération, idempotent — recette
-  réelle : 41/41), gestion des bénéfices, fenêtre de campagne, réouverture d'un dossier ;
+  réelle : 41/41), **envoi des identifiants par e-mail** (création / import / réinit /
+  envoi groupé ; mot de passe provisoire à changer à la première connexion ; mode
+  hors-ligne si SMTP non configuré), gestion des bénéfices, fenêtre de campagne,
+  réouverture d'un dossier ;
 - **Base de données** : dossiers, éléments déclarés, pièces, décisions, **bénéfices
   persistants** (pénalités `3-n` et fenêtre calculées automatiquement), journal des
   actions ; migrations Alembic ;
@@ -80,7 +83,14 @@ dossier web ≡ dict moteur pour chaque type de critère.
   [guide Coolify pas-à-pas](guide-deploiement-coolify.md) ;
 - **Préparation à la mise en service** (13/06/2026) : changement de mot de passe par
   l'utilisateur connecté, pages d'erreur HTML en français (+ alerte HTMX pour les refus),
-  bandeau « phase expérimentale » avec contact sur la page de connexion.
+  bandeau « phase expérimentale » avec contact sur la page de connexion ;
+- **Distribution des comptes** (20/06/2026) : envoi des identifiants par e-mail (SMTP
+  stdlib, cible Google Workspace `stages@enset-skikda.dz` via mot de passe d'application),
+  unitaire ou groupé depuis l'admin ; **mot de passe provisoire** avec changement forcé à
+  la première connexion (migration à backfill `False` → comptes existants non perturbés) ;
+  bandeaux de confirmation après les actions à redirection (soumission, validation, gel,
+  actions admin) ; tri de la liste des comptes ; script `webapp.scripts.test_email` pour
+  valider la configuration SMTP.
 
 **Reste à faire** :
 - déploiement effectif sur l'instance Coolify (PostgreSQL + volume `/data/uploads` +

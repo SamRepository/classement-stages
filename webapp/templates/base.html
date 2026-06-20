@@ -44,6 +44,8 @@
   </nav>
 </header>
 <main class="container">
+  {% set flash = consume_flash(request) %}
+  {% if flash %}<p role="alert" class="flash"><mark>{{ flash }}</mark></p>{% endif %}
   {% block contenu %}{% endblock %}
 </main>
 <footer class="container site-footer">

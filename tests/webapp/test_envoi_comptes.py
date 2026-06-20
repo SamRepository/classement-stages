@@ -130,8 +130,12 @@ def test_changement_leve_le_verrou(client, db_session, dossier):
     assert r.headers["location"] == "/mon-dossier"
     db_session.refresh(enseignant)
     assert enseignant.must_change_password is False
-    # L'accès au dossier n'est plus intercepté.
-    assert client.get("/mon-dossier").status_code == 200
+    # L'accès au dossier n'est plus intercepté, avec confirmation à l'arrivée.
+    page = client.get("/mon-dossier")
+    assert page.status_code == 200
+    assert "mot de passe a été modifié" in page.text
+    # Le bandeau ne réapparaît pas au rechargement suivant.
+    assert "mot de passe a été modifié" not in client.get("/mon-dossier").text
 
 
 def test_compte_existant_non_perturbe(client, db_session, dossier):

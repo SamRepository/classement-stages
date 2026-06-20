@@ -27,8 +27,18 @@ def static_version() -> str:
         return "0"
 
 
+def consume_flash(request) -> str | None:
+    """Message éphémère (posé en session avant une redirection) : lu une fois.
+
+    Le retrait de la session marque celle-ci comme modifiée → le cookie est
+    réécrit sans le message, qui ne réapparaît donc pas au rechargement suivant.
+    """
+    return request.session.pop("flash", None)
+
+
 templates.env.globals["static_version"] = static_version()
 templates.env.globals["current_year"] = lambda: datetime.now().year
+templates.env.globals["consume_flash"] = consume_flash
 
 
 def fmt_points(value: float | int | None) -> str:

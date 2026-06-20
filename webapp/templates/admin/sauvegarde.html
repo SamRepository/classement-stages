@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block titre %}Sauvegarde / Restauration{% endblock %}
+{% block contenu %}
+<h1>Sauvegarde et restauration des données</h1>
+
+<p>Filet de sécurité <strong>indépendant de l'hébergeur</strong>, en complément des
+   sauvegardes PostgreSQL planifiées de Coolify et des snapshots Proxmox. L'archive
+   contient l'intégralité de la base <strong>et</strong> les justificatifs PDF.</p>
+
+{% if rapport %}
+<article>
+  <h3>✅ Restauration effectuée</h3>
+  <p>{{ rapport.counts.values()|sum }} ligne(s) restaurée(s),
+     {{ rapport.files_restored }} justificatif(s).
+     Sauvegarde de sécurité de l'état précédent : <code>{{ rapport.pre_restore_backup }}</code>.</p>
+  {% if rapport.warnings %}
+  <details open>
+    <summary>{{ rapport.warnings|length }} avertissement(s)</summary>
+    <ul>{% for w in rapport.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+  </details>
+  {% endif %}
+</article>
+{% endif %}
+
+<article>
+  <h3>Télécharger une sauvegarde complète</h3>
+  <p>État actuel :
+     {{ counts.get('users', 0) }} compte(s),
+     {{ counts.get('dossiers', 0) }} dossier(s),
+     {{ counts.get('entries', 0) }} élément(s) déclaré(s),
+     {{ counts.get('attachments', 0) }} justificatif(s).</p>
+  <p><a href="/admin/backup" role="button">⬇ Télécharger la sauvegarde (.zip)</a></p>
+  <p><small>⚠ L'archive contient des données nominatives et des empreintes de mots de
+     passe. Conservez-la sur un support sécurisé (poste chiffré), ne la partagez pas.</small></p>
+</article>
+
+<article>
+  <h3>Restaurer depuis une sauvegarde</h3>
+  {% if not preview %}
+  <p><strong>Remplacement complet</strong> : la restauration écrase l'intégralité des
+     données actuelles par celles de l'archive. À privilégier sur une instance neuve.
+     Une sauvegarde de sécurité de l'état courant est créée automatiquement avant
+     l'écrasement.</p>
+  <form method="post" action="/admin/restore/preview" enctype="multipart/form-data">
+    <label>Archive de sauvegarde (.zip)
+      <input type="file" name="fichier" accept=".zip" required>
+    </label>
+    <button type="submit" class="secondary">Vérifier l'archive…</button>
+  </form>
+  {% else %}
+  <p>Archive <strong>{{ preview.filename }}</strong> validée
+     (générée le {{ preview.generated_at }}). Contenu :</p>
+  <table>
+    <thead><tr><th>Comptes</th><th>Dossiers</th><th>Éléments</th><th>Justificatifs</th></tr></thead>
+    <tbody><tr>
+      <td>{{ preview.counts.get('users', 0) }}</td>
+      <td>{{ preview.counts.get('dossiers', 0) }}</td>
+      <td>{{ preview.counts.get('entries', 0) }}</td>
+      <td>{{ preview.files.get('count', 0) }}</td>
+    </tr></tbody>
+  </table>
+  <form method="post" action="/admin/restore/confirm"
+        onsubmit="return confirm('Cette action remplace TOUTES les données actuelles. Continuer ?');">
+    <input type="hidden" name="token" value="{{ preview.token }}">
+    <label>Pour confirmer, saisissez exactement : <code>{{ phrase }}</code>
+      <input type="text" name="phrase" autocomplete="off" required
+             placeholder="{{ phrase }}">
+    </label>
+    <button type="submit" class="contrast">Remplacer toutes les données</button>
+    <a href="/admin/sauvegarde" role="button" class="secondary outline">Annuler</a>
+  </form>
+  {% endif %}
+</article>
+{% endblock %}

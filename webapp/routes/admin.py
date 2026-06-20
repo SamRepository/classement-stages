@@ -2,18 +2,23 @@
 
 from __future__ import annotations
 
+import secrets
 from datetime import date, datetime
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import RedirectResponse
-from sqlalchemy import select
+from fastapi.responses import FileResponse, RedirectResponse
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+from starlette.background import BackgroundTask
 from starlette.datastructures import UploadFile
 
 from webapp.auth import require_role
-from webapp.db import get_db
+from webapp.config import get_settings
+from webapp.db import Base, get_db
 from webapp.models import Benefit, Dossier, User
 from webapp.security import generate_password, hash_password
+from webapp.services import backup
 from webapp.services.accounts import import_accounts, import_benefits
 from webapp.services.dossier import get_campaign, log_event, reopen_dossier
 from webapp.services.mailer import notify_new_accounts
@@ -301,3 +306,107 @@ def reouvrir(
     reopen_dossier(db, dossier, user)
     request.session["flash"] = "Dossier rouvert pour modification."
     return RedirectResponse("/admin/campagne", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Sauvegarde et restauration (cf. docs/spec-backup-restauration.md)
+# ---------------------------------------------------------------------------
+
+
+def _db_counts(db: Session) -> dict[str, int]:
+    return {
+        table.name: db.scalar(select(func.count()).select_from(table))
+        for table in Base.metadata.sorted_tables
+    }
+
+
+def _page_sauvegarde(request: Request, db: Session, user: User, *, preview=None, rapport=None):
+    contexte = {
+        "user": user,
+        "counts": _db_counts(db),
+        "phrase": backup.CONFIRM_PHRASE,
+        "preview": preview,
+        "rapport": rapport,
+    }
+    return templates.TemplateResponse(request, "admin/sauvegarde.html", contexte)
+
+
+@router.get("/sauvegarde")
+def sauvegarde(request: Request, user: User = ADMIN, db: Session = Depends(get_db)):
+    return _page_sauvegarde(request, db, user)
+
+
+@router.get("/backup")
+def telecharger_backup(request: Request, user: User = ADMIN, db: Session = Depends(get_db)):
+    """Archive ZIP complète (base + justificatifs), téléchargée hors-serveur."""
+    settings = get_settings()
+    institution_id = get_campaign(db).institution_id
+    archive = backup.build_archive(db, settings.upload_dir, institution_id=institution_id)
+    log_event(db, user, "backup_telecharge", detail=archive.name)
+    db.commit()
+    return FileResponse(
+        archive,
+        media_type="application/zip",
+        filename=backup.archive_filename(institution_id),
+        background=BackgroundTask(archive.unlink, missing_ok=True),
+    )
+
+
+@router.post("/restore/preview")
+async def restore_preview(request: Request, user: User = ADMIN, db: Session = Depends(get_db)):
+    """Valide l'archive sans rien écrire, conserve-la, et propose la confirmation."""
+    form = await request.form()
+    fichier = form.get("fichier")
+    if not (isinstance(fichier, UploadFile) and fichier.filename):
+        raise HTTPException(status_code=422, detail="Aucune archive fournie.")
+
+    settings = get_settings()
+    pending_dir = settings.upload_dir / "_restore_pending"
+    pending_dir.mkdir(parents=True, exist_ok=True)
+    token = secrets.token_urlsafe(16)
+    pending = pending_dir / f"{token}.zip"
+    pending.write_bytes(await fichier.read())
+
+    try:
+        # Validation complète (révision, tables, sommes de contrôle) sans écriture.
+        manifest = backup.validate_archive(db, pending)
+    except HTTPException:
+        pending.unlink(missing_ok=True)
+        raise
+
+    request.session["restore_token"] = token
+    preview = {
+        "token": token,
+        "filename": fichier.filename,
+        "generated_at": manifest.get("generated_at"),
+        "counts": manifest.get("counts", {}),
+        "files": manifest.get("files", {}),
+    }
+    return _page_sauvegarde(request, db, user, preview=preview)
+
+
+@router.post("/restore/confirm")
+async def restore_confirm(request: Request, user: User = ADMIN, db: Session = Depends(get_db)):
+    form = await request.form()
+    token = (form.get("token") or "").strip()
+    phrase = (form.get("phrase") or "").strip()
+    session_token = request.session.get("restore_token")
+    settings = get_settings()
+    pending = settings.upload_dir / "_restore_pending" / f"{token}.zip"
+
+    if not token or token != session_token or not pending.exists():
+        raise HTTPException(status_code=422, detail="Session de restauration expirée — recommencez.")
+    if phrase != backup.CONFIRM_PHRASE:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Confirmation incorrecte : saisissez exactement « {backup.CONFIRM_PHRASE} ».",
+        )
+
+    rapport = backup.restore_archive(db, settings.upload_dir, pending, confirmed=True)
+    request.session.pop("restore_token", None)
+    pending.unlink(missing_ok=True)
+    log_event(db, user, "restauration",
+              detail=f"{sum(rapport.counts.values())} ligne(s), "
+                     f"{rapport.files_restored} fichier(s), {len(rapport.warnings)} avert.")
+    db.commit()
+    return _page_sauvegarde(request, db, user, rapport=rapport)

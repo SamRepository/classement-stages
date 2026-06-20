@@ -161,7 +161,12 @@ Le mot de passe admin généré s'affiche — **le noter immédiatement** (ou pa
   `git push` (ou configurer la GitHub App pour le déploiement automatique).
 - **Sauvegardes** : ressource PostgreSQL → onglet **Backups** → planifier
   (quotidien) ; le volume `uploads` vit sur le serveur Proxmox — l'inclure
-  dans les snapshots/backups Proxmox.
+  dans les snapshots/backups Proxmox. **En complément** (filet indépendant de
+  l'hébergeur, téléchargé hors-serveur), l'admin dispose dans le portail de
+  **Sauvegarde / Restauration** : une archive ZIP unique réunissant base **et**
+  justificatifs, restaurable depuis l'interface — voir
+  [spec-backup-restauration.md](spec-backup-restauration.md). Les deux mécanismes
+  sont complémentaires, ils ne se remplacent pas.
 - **Dépôt privé** : passer le dépôt GitHub en privé (Settings → Change
   visibility) puis reconnecter l'application via la GitHub App.
 

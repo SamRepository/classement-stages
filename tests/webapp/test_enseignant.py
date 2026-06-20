@@ -247,6 +247,8 @@ def test_soumission_gele_les_ecritures(client, db_session, campaign, enseignant)
     client.post("/mon-dossier/entrees/rang_scientifique", data={"value": "mca"})
     r = client.post("/mon-dossier/soumettre")
     assert r.status_code == 303
+    # Confirmation affichée à l'arrivée sur le dossier.
+    assert "dossier a été soumis" in client.get("/mon-dossier").text
 
     r = client.post("/mon-dossier/entrees/rang_scientifique", data={"value": "professeur"})
     assert r.status_code == 403

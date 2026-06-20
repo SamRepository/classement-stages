@@ -135,6 +135,7 @@ async def maj_infos(
     dossier.billet_estime_da = _to_float(form.get("billet_estime_da"))
     dossier.frais_divers_da = _to_float(form.get("frais_divers_da"))
     db.commit()
+    request.session["flash"] = "Informations enregistrées."
     return RedirectResponse("/mon-dossier", status_code=303)
 
 
@@ -494,9 +495,11 @@ def supprime_activite(
 
 @router.post("/soumettre")
 def soumettre(
+    request: Request,
     user: User = Depends(require_role("enseignant")),
     db: Session = Depends(get_db),
 ):
     _, dossier, _ = _context(db, user)
     submit_dossier(db, dossier, user)
+    request.session["flash"] = "Votre dossier a été soumis à la commission."
     return RedirectResponse("/mon-dossier", status_code=303)

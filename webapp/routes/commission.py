@@ -273,6 +273,7 @@ def tout_valider(
             n += 1
     log_event(db, user, "tout_valider", dossier, detail=f"{n} élément(s) validé(s)")
     db.commit()
+    request.session["flash"] = f"{n} élément(s) en attente validé(s)."
     return RedirectResponse(f"/commission/dossiers/{dossier_id}", status_code=303)
 
 
@@ -388,11 +389,13 @@ def simulation_budget(
 
 @router.post("/classement/geler")
 def geler(
+    request: Request,
     user: User = COMMISSION,
     db: Session = Depends(get_db),
 ):
     campaign = get_campaign(db)
     freeze_campaign(db, campaign, user)
+    request.session["flash"] = "Le classement a été gelé."
     return RedirectResponse("/commission/classement", status_code=303)
 
 

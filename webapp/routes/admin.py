@@ -85,7 +85,9 @@ async def importer_utilisateurs(
 
 
 @router.post("/utilisateurs/{user_id}/basculer-actif")
-def basculer_actif(user_id: int, user: User = ADMIN, db: Session = Depends(get_db)):
+def basculer_actif(
+    request: Request, user_id: int, user: User = ADMIN, db: Session = Depends(get_db)
+):
     cible = db.get(User, user_id)
     if cible is None:
         raise HTTPException(status_code=404)
@@ -94,6 +96,9 @@ def basculer_actif(user_id: int, user: User = ADMIN, db: Session = Depends(get_d
     cible.actif = not cible.actif
     log_event(db, user, "bascule_actif", detail=f"{cible.email} → actif={cible.actif}")
     db.commit()
+    request.session["flash"] = (
+        f"Compte {cible.email} {'réactivé' if cible.actif else 'désactivé'}."
+    )
     return RedirectResponse("/admin/utilisateurs", status_code=303)
 
 
@@ -201,11 +206,14 @@ async def ajouter_benefice(request: Request, user: User = ADMIN, db: Session = D
                    note=(form.get("note") or "").strip() or None))
     log_event(db, user, "ajout_benefice", detail=f"{cible.email} : {date_mobilite}")
     db.commit()
+    request.session["flash"] = f"Bénéfice du {date_mobilite} ajouté."
     return RedirectResponse(f"/admin/benefices?user_id={cible.id}", status_code=303)
 
 
 @router.post("/benefices/{benefit_id}/supprimer")
-def supprimer_benefice(benefit_id: int, user: User = ADMIN, db: Session = Depends(get_db)):
+def supprimer_benefice(
+    request: Request, benefit_id: int, user: User = ADMIN, db: Session = Depends(get_db)
+):
     benefit = db.get(Benefit, benefit_id)
     if benefit is None:
         raise HTTPException(status_code=404)
@@ -213,6 +221,7 @@ def supprimer_benefice(benefit_id: int, user: User = ADMIN, db: Session = Depend
     log_event(db, user, "suppression_benefice", detail=f"user={user_id} date={benefit.date}")
     db.delete(benefit)
     db.commit()
+    request.session["flash"] = "Bénéfice supprimé."
     return RedirectResponse(f"/admin/benefices?user_id={user_id}", status_code=303)
 
 
@@ -278,13 +287,17 @@ async def maj_campagne(request: Request, user: User = ADMIN, db: Session = Depen
 
     log_event(db, user, "maj_campagne", detail=f"statut={statut} fenetre={wref}")
     db.commit()
+    request.session["flash"] = "Paramètres de campagne enregistrés."
     return RedirectResponse("/admin/campagne", status_code=303)
 
 
 @router.post("/dossiers/{dossier_id}/reouvrir")
-def reouvrir(dossier_id: int, user: User = ADMIN, db: Session = Depends(get_db)):
+def reouvrir(
+    request: Request, dossier_id: int, user: User = ADMIN, db: Session = Depends(get_db)
+):
     dossier = db.get(Dossier, dossier_id)
     if dossier is None:
         raise HTTPException(status_code=404)
     reopen_dossier(db, dossier, user)
+    request.session["flash"] = "Dossier rouvert pour modification."
     return RedirectResponse("/admin/campagne", status_code=303)

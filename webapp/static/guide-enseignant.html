@@ -94,6 +94,11 @@
     figure.capture,.note,.attention,.astuce,table{page-break-inside:avoid}
     .saut-page{page-break-before:always}
     a{color:var(--texte); text-decoration:none}
+    /* Liens de référence (grille / arrêté) : rester visibles et cliquables au PDF,
+       et afficher l'URL pour les lecteurs d'une copie papier. */
+    .ref-carte a, a[href^="http"]{color:var(--bleu2); text-decoration:underline}
+    .ref-carte a[href^="http"]::after{content:" — " attr(href); font-size:.8rem;
+       color:var(--gris); word-break:break-all; text-decoration:none}
   }
   @page{margin:18mm 14mm; size:A4}
 </style>

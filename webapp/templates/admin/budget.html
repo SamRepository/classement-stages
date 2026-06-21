@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block titre %}Budget{% endblock %}
+{% block contenu %}
+<h1>Budget des mobilités</h1>
+<p>Saisie des montants estimés (billet, frais divers) par bénéficiaire, réservée au
+   service budget. Ces montants ne sont plus saisis par l'enseignant.</p>
+<p><small>Ils peuvent aussi être renseignés en masse via l'<a href="/admin/utilisateurs">import des
+   comptes</a> (colonnes <code>billet</code> et <code>frais</code> du fichier des bénéficiaires).</small></p>
+
+<article>
+  <h3>{{ campaign.grid_id }} — {{ dossiers|length }} dossier(s)</h3>
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Réf.</th><th>Bénéficiaire</th><th>Pays</th><th>Billet (DA)</th><th>Frais divers (DA)</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for d in dossiers %}
+      <tr>
+        <td>{{ d.candidate_ref }}</td>
+        <td>{{ d.user.nom }} {{ d.user.prenom }}</td>
+        <td>{{ d.pays or '—' }}</td>
+        <td><input form="budget-{{ d.id }}" name="billet_estime_da" type="number" step="0.01" min="0"
+                   value="{{ d.billet_estime_da or '' }}" style="width:9rem"></td>
+        <td><input form="budget-{{ d.id }}" name="frais_divers_da" type="number" step="0.01" min="0"
+                   value="{{ d.frais_divers_da or '' }}" style="width:9rem"></td>
+        <td>
+          <form id="budget-{{ d.id }}" method="post" action="/admin/budget/{{ d.id }}" class="inline-form">
+            <button type="submit">Enregistrer</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6">Aucun dossier.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</article>
+{% endblock %}

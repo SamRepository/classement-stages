@@ -9,6 +9,12 @@
      · <a href="/commission/dossiers">← retour à la liste</a></p>
 </hgroup>
 
+{% if dossier.habilitation_exercice %}
+<mark>ℹ️ Le candidat déclare avoir obtenu son habilitation universitaire durant l'exercice
+   budgétaire : les documents pédagogiques déjà utilisés dans le dossier d'habilitation
+   ne doivent pas être comptés (art. règles transverses).</mark>
+{% endif %}
+
 {% if not decidable %}
 <mark>{% if dossier.statut == 'brouillon' %}Dossier encore en brouillon : pas de décision possible avant soumission.
 {% else %}Dossier gelé : les décisions sont closes.{% endif %}</mark>

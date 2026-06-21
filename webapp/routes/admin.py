@@ -20,7 +20,12 @@ from webapp.models import Benefit, Dossier, User
 from webapp.security import generate_password, hash_password
 from webapp.services import backup
 from webapp.services.accounts import import_accounts, import_benefits
-from webapp.services.dossier import get_campaign, log_event, reopen_dossier
+from webapp.services.dossier import (
+    auto_submit_drafts,
+    get_campaign,
+    log_event,
+    reopen_dossier,
+)
 from webapp.services.mailer import notify_new_accounts
 from webapp.templating import templates
 
@@ -267,6 +272,7 @@ async def maj_campagne(request: Request, user: User = ADMIN, db: Session = Depen
     statut = form.get("statut") or camp.statut
     if statut not in ("ouverte", "cloturee"):
         raise HTTPException(status_code=422, detail=f"Statut inconnu : {statut!r}.")
+    closing_saisie = statut == "cloturee" and camp.statut != "cloturee"
     if form.get("campaign_date"):
         try:
             camp.campaign_date = date.fromisoformat(form.get("campaign_date"))
@@ -303,7 +309,13 @@ async def maj_campagne(request: Request, user: User = ADMIN, db: Session = Depen
 
     log_event(db, user, "maj_campagne", detail=f"statut={statut} fenetre={wref}")
     db.commit()
-    request.session["flash"] = "Paramètres de campagne enregistrés."
+
+    flash = "Paramètres de campagne enregistrés."
+    if closing_saisie:
+        n = auto_submit_drafts(db, camp, user)
+        if n:
+            flash += f" {n} dossier(s) en brouillon soumis automatiquement."
+    request.session["flash"] = flash
     return RedirectResponse("/admin/campagne", status_code=303)
 
 
@@ -317,6 +329,59 @@ def reouvrir(
     reopen_dossier(db, dossier, user)
     request.session["flash"] = "Dossier rouvert pour modification."
     return RedirectResponse("/admin/campagne", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Budget : billet / frais divers par bénéficiaire (saisie service budget)
+# ---------------------------------------------------------------------------
+
+
+def _parse_da(value: str | None, libelle: str) -> float | None:
+    raw = (value or "").strip().replace(",", ".")
+    if not raw:
+        return None
+    try:
+        montant = float(raw)
+    except ValueError:
+        raise HTTPException(status_code=422, detail=f"{libelle} : montant invalide.")
+    if montant < 0:
+        raise HTTPException(status_code=422, detail=f"{libelle} : montant négatif.")
+    return montant
+
+
+@router.get("/budget")
+def budget(request: Request, user: User = ADMIN, db: Session = Depends(get_db)):
+    camp = get_campaign(db)
+    dossiers = list(
+        db.scalars(
+            select(Dossier)
+            .where(Dossier.campaign_id == camp.id)
+            .order_by(Dossier.candidate_ref)
+        )
+    )
+    return templates.TemplateResponse(
+        request,
+        "admin/budget.html",
+        {"user": user, "campaign": camp, "dossiers": dossiers},
+    )
+
+
+@router.post("/budget/{dossier_id}")
+async def maj_budget(
+    request: Request, dossier_id: int, user: User = ADMIN, db: Session = Depends(get_db)
+):
+    camp = get_campaign(db)
+    dossier = db.get(Dossier, dossier_id)
+    if dossier is None or dossier.campaign_id != camp.id:
+        raise HTTPException(status_code=404)
+    form = await request.form()
+    dossier.billet_estime_da = _parse_da(form.get("billet_estime_da"), "Billet estimé")
+    dossier.frais_divers_da = _parse_da(form.get("frais_divers_da"), "Frais divers")
+    log_event(db, user, "maj_budget", dossier,
+              detail=f"billet={dossier.billet_estime_da} frais={dossier.frais_divers_da}")
+    db.commit()
+    request.session["flash"] = f"Budget enregistré pour {dossier.candidate_ref}."
+    return RedirectResponse("/admin/budget", status_code=303)
 
 
 # ---------------------------------------------------------------------------

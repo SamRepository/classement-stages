@@ -187,6 +187,28 @@ def test_cloture_campagne(client, db_session, campaign, admin):
     assert campaign.statut == "cloturee"
 
 
+def test_cloture_saisie_auto_soumet_brouillons(client, db_session, campaign, dossier, admin):
+    """À la fermeture de la saisie, les dossiers en brouillon sont soumis d'office."""
+    assert dossier.statut == "brouillon"
+    login(client, "admin@test.dz")
+    r = client.post("/admin/campagne", data={"statut": "cloturee",
+                                             "campaign_date": "2026-06-30"})
+    assert r.status_code == 303
+    db_session.expire_all()
+    assert dossier.statut == "soumis"
+    assert dossier.submitted_at is not None
+
+
+def test_admin_budget_saisie(client, db_session, campaign, dossier, admin):
+    login(client, "admin@test.dz")
+    r = client.post(f"/admin/budget/{dossier.id}",
+                    data={"billet_estime_da": "85000", "frais_divers_da": "12000,50"})
+    assert r.status_code == 303
+    db_session.expire_all()
+    assert dossier.billet_estime_da == 85000.0
+    assert dossier.frais_divers_da == 12000.5
+
+
 def test_reouverture_dossier(client, db_session, campaign, dossier, admin):
     dossier.statut = "soumis"
     db_session.commit()

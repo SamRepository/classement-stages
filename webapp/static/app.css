@@ -81,6 +81,18 @@ button.modifier { color: #0b5ed7; border: 1px solid #0b5ed7; }
 button.modifier:hover { background: #0b5ed7; color: #fff; }
 button.supprimer { color: #b71c1c; border: 1px solid #b71c1c; }
 button.supprimer:hover { background: #b71c1c; color: #fff; }
+
+/* Bouton de soumission du dossier : couleur distincte (mauve) pour le démarquer
+   des boutons « Enregistrer » et signaler une action définitive. */
+button.btn-soumettre {
+  background: #6f42c1;
+  border-color: #6f42c1;
+  color: #fff;
+}
+button.btn-soumettre:hover {
+  background: #59359a;
+  border-color: #59359a;
+}
 tr.edition td { background: #f3f7ff; }
 
 /* Page « Mon dossier » : contenu pleine largeur (les tableaux d'activités ont

@@ -30,7 +30,7 @@
 </article>
 {% elif not editable %}
 <mark>Votre dossier a été soumis{% if dossier.submitted_at %} le {{ dossier.submitted_at.strftime('%d/%m/%Y') }}{% endif %} :
-il est en cours d'examen et ne peut plus être modifié. Pour toute correction, contactez l'administration.</mark>
+il est en cours d'examen et ne peut plus être modifié.</mark>
 {% endif %}
 
 <div id="score-host" hx-get="/mon-dossier/score" hx-trigger="load"></div>
@@ -55,14 +55,16 @@ il est en cours d'examen et ne peut plus être modifié. Pour toute correction, 
             <input name="duree_jours" type="number" min="1" value="{{ dossier.duree_jours or '' }}" {% if not editable %}disabled{% endif %}>
           </label>
         </div>
-        <div class="grid">
-          <label>Billet estimé (DA)
-            <input name="billet_estime_da" type="number" step="0.01" value="{{ dossier.billet_estime_da or '' }}" {% if not editable %}disabled{% endif %}>
-          </label>
-          <label>Frais divers estimés (DA)
-            <input name="frais_divers_da" type="number" step="0.01" value="{{ dossier.frais_divers_da or '' }}" {% if not editable %}disabled{% endif %}>
-          </label>
-        </div>
+        <label>
+          <input type="checkbox" name="habilitation_exercice" value="1"
+                 {% if dossier.habilitation_exercice %}checked{% endif %} {% if not editable %}disabled{% endif %}>
+          J'ai obtenu mon habilitation universitaire durant l'exercice budgétaire
+          {% if campaign.window_start_date and campaign.window_end_date %}
+            ({{ campaign.window_start_date.strftime('%d/%m/%Y') }} – {{ campaign.window_end_date.strftime('%d/%m/%Y') }})
+          {% endif %}
+        </label>
+        <small>Les travaux et documents pédagogiques déjà utilisés dans le dossier d'habilitation
+          universitaire ne sont pas comptabilisés dans le classement.</small>
         {% if editable %}<button type="submit">Enregistrer les informations</button>{% endif %}
       </form>
     </article>
@@ -102,9 +104,11 @@ il est en cours d'examen et ne peut plus être modifié. Pour toute correction, 
       <h3>Soumission</h3>
       <p>Une fois soumis, votre dossier est gelé et transmis à la commission : vous ne pourrez
          plus le modifier. Vérifiez chaque élément et son justificatif avant de soumettre.</p>
+      <p><small>⚠️ Si vous ne le soumettez pas vous-même, votre dossier sera <strong>soumis
+         automatiquement</strong> à la fermeture de la saisie sur la plateforme, en l'état.</small></p>
       <form method="post" action="/mon-dossier/soumettre"
             onsubmit="return confirm('Soumettre définitivement votre dossier ?');">
-        <button type="submit">Soumettre mon dossier</button>
+        <button type="submit" class="btn-soumettre">Soumettre mon dossier</button>
       </form>
     </article>
     {% endif %}

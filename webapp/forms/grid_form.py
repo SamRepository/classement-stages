@@ -25,6 +25,9 @@ def build_form_spec(grid: dict) -> list[dict]:
             "criterion_id": criterion["id"],
             "label": _label(criterion),
             "type": ctype,
+            # Rappel affiché : les documents pédagogiques déjà utilisés dans le
+            # dossier d'habilitation universitaire ne sont pas comptés.
+            "habilitation_hint": bool(criterion.get("habilitation_hint")),
         }
         if ctype == "enum":
             section["widget"] = "enum"
@@ -49,6 +52,9 @@ def build_form_spec(grid: dict) -> list[dict]:
                     {"index": i, "condition": b.get("condition", "?"), "points": b.get("points", 0)}
                     for i, b in enumerate(criterion.get("bonuses", []))
                 ]
+                # Saisie facultative de l'ISBN et de l'URL (livre référencé) pour
+                # vérification par la commission ; sans effet sur le score.
+                section["capture_isbn"] = bool(criterion.get("capture_isbn"))
         elif ctype == "capped":
             section["widget"] = "capped"
             section["cap_points"] = criterion.get("cap_points", 0)
@@ -73,6 +79,7 @@ def build_form_spec(grid: dict) -> list[dict]:
             else:
                 section["widget"] = "count_detail"
                 section["has_date"] = criterion.get("window") == "after_last_benefit"
+                section["date_label"] = criterion.get("date_label_fr") or "Date"
                 section["has_position"] = "author_position_weighting" in criterion.get("rules", [])
                 section["bonuses"] = [
                     {"condition": b.get("condition", "?"), "points": b.get("points", 0)}

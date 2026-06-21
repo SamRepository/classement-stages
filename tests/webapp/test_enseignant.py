@@ -16,6 +16,23 @@ def test_page_dossier_cree_brouillon(client, db_session, campaign, enseignant):
     assert len(dossiers) == 1
 
 
+def test_infos_habilitation_preserve_budget(client, db_session, campaign, enseignant):
+    """La saisie des infos coche l'habilitation et n'écrase pas le budget (service budget)."""
+    from webapp.models import Dossier
+
+    login(client, "enseignant@test.dz")
+    client.get("/mon-dossier")  # crée le brouillon
+    dossier = db_session.scalar(select(Dossier).where(Dossier.user_id == enseignant.id))
+    dossier.billet_estime_da = 90000.0  # saisi par le service budget
+    db_session.commit()
+
+    r = client.post("/mon-dossier/infos", data={"pays": "France", "habilitation_exercice": "1"})
+    assert r.status_code == 303
+    db_session.expire_all()
+    assert dossier.habilitation_exercice is True
+    assert dossier.billet_estime_da == 90000.0  # non écrasé
+
+
 def test_saisie_enum_et_score(client, db_session, campaign, enseignant):
     login(client, "enseignant@test.dz")
     client.get("/mon-dossier")

@@ -132,8 +132,9 @@ async def maj_infos(
     dossier.departement = (form.get("departement") or None) or dossier.departement
     dossier.pays = (form.get("pays") or "").strip() or None
     dossier.duree_jours = _to_int(form.get("duree_jours"))
-    dossier.billet_estime_da = _to_float(form.get("billet_estime_da"))
-    dossier.frais_divers_da = _to_float(form.get("frais_divers_da"))
+    # Billet / frais divers ne sont plus saisis par l'enseignant : ils sont
+    # renseignés par le service budget (champs masqués côté enseignant).
+    dossier.habilitation_exercice = bool(form.get("habilitation_exercice"))
     db.commit()
     request.session["flash"] = "Informations enregistrées."
     return RedirectResponse("/mon-dossier", status_code=303)
@@ -193,6 +194,11 @@ def _single_payload(spec: dict, form) -> tuple[dict | None, str | None]:
         payload = {"applies": True}
         if indices:
             payload["bonuses"] = indices
+        if spec.get("capture_isbn"):
+            for key in ("isbn", "url"):
+                value = (form.get(key) or "").strip()
+                if value:
+                    payload[key] = value
         return payload, None
     if widget in ("fixed_cap", "capped"):
         points = _to_float(form.get("points"))

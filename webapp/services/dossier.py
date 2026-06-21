@@ -86,6 +86,31 @@ def submit_dossier(db: Session, dossier: Dossier, user: User) -> None:
     db.commit()
 
 
+def auto_submit_drafts(db: Session, campaign: Campaign, actor: User) -> int:
+    """Soumet d'office les dossiers restés en brouillon (fermeture de la saisie).
+
+    Appelé quand l'administration clôt la saisie : les dossiers non soumis par
+    l'enseignant sont transmis à la commission en l'état (cf. l'avertissement de
+    l'espace enseignant). Les dossiers déjà soumis ou gelés ne sont pas touchés.
+    Renvoie le nombre de dossiers soumis automatiquement.
+    """
+    drafts = list(
+        db.scalars(
+            select(Dossier).where(
+                Dossier.campaign_id == campaign.id, Dossier.statut == "brouillon"
+            )
+        )
+    )
+    now = _now()
+    for dossier in drafts:
+        dossier.statut = "soumis"
+        dossier.submitted_at = now
+        log_event(db, actor, "soumission_auto", dossier)
+    if drafts:
+        db.commit()
+    return len(drafts)
+
+
 def reopen_dossier(db: Session, dossier: Dossier, admin: User) -> None:
     """Réouverture par l'admin (dossier soumis → brouillon), refusée après gel."""
     if dossier.campaign.statut == "gelee":

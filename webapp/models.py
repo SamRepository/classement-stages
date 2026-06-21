@@ -13,6 +13,7 @@ from datetime import date, datetime, timezone
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     CheckConstraint,
     Date,
     DateTime,
@@ -102,6 +103,11 @@ class Dossier(Base):
     duree_jours: Mapped[int | None] = mapped_column(Integer)
     billet_estime_da: Mapped[float | None] = mapped_column(Float)
     frais_divers_da: Mapped[float | None] = mapped_column(Float)
+    # Déclaration de l'enseignant : habilitation universitaire obtenue durant
+    # l'exercice budgétaire de la fenêtre. Sert d'alerte à la commission (les
+    # documents pédagogiques déjà utilisés dans le dossier d'habilitation ne sont
+    # pas comptés, cf. shared-rules) ; sans effet automatique sur le score.
+    habilitation_exercice: Mapped[bool] = mapped_column(Boolean, default=False)
     statut: Mapped[str] = mapped_column(String(20), default="brouillon")
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

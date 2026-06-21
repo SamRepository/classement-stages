@@ -4,6 +4,11 @@
 <article class="critere" id="section-{{ spec.criterion_id }}">
   <h3>{{ spec.label }}</h3>
 
+  {% if spec.habilitation_hint %}
+  <p class="habilitation-hint"><small>ℹ️ Les travaux et documents pédagogiques déjà utilisés
+     dans votre dossier d'habilitation universitaire <strong>ne sont pas comptabilisés</strong> ici.</small></p>
+  {% endif %}
+
   {% if spec.widget == 'enum' %}
     <form hx-post="/mon-dossier/entrees/{{ spec.criterion_id }}" hx-target="#section-{{ spec.criterion_id }}"
           hx-swap="outerHTML" hx-encoding="multipart/form-data">
@@ -41,6 +46,18 @@
                {% if entry and entry.payload.applies %}checked{% endif %} {% if not editable %}disabled{% endif %}>
         Je suis concerné ({{ spec.points|points }} pts)
       </label>
+      {% if spec.capture_isbn %}
+      <div class="grid">
+        <label>ISBN (optionnel)
+          <input name="isbn" value="{{ entry.payload.isbn if entry else '' }}"
+                 placeholder="978-…" {% if not editable %}disabled{% endif %}>
+        </label>
+        <label>URL (optionnel)
+          <input type="url" name="url" value="{{ entry.payload.url if entry else '' }}"
+                 placeholder="https://…" {% if not editable %}disabled{% endif %}>
+        </label>
+      </div>
+      {% endif %}
       {% for b in spec.bonuses %}
       <label>
         <input type="checkbox" name="bonus" value="{{ b.index }}"
@@ -130,7 +147,7 @@
       <thead>
         <tr>
           <th>Élément</th><th>Intitulé</th>
-          {% if spec.has_date %}<th>Date</th>{% endif %}
+          {% if spec.has_date %}<th>{{ spec.date_label or 'Date' }}</th>{% endif %}
           {% if spec.has_position %}<th>Position</th>{% endif %}
           <th>Qté</th>{% if show_ref %}<th>Réf.</th>{% endif %}<th>Justificatif</th>{% if editable %}<th></th>{% endif %}
         </tr>
@@ -149,7 +166,7 @@
                   <input name="intitule" value="{{ r.payload.intitule or '' }}">
                 </label>
                 {% if spec.has_date %}
-                <label>Date
+                <label>{{ spec.date_label or 'Date' }}
                   <input type="date" name="date" value="{{ r.payload.date or '' }}" required>
                 </label>
                 {% endif %}
@@ -235,7 +252,7 @@
         </div>
         <div class="grid">
           {% if spec.has_date %}
-          <label>Date <input type="date" name="date" required></label>
+          <label>{{ spec.date_label or 'Date' }} <input type="date" name="date" required></label>
           {% endif %}
           {% if spec.has_position %}
           <label>Position d'auteur <input type="number" name="author_position" min="1" placeholder="1"></label>

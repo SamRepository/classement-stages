@@ -12,7 +12,7 @@ import pytest
 from classement.engine import score_candidate
 from webapp.models import Benefit, Entry
 from webapp.services.scoring import (
-    _window_reference,
+    _campaign_window,
     assemble_candidate,
     compute_ranking,
     compute_score,
@@ -29,25 +29,21 @@ def _score_manual(candidate: dict):
     return score_candidate(GRID, candidate, RULES, CAMPAIGN_DATE, "cloture")
 
 
-def test_window_reference_uniforme(campaign):
-    """Date de clôture uniforme : repère unique pour les candidats ayant bénéficié."""
-    campaign.window_global_close_date = date(2025, 12, 31)
-    avec = {"benefits": [{"date": "2024-05-10"}]}
-    assert _window_reference(avec, campaign) == "cloture"
-    assert avec["last_benefit_platform_close_date"] == "2025-12-31"
-    # Sans bénéfice : pas de fenêtre imposée, on garde le mode de la campagne.
-    sans = {"benefits": []}
-    assert _window_reference(sans, campaign) == campaign.window_reference
-    assert "last_benefit_platform_close_date" not in sans
+def test_campaign_window_intervalle(campaign):
+    """Intervalle d'exercice budgétaire : fenêtre uniforme pour tous les candidats."""
+    campaign.window_start_date = date(2025, 1, 1)
+    campaign.window_end_date = date(2025, 12, 31)
+    assert _campaign_window(campaign) == (date(2025, 1, 1), date(2025, 12, 31))
+    # Une seule borne suffit à activer l'intervalle.
+    campaign.window_start_date = None
+    assert _campaign_window(campaign) == (None, date(2025, 12, 31))
 
 
-def test_window_reference_par_benefice(campaign):
-    """Sans date uniforme : on garde le repère par bénéfice de la campagne."""
-    campaign.window_global_close_date = None
-    campaign.window_reference = "mobilite"
-    cand = {"benefits": [{"date": "2024-05-10"}]}
-    assert _window_reference(cand, campaign) == "mobilite"
-    assert "last_benefit_platform_close_date" not in cand
+def test_campaign_window_absent(campaign):
+    """Sans borne : pas d'intervalle, on retombe sur le repère par bénéfice."""
+    campaign.window_start_date = None
+    campaign.window_end_date = None
+    assert _campaign_window(campaign) is None
 
 
 def _add_entries(db, dossier, rows):

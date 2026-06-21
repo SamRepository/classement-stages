@@ -47,10 +47,12 @@ class Campaign(Base):
     institution_id: Mapped[str] = mapped_column(String(80))
     campaign_date: Mapped[date] = mapped_column(Date)
     window_reference: Mapped[str] = mapped_column(String(20), default="cloture")
-    # Date de clôture uniforme (optionnelle) : si renseignée, sert de repère unique
-    # de la fenêtre « après dernier bénéfice » pour tous les candidats ayant
-    # bénéficié (ex. clôture de la plateforme Odoo), au lieu des dates par bénéfice.
-    window_global_close_date: Mapped[date | None] = mapped_column(Date)
+    # Fenêtre « après dernier bénéfice » uniforme : intervalle de l'exercice
+    # budgétaire (ex. 01/01/2025 → 31/12/2025). Si l'une des bornes est renseignée,
+    # seules les activités datées dans [début, fin] comptent — pour tous les
+    # candidats —, au lieu des dates par bénéfice (repère `window_reference`).
+    window_start_date: Mapped[date | None] = mapped_column(Date)
+    window_end_date: Mapped[date | None] = mapped_column(Date)
     date_ouverture: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     date_cloture: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     statut: Mapped[str] = mapped_column(String(20), default="ouverte")

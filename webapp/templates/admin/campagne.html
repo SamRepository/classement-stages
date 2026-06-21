@@ -35,17 +35,24 @@
     <fieldset>
       <legend>Fenêtre « après dernier bénéfice » (activités : publications, communications…)</legend>
       <div class="grid">
-        <label>Repère par bénéfice
+        <label>Début de l'exercice budgétaire (optionnel)
+          <input type="date" name="window_start_date"
+                 value="{{ campaign.window_start_date.isoformat() if campaign.window_start_date else '' }}">
+        </label>
+        <label>Fin de l'exercice budgétaire (optionnel)
+          <input type="date" name="window_end_date"
+                 value="{{ campaign.window_end_date.isoformat() if campaign.window_end_date else '' }}">
+        </label>
+      </div>
+      <small>Intervalle <strong>uniforme</strong> (ex. 01/01/2025 → 31/12/2025) : si une borne est
+        renseignée, seules les activités datées dans l'intervalle comptent, pour tous les candidats —
+        et cela prime sur le repère par bénéfice ci-dessous.</small>
+      <div class="grid">
+        <label>… ou repère par bénéfice (utilisé si l'intervalle est laissé vide)
           <select name="window_reference">
             <option value="cloture" {% if campaign.window_reference == 'cloture' %}selected{% endif %}>Clôture de plateforme (fin de session du bénéfice)</option>
             <option value="mobilite" {% if campaign.window_reference == 'mobilite' %}selected{% endif %}>Date de mobilité (départ du stage)</option>
           </select>
-        </label>
-        <label>… ou date de clôture <strong>uniforme</strong> (optionnel)
-          <input type="date" name="window_global_close_date"
-                 value="{{ campaign.window_global_close_date.isoformat() if campaign.window_global_close_date else '' }}">
-          <small>Si renseignée, sert de repère unique pour tous les candidats ayant bénéficié
-             (ex. date de clôture de la plateforme Odoo) et prime sur le repère par bénéfice.</small>
         </label>
       </div>
     </fieldset>

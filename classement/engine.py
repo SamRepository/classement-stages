@@ -55,6 +55,25 @@ def _parse_date(value: str | None) -> date | None:
     return date.fromisoformat(value)
 
 
+def _normalize_interval(
+    window: tuple[date | str | None, date | str | None] | None,
+) -> tuple[date | None, date | None] | None:
+    """Normalise un intervalle de fenêtre `(début, fin)` en dates.
+
+    Accepte des `date`, des chaînes ISO ou `None` pour chaque borne. Renvoie
+    `None` si l'intervalle est vide (les deux bornes absentes) : on retombe alors
+    sur le repère par bénéfice.
+    """
+    if not window:
+        return None
+    start, end = window
+    start = _parse_date(start) if isinstance(start, str) else start
+    end = _parse_date(end) if isinstance(end, str) else end
+    if start is None and end is None:
+        return None
+    return (start, end)
+
+
 def _label(criterion: dict) -> str:
     return criterion.get("label_fr") or criterion.get("label_ar") or criterion["id"]
 
@@ -249,6 +268,7 @@ def _score_count(
     weights: dict[int, float],
     weight_5_plus: float,
     last_close: date | None,
+    window_interval: tuple[date | None, date | None] | None = None,
 ) -> ScoreLine:
     line = ScoreLine(criterion["id"], _label(criterion), 0.0)
     if not entry:
@@ -258,9 +278,14 @@ def _score_count(
     # La fenêtre est filtrée par date d'élément, sauf en saisie agrégée
     # (`saisie_simple`, ex. citations Scopus) : l'enseignant reporte déjà un nombre
     # « depuis le dernier bénéfice », il n'y a pas de date par unité à vérifier.
+    # Deux modes (cf. `score_candidate`) :
+    #   - intervalle uniforme `window_interval` (exercice budgétaire) : on garde les
+    #     éléments datés dans [début, fin] (bornes incluses, chacune optionnelle) ;
+    #   - sinon, repère par bénéfice `last_close` : on écarte les éléments antérieurs
+    #     ou égaux à la clôture du dernier bénéfice.
     window_filter = (
         criterion.get("window") == "after_last_benefit"
-        and last_close
+        and (window_interval is not None or last_close)
         and not criterion.get("excel", {}).get("saisie_simple")
     )
 
@@ -284,6 +309,17 @@ def _score_count(
                     f"{item_id} : entrée non datée, comptée sans vérification de la "
                     f"fenêtre 'après dernier bénéfice'."
                 )
+            elif window_interval is not None:
+                start, end = window_interval
+                if (start and d < start) or (end and d > end):
+                    bornes = (
+                        f"{start.isoformat() if start else '…'} "
+                        f"– {end.isoformat() if end else '…'}"
+                    )
+                    line.warnings.append(
+                        f"{item_id} : hors de l'exercice budgétaire ({bornes}), ignoré."
+                    )
+                    continue
             elif d <= last_close:
                 line.warnings.append(
                     f"{item_id} : antérieur au {last_close.isoformat()}, ignoré."
@@ -445,16 +481,24 @@ def score_candidate(
     shared_rules: dict | None = None,
     campaign_date: date | str | None = None,
     window_reference: str = "cloture",
+    window_interval: tuple[date | str | None, date | str | None] | None = None,
 ) -> ScoreBreakdown:
     """Calcule le score détaillé d'un candidat sur une grille.
 
-    `window_reference` : repère de la fenêtre « après dernier bénéfice » retenu par
-    la commission — "cloture" (clôture de plateforme, défaut) ou "mobilite" (date de
-    la mobilité). Voir `_last_benefit_close_date`.
+    Fenêtre « après dernier bénéfice » des activités (deux modes exclusifs) :
+
+    - `window_interval` : intervalle uniforme `(début, fin)` (exercice budgétaire,
+      bornes incluses et chacune optionnelle) appliqué à **tous** les candidats —
+      seules les activités datées dans l'intervalle comptent. S'il est fourni, il
+      prime sur le repère par bénéfice.
+    - `window_reference` (utilisé si `window_interval` est absent) : repère par
+      bénéfice retenu par la commission — "cloture" (clôture de plateforme, défaut)
+      ou "mobilite" (date de la mobilité). Voir `_last_benefit_close_date`.
     """
     if isinstance(campaign_date, str):
         campaign_date = date.fromisoformat(campaign_date)
     campaign_date = campaign_date or date.today()
+    window_interval = _normalize_interval(window_interval)
 
     weights, weight_5_plus = author_weights(shared_rules)
     last_close = _last_benefit_close_date(candidate, window_reference)
@@ -493,7 +537,9 @@ def score_candidate(
         elif ctype == "formula":
             line = _score_formula(criterion, entry, candidate, campaign_date)
         elif ctype == "count":
-            line = _score_count(criterion, entry, weights, weight_5_plus, last_close)
+            line = _score_count(
+                criterion, entry, weights, weight_5_plus, last_close, window_interval
+            )
         else:
             line = ScoreLine(criterion["id"], _label(criterion), 0.0)
             line.warnings.append(f"Type de critère non supporté : {ctype!r}.")

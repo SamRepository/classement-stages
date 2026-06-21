@@ -146,11 +146,13 @@ Le mot de passe admin généré s'affiche — **le noter immédiatement** (ou pa
    la session en cours. Sans historique disponible, le candidat peut saisir
    `n` lui-même et la commission l'ajuste. Contrôle visuel possible en
    sélectionnant un enseignant.
-4. **Campagne** : fixer la fenêtre d'ouverture/clôture de la saisie et choisir
-   le **repère de la fenêtre « après dernier bénéfice »** (activités) :
-   *clôture de plateforme (fin de session)* ou *date de mobilité (départ)* par
-   bénéfice, ou une **date de clôture uniforme** pour tous (ex. clôture de la
-   plateforme Odoo), prioritaire si renseignée.
+4. **Campagne** : fixer la fenêtre d'ouverture/clôture de la saisie et la
+   **fenêtre « après dernier bénéfice »** (activités). Deux modes : un
+   **intervalle d'exercice budgétaire uniforme** (ex. 01/01/2025 → 31/12/2025)
+   appliqué à tous — seules les activités datées dans l'intervalle comptent,
+   prioritaire si une borne est renseignée ; à défaut, un **repère par
+   bénéfice** : *clôture de plateforme (fin de session)* ou *date de mobilité
+   (départ)*.
 5. **Recette finale** : se connecter avec un compte enseignant réel, saisir un
    dossier complet avec quelques PDF, comparer le score provisoire au barème —
    puis distribuer les accès aux autres candidats.

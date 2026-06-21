@@ -281,14 +281,25 @@ async def maj_campagne(request: Request, user: User = ADMIN, db: Session = Depen
     if wref not in ("cloture", "mobilite"):
         raise HTTPException(status_code=422, detail=f"Repère de fenêtre inconnu : {wref!r}.")
     camp.window_reference = wref
-    raw_global = (form.get("window_global_close_date") or "").strip()
-    if raw_global:
+
+    def _window_date(name: str, libelle: str) -> date | None:
+        raw = (form.get(name) or "").strip()
+        if not raw:
+            return None
         try:
-            camp.window_global_close_date = date.fromisoformat(raw_global)
+            return date.fromisoformat(raw)
         except ValueError:
-            raise HTTPException(status_code=422, detail="Date de clôture uniforme invalide.")
-    else:
-        camp.window_global_close_date = None
+            raise HTTPException(status_code=422, detail=f"{libelle} invalide.")
+
+    start = _window_date("window_start_date", "Début de l'exercice budgétaire")
+    end = _window_date("window_end_date", "Fin de l'exercice budgétaire")
+    if start and end and start > end:
+        raise HTTPException(
+            status_code=422,
+            detail="L'exercice budgétaire commence après sa date de fin.",
+        )
+    camp.window_start_date = start
+    camp.window_end_date = end
 
     log_event(db, user, "maj_campagne", detail=f"statut={statut} fenetre={wref}")
     db.commit()

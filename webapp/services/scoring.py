@@ -7,6 +7,7 @@ Les barèmes, plafonds, fenêtres et pénalités restent dans ``classement.engin
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 from functools import lru_cache
 from typing import Literal
 
@@ -141,21 +142,18 @@ def _assemble_from_db(db: Session, dossier: Dossier, *, mode: Mode) -> Assembled
     return assemble_candidate(dossier, dossier.entries, benefits, grid, mode=mode)
 
 
-def _window_reference(candidate: dict, campaign: Campaign) -> str:
-    """Repère de la fenêtre « après dernier bénéfice » à appliquer au candidat.
+def _campaign_window(campaign: Campaign) -> tuple[date | None, date | None] | None:
+    """Intervalle de fenêtre uniforme (exercice budgétaire) de la campagne.
 
-    Si la campagne fixe une **date de clôture uniforme**, elle sert de repère
-    unique pour tous les candidats ayant au moins un bénéfice (le moteur honore
-    ``last_benefit_platform_close_date`` en mode ``cloture``). Sinon on garde le
-    mode par bénéfice de la campagne (``cloture`` = clôture de plateforme,
-    ``mobilite`` = date de mobilité/départ).
+    Si la campagne fixe au moins une borne (``window_start_date`` et/ou
+    ``window_end_date``), cet intervalle s'applique **uniformément** à tous les
+    candidats : seules les activités datées dans [début, fin] comptent. Sinon
+    (``None``), on retombe sur le repère par bénéfice (``window_reference`` :
+    ``cloture`` = clôture de plateforme, ``mobilite`` = date de mobilité/départ).
     """
-    if campaign.window_global_close_date and candidate.get("benefits"):
-        candidate["last_benefit_platform_close_date"] = (
-            campaign.window_global_close_date.isoformat()
-        )
-        return "cloture"
-    return campaign.window_reference
+    if campaign.window_start_date or campaign.window_end_date:
+        return (campaign.window_start_date, campaign.window_end_date)
+    return None
 
 
 def compute_score(
@@ -169,7 +167,8 @@ def compute_score(
         assembled.candidate,
         get_shared_rules(),
         campaign.campaign_date,
-        _window_reference(assembled.candidate, campaign),
+        campaign.window_reference,
+        _campaign_window(campaign),
     )
     return breakdown, assembled.exclusions
 
@@ -203,6 +202,7 @@ def compute_ranking(
     candidates: list[dict] = []
     breakdowns: list[ScoreBreakdown] = []
     exclusions: dict[int, list[dict]] = {}
+    window = _campaign_window(campaign)
     for dossier in dossiers:
         assembled = _assemble_from_db(db, dossier, mode=mode)
         breakdown = score_candidate(
@@ -210,7 +210,8 @@ def compute_ranking(
             assembled.candidate,
             get_shared_rules(),
             campaign.campaign_date,
-            _window_reference(assembled.candidate, campaign),
+            campaign.window_reference,
+            window,
         )
         candidates.append(assembled.candidate)
         breakdowns.append(breakdown)

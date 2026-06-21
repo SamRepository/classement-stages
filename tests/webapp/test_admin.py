@@ -154,16 +154,28 @@ def test_import_benefices_email_inconnu_ignore(client, db_session, campaign, adm
     assert db_session.scalar(select(Benefit)) is None
 
 
-def test_campagne_fenetre_uniforme(client, db_session, campaign, admin):
+def test_campagne_fenetre_intervalle(client, db_session, campaign, admin):
     login(client, "admin@test.dz")
     r = client.post("/admin/campagne", data={
         "statut": "ouverte", "campaign_date": "2026-06-30",
-        "window_reference": "mobilite", "window_global_close_date": "2025-12-31",
+        "window_reference": "mobilite",
+        "window_start_date": "2025-01-01", "window_end_date": "2025-12-31",
     })
     assert r.status_code == 303
     db_session.expire_all()
     assert campaign.window_reference == "mobilite"
-    assert campaign.window_global_close_date.isoformat() == "2025-12-31"
+    assert campaign.window_start_date.isoformat() == "2025-01-01"
+    assert campaign.window_end_date.isoformat() == "2025-12-31"
+
+
+def test_campagne_fenetre_intervalle_invalide(client, db_session, campaign, admin):
+    """Début postérieur à la fin : rejet 422, paramètres inchangés."""
+    login(client, "admin@test.dz")
+    r = client.post("/admin/campagne", data={
+        "statut": "ouverte", "campaign_date": "2026-06-30",
+        "window_start_date": "2025-12-31", "window_end_date": "2025-01-01",
+    })
+    assert r.status_code == 422
 
 
 def test_cloture_campagne(client, db_session, campaign, admin):

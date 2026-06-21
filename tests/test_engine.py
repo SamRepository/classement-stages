@@ -189,6 +189,55 @@ def test_window_reference_mobilite_ignores_close_date(u1, shared):
     assert _line(b, "publications").points == 0
 
 
+def test_window_interval_filters_outside_exercice(u1, shared):
+    # Fenêtre uniforme = exercice budgétaire 2025 : seules les activités datées
+    # dans [01/01/2025, 31/12/2025] comptent, indépendamment des bénéfices.
+    candidate = {
+        "id": "X",
+        "benefits": [{"date": "2024-09-15", "platform_close_date": "2024-04-30"}],
+        "entries": {
+            "publications": {
+                "items": [
+                    {"item": "classe_a", "count": 1, "author_position": 1, "date": "2024-12-31"},
+                    {"item": "classe_a", "count": 1, "author_position": 1, "date": "2025-06-15"},
+                    {"item": "classe_a", "count": 1, "author_position": 1, "date": "2026-01-02"},
+                ]
+            }
+        },
+    }
+    b = score_candidate(
+        u1, candidate, shared, CAMPAIGN,
+        window_interval=("2025-01-01", "2025-12-31"),
+    )
+    line = _line(b, "publications")
+    assert line.points == 15  # seule la publication de 2025 est dans l'exercice
+    assert sum("hors de l'exercice" in w for w in line.warnings) == 2
+
+
+def test_window_interval_prime_sur_repere_par_benefice(u1, shared):
+    # L'intervalle prime : une publication antérieure au dernier bénéfice mais
+    # dans l'exercice budgétaire est comptée.
+    candidate = {
+        "id": "X",
+        "benefits": [{"date": "2025-09-15", "platform_close_date": "2025-08-30"}],
+        "entries": {
+            "publications": {
+                "items": [
+                    {"item": "classe_a", "count": 1, "author_position": 1, "date": "2025-03-15"},
+                ]
+            }
+        },
+    }
+    # Repère par bénéfice : écartée (antérieure à la clôture 2025-08-30).
+    assert _line(score_candidate(u1, candidate, shared, CAMPAIGN), "publications").points == 0
+    # Intervalle uniforme : comptée.
+    b = score_candidate(
+        u1, candidate, shared, CAMPAIGN,
+        window_interval=(None, "2025-12-31"),
+    )
+    assert _line(b, "publications").points == 15
+
+
 def test_formula_3_minus_n_from_benefits(u1, shared):
     candidate = {
         "id": "X",

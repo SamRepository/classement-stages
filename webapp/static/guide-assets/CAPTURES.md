@@ -18,5 +18,6 @@ Les captures peuvent être annotées (flèches, encadrés) sous Excalidraw avant
 | `10-score.png` | Barre « Score provisoire » + détail du calcul |
 | `11-soumettre.png` | Section « Soumission » + bouton Soumettre |
 | `12-resultat.png` | Encadré « Résultat du classement » (campagne gelée) |
+| `13-archive-zip.png` | Bouton « Télécharger mon dossier complet (ZIP) » (dossier soumis/gelé) |
 
 Conseil : largeur ~1000 px, format PNG. Recadrer sur la zone utile.

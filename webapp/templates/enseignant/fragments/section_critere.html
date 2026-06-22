@@ -184,7 +184,7 @@
                 {% if spec.has_reference %}<label>DOI <input name="doi" value="{{ r.payload.doi or '' }}" placeholder="10.xxxx/…"></label>{% endif %}
                 <label>{{ spec.url_label or 'URL' }} <input name="url" type="url" value="{{ r.payload.url or '' }}" placeholder="https://…"></label>
               </div>
-              <p class="ref-hint"><small>Champs <strong>facultatifs</strong> (ex. une revue classe C
+              <p class="ref-hint"><small>Champs <strong>facultatifs</strong> (ex. une conférence non classée ou nationale
                  n'a pas toujours de DOI). Si la quantité est supérieure à 1, vous pouvez indiquer
                  <strong>plusieurs DOI/URL</strong> en les séparant par une virgule ou un retour à la ligne.</small></p>
               {% endif %}
@@ -249,7 +249,7 @@
               {% endfor %}
             </select>
           </label>
-          <label>Intitulé (titre de la publication, du projet…)
+          <label>Intitulé ({% if 'publication' in spec.criterion_id %}titre de la publication{% else %}titre de travail{% endif %}, du projet…)
             <input name="intitule" placeholder="Pour l'examen par la commission">
           </label>
         </div>
@@ -267,7 +267,7 @@
           {% if spec.has_reference %}<label>DOI <input name="doi" placeholder="10.xxxx/…"></label>{% endif %}
           <label>{{ spec.url_label or 'URL' }} <input name="url" type="url" placeholder="https://…"></label>
         </div>
-        <p class="ref-hint"><small>Champs <strong>facultatifs</strong> (ex. une revue classe C
+        <p class="ref-hint"><small>Champs <strong>facultatifs</strong> (ex. une conférence non classée ou nationale
            n'a pas toujours de DOI). Si la quantité est supérieure à 1, vous pouvez indiquer
            <strong>plusieurs DOI/URL</strong> en les séparant par une virgule ou un retour à la ligne.</small></p>
         {% endif %}

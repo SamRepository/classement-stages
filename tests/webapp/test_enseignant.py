@@ -90,6 +90,36 @@ def test_activite_avec_pdf(client, db_session, campaign, enseignant, upload_dir)
     assert r.headers["content-type"] == "application/pdf"
 
 
+def test_archive_dossier_apres_soumission(client, db_session, campaign, enseignant, upload_dir):
+    import io
+    import zipfile
+
+    login(client, "enseignant@test.dz")
+    client.get("/mon-dossier")
+    client.post(
+        "/mon-dossier/activites",
+        data={"criterion_id": "publications", "item": "classe_a",
+              "date": "2025-03-10", "author_position": "1", "intitule": "Article test"},
+        files={"fichier": ("preuve.pdf", PDF_BYTES, "application/pdf")},
+    )
+    # Indisponible tant que le dossier est en brouillon.
+    assert client.get("/mon-dossier/archive").status_code == 403
+
+    assert client.post("/mon-dossier/soumettre").status_code == 303
+
+    r = client.get("/mon-dossier/archive")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "application/zip"
+    with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+        names = zf.namelist()
+        assert "recapitulatif.html" in names
+        justifs = [n for n in names if n.startswith("justificatifs/")]
+        assert len(justifs) == 1
+        recap = zf.read("recapitulatif.html").decode("utf-8")
+        assert "Article test" in recap
+        assert justifs[0] in recap  # le récap référence le justificatif
+
+
 def test_justificatif_pdf_invalide(client, campaign, enseignant, upload_dir):
     login(client, "enseignant@test.dz")
     client.get("/mon-dossier")

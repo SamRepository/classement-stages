@@ -7,10 +7,12 @@ aucune logique de calcul côté client.
 
 from __future__ import annotations
 
+import os
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from starlette.background import BackgroundTask
 from starlette.datastructures import UploadFile
 from sqlalchemy.orm import Session
 
@@ -18,6 +20,7 @@ from webapp.auth import require_role
 from webapp.db import get_db
 from webapp.forms.grid_form import build_form_spec
 from webapp.models import Benefit, Dossier, Entry, User
+from webapp.services.archive import build_dossier_archive
 from webapp.services.dossier import assert_editable, ensure_dossier, get_campaign, submit_dossier
 from webapp.services.exports import snapshot_rank_for
 from webapp.services.scoring import compute_score, get_grid, get_institution
@@ -509,3 +512,24 @@ def soumettre(
     submit_dossier(db, dossier, user)
     request.session["flash"] = "Votre dossier a été soumis à la commission."
     return RedirectResponse("/mon-dossier", status_code=303)
+
+
+@router.get("/archive")
+def telecharger_archive(
+    user: User = Depends(require_role("enseignant")),
+    db: Session = Depends(get_db),
+):
+    """Archive ZIP du dossier (récapitulatif HTML + justificatifs PDF), après soumission."""
+    _, dossier, _ = _context(db, user)
+    if dossier.statut not in ("soumis", "gele"):
+        raise HTTPException(
+            status_code=403,
+            detail="Le téléchargement du dossier complet est disponible après sa soumission.",
+        )
+    path = build_dossier_archive(db, dossier)
+    return FileResponse(
+        path,
+        media_type="application/zip",
+        filename=f"dossier-{dossier.candidate_ref}.zip",
+        background=BackgroundTask(os.unlink, path),
+    )

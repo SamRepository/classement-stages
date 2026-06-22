@@ -33,6 +33,10 @@
 il est en cours d'examen et ne peut plus être modifié.</mark>
 {% endif %}
 
+{% if dossier.statut in ('soumis', 'gele') %}
+<p><a href="/mon-dossier/archive" role="button" class="secondary">⬇ Télécharger mon dossier complet (ZIP : récapitulatif + justificatifs PDF)</a></p>
+{% endif %}
+
 <div id="score-host" hx-get="/mon-dossier/score" hx-trigger="load"></div>
 
 <div class="dossier-content">

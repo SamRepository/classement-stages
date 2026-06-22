@@ -316,7 +316,7 @@ aequo sont signalés (`ex_aequo: true`) et laissés à l'arbitrage de la commiss
 python -m pytest -q
 ```
 
-182 tests : le moteur (six types de critères, plafonds, pondération auteur, fenêtres
+196 tests : le moteur (six types de critères, plafonds, pondération auteur, fenêtres
 temporelles, formules, classement, profils d'établissement, coûts/budget) et le circuit
 Excel (modèle, menus en libellés français, import avec rapport d'erreurs, équivalence
 Excel/JSON, exports PV/fiches/HTML), plus l'application web
@@ -328,8 +328,10 @@ forcé** à la première connexion sans perturber les comptes existants, classem
 exports, simulation budgétaire commission, changement de mot de passe, pages d'erreur en
 français, publication du rang à l'enseignant après le gel, édition en place des activités,
 saisie/ajustement du nombre de bénéfices `n`, import de l'historique des bénéfices par
-e-mail et repère de fenêtre configurable (clôture par bénéfice / date de mobilité / date
-uniforme).
+e-mail, fenêtre configurable (intervalle d'exercice budgétaire uniforme ou repère par
+bénéfice clôture/mobilité), déclaration d'habilitation, saisie budget par bénéficiaire,
+**auto-soumission des brouillons à la fermeture de la saisie** et **téléchargement du
+dossier complet en archive ZIP** (récapitulatif + justificatifs).
 
 ## Structure du projet
 

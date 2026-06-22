@@ -91,6 +91,16 @@ dossier web ≡ dict moteur pour chaque type de critère.
   bandeaux de confirmation après les actions à redirection (soumission, validation, gel,
   actions admin) ; tri de la liste des comptes ; script `webapp.scripts.test_email` pour
   valider la configuration SMTP.
+- **Affinages campagne u3 & portail enseignant** (21–22/06/2026) : sauvegarde/restauration
+  des données depuis l'admin ; **fenêtre « après dernier bénéfice » en intervalle
+  d'exercice budgétaire** uniforme (en plus du repère par bénéfice) ; **déclaration
+  d'habilitation** par l'enseignant (rappel que les documents pédagogiques du dossier
+  d'habilitation ne comptent pas) ; billet/frais retirés du formulaire enseignant et
+  saisis via un **onglet Budget** (ou l'import des comptes) ; libellés u3 précisés (date de
+  publication/communication, projets « en cours », encadrement master BAC+5/PES, poste
+  supérieur structurel/fonctionnel, ISBN+URL pour les livres) ; **auto-soumission** des
+  brouillons à la fermeture de la saisie ; **téléchargement du dossier complet en archive
+  ZIP** (récapitulatif HTML imprimable + justificatifs PDF) ; 196 tests.
 
 **Reste à faire** :
 - déploiement effectif sur l'instance Coolify (PostgreSQL + volume `/data/uploads` +

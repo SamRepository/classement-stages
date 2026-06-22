@@ -152,10 +152,16 @@ Le mot de passe admin généré s'affiche — **le noter immédiatement** (ou pa
    appliqué à tous — seules les activités datées dans l'intervalle comptent,
    prioritaire si une borne est renseignée ; à défaut, un **repère par
    bénéfice** : *clôture de plateforme (fin de session)* ou *date de mobilité
-   (départ)*.
-5. **Recette finale** : se connecter avec un compte enseignant réel, saisir un
+   (départ)*. **Passer la campagne en « clôturée » soumet automatiquement** les
+   dossiers restés en brouillon (transmis à la commission en l'état).
+5. **Budget** : onglet **Budget** → saisir le *billet* et les *frais divers* par
+   bénéficiaire (réservé au service budget ; l'enseignant ne saisit plus ces
+   montants). Ces montants peuvent aussi être renseignés en masse par l'import
+   des comptes (colonnes `billet` / `frais`).
+6. **Recette finale** : se connecter avec un compte enseignant réel, saisir un
    dossier complet avec quelques PDF, comparer le score provisoire au barème —
-   puis distribuer les accès aux autres candidats.
+   puis distribuer les accès aux autres candidats. Après soumission, l'enseignant
+   peut télécharger son dossier complet (archive ZIP : récapitulatif + justificatifs).
 
 ## Étape 10 — Après la mise en service
 

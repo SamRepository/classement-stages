@@ -151,7 +151,7 @@
       <li><a href="#justificatifs">Joindre les justificatifs (PDF)</a></li>
       <li><a href="#score">Suivre son score provisoire</a></li>
       <li><a href="#soumettre">Soumettre son dossier <span class="pilule">étape clé</span></a></li>
-      <li><a href="#apres">Après la soumission &amp; résultat du classement</a></li>
+      <li><a href="#apres">Après la soumission, téléchargement du dossier &amp; résultat</a></li>
       <li><a href="#aide">Aide, contacts et références officielles</a></li>
     </ol>
   </div>
@@ -161,7 +161,9 @@
     Connectez-vous → complétez votre dossier critère par critère → joignez un
     justificatif PDF pour chaque élément → vérifiez votre score provisoire →
     <strong>soumettez</strong>. Tant que vous n'avez pas soumis, votre dossier reste
-    modifiable (statut <em>brouillon</em>).
+    modifiable (statut <em>brouillon</em>). Après soumission, vous pouvez
+    <strong>télécharger votre dossier complet en archive ZIP</strong> (récapitulatif +
+    justificatifs).
   </div>
 
   <!-- ============ 1. CONNEXION ============ -->
@@ -246,8 +248,9 @@
   <ul>
     <li>la <strong>grille</strong> appliquée et la <strong>date de campagne</strong>&nbsp;;</li>
     <li>votre <strong>référence de dossier</strong>&nbsp;;</li>
-    <li>le <strong>statut</strong> : <span class="pilule">brouillon</span> (modifiable) ou
-        <span class="pilule">soumis</span> (verrouillé).</li>
+    <li>le <strong>statut</strong> : <span class="pilule">brouillon</span> (modifiable),
+        <span class="pilule">soumis</span> (verrouillé) ou <span class="pilule">gelé</span>
+        (classement arrêté).</li>
   </ul>
   <figure class="capture">
     <img src="guide-assets/04-entete-dossier.png" alt="En-tête du dossier : grille, date de campagne, référence et statut.">
@@ -259,12 +262,14 @@
   <!-- ============ 5. INFOS MOBILITE ============ -->
   <h2 id="infos">5. Renseigner les informations de mobilité</h2>
   <p>La première section, <strong>« Informations de mobilité »</strong>, décrit votre
-     projet&nbsp;: département, pays de destination, durée, et coûts estimés (billet,
-     frais divers).</p>
+     projet&nbsp;: département, pays de destination et durée. Vous y déclarez aussi si vous
+     avez obtenu votre <strong>habilitation universitaire</strong> durant l'exercice
+     budgétaire en cours.</p>
   <ol class="etapes">
     <li>Choisissez votre <strong>département</strong> dans la liste.</li>
     <li>Indiquez le <strong>pays de destination</strong> et la <strong>durée</strong> en jours.</li>
-    <li>Renseignez le <strong>billet estimé</strong> et les <strong>frais divers</strong> (en DA).</li>
+    <li>Cochez la case <strong>« habilitation obtenue durant l'exercice budgétaire »</strong>
+        si c'est votre cas (les dates de l'exercice sont rappelées à côté de la case).</li>
     <li>Cliquez sur <span class="menu-demo">Enregistrer les informations</span>.</li>
   </ol>
   <figure class="capture">
@@ -273,6 +278,13 @@
     <figcaption><span class="slot">Capture : guide-assets/05-infos-mobilite.png</span> —
       section « Informations de mobilité ».</figcaption>
   </figure>
+  <div class="note"><b>Coûts de la mobilité</b> Le <strong>billet</strong> et les
+    <strong>frais divers</strong> ne sont plus à votre charge dans le portail&nbsp;: ils sont
+    renseignés par le <strong>service budget</strong>.</div>
+  <div class="attention"><b>Habilitation universitaire</b> Si vous cochez cette case, sachez
+    que les <strong>travaux et documents pédagogiques déjà utilisés dans votre dossier
+    d'habilitation ne sont pas comptabilisés</strong> dans le classement (un rappel s'affiche
+    sur les critères concernés).</div>
   <div class="note"><b>Historique des bénéfices</b> Juste en dessous, la section
     « Historique de vos mobilités » est <strong>gérée par l'administration</strong>. Elle
     sert à calculer la pénalité des bénéfices antérieurs. Signalez toute erreur (voir
@@ -325,10 +337,16 @@
     <li>Dépliez <span class="menu-demo">Ajouter un élément</span>.</li>
     <li>Choisissez le <strong>type d'élément</strong> et saisissez son <strong>intitulé</strong>.</li>
     <li>Complétez les champs demandés : <strong>date</strong> (obligatoire pour certains
-        critères), <strong>position d'auteur</strong>, <strong>quantité</strong>, DOI/URL.</li>
+        critères — son libellé est précisé, ex. <em>« Date de publication »</em> ou
+        <em>« Date de communication »</em>), <strong>position d'auteur</strong>,
+        <strong>quantité</strong>, DOI/URL.</li>
     <li>Joignez le <strong>justificatif (PDF)</strong>, puis cliquez sur
         <span class="menu-demo">Ajouter</span>.</li>
   </ol>
+  <div class="note"><b>Cas particuliers</b> Pour le critère <strong>« Livre évalué avec ISBN »</strong>,
+    des champs <strong>ISBN</strong> et <strong>URL</strong> facultatifs permettent à la commission
+    de vérifier l'ouvrage. Sur les critères pédagogiques (polycopié, cours en ligne, livre),
+    un rappel signale que les documents déjà versés au dossier d'habilitation ne comptent pas.</div>
   <figure class="capture">
     <img src="guide-assets/07-ajouter-element.png" alt="Formulaire d'ajout d'un élément : type, intitulé, date, position, quantité, justificatif.">
     <div class="placeholder">Capture à insérer — ajouter un élément</div>
@@ -390,7 +408,8 @@
     <li>Vérifiez <strong>chaque critère</strong> et la présence de <strong>chaque
         justificatif</strong>.</li>
     <li>Contrôlez votre <strong>score provisoire</strong> et les observations éventuelles.</li>
-    <li>En bas de page, cliquez sur <span class="menu-demo">Soumettre mon dossier</span>.</li>
+    <li>En bas de page, cliquez sur le bouton <strong>mauve</strong>
+        <span class="menu-demo">Soumettre mon dossier</span>.</li>
     <li>Confirmez dans la fenêtre <em>« Soumettre définitivement votre dossier ? »</em>.</li>
   </ol>
   <figure class="capture">
@@ -401,13 +420,35 @@
   </figure>
   <div class="attention"><b>Action définitive</b> Une fois soumis, le dossier est
     <strong>verrouillé</strong> (statut <span class="pilule">soumis</span>) et ne peut plus
-    être modifié. Pour toute correction après soumission, contactez l'administration.</div>
+    être modifié.</div>
+  <div class="note"><b>Si vous ne soumettez pas à temps</b> À la <strong>fermeture de la
+    saisie</strong> sur la plateforme, tout dossier resté en brouillon est
+    <strong>soumis automatiquement, en l'état</strong>. Soumettez-le vous-même pour le faire
+    après vérification.</div>
 
   <!-- ============ 10. APRES ============ -->
   <h2 id="apres">10. Après la soumission &amp; résultat du classement</h2>
   <p>Votre dossier passe « en cours d'examen ». Lorsque la campagne est close et le
      classement <strong>gelé</strong>, votre dossier affiche votre <strong>rang</strong>,
      la <strong>taille du groupe</strong> et le <strong>score retenu</strong>.</p>
+
+  <h3>10.1 Télécharger son dossier complet (archive ZIP)</h3>
+  <p>Dès que votre dossier est <strong>soumis</strong> (ou gelé), un bouton
+     <span class="menu-demo">⬇ Télécharger mon dossier complet (ZIP)</span> apparaît. L'archive
+     contient&nbsp;:</p>
+  <ul>
+    <li>un <strong>récapitulatif</strong> (page imprimable) : vos informations, le détail de
+        votre score et la liste de vos éléments déclarés&nbsp;;</li>
+    <li>l'ensemble de vos <strong>justificatifs PDF</strong>, reliés au récapitulatif.</li>
+  </ul>
+  <p>Conservez cette archive comme preuve de votre dépôt.</p>
+  <figure class="capture">
+    <img src="guide-assets/13-archive-zip.png" alt="Bouton de téléchargement du dossier complet en archive ZIP.">
+    <div class="placeholder">Capture à insérer — téléchargement du dossier (ZIP)</div>
+    <figcaption><span class="slot">Capture : guide-assets/13-archive-zip.png</span> —
+      bouton « Télécharger mon dossier complet (ZIP) ».</figcaption>
+  </figure>
+
   <div class="note"><b>Important</b> Le rang ne vaut pas décision d'attribution : la liste
     des bénéficiaires dépend du budget de l'exercice et de la décision de la commission.
     Les éléments éventuellement rejetés et leurs motifs (art. 14-15) restent consultables

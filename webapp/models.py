@@ -81,6 +81,9 @@ class User(Base):
     # Faux par défaut → les comptes existants ne sont jamais perturbés.
     must_change_password: Mapped[bool] = mapped_column(default=False, server_default=text("0"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    # Horodatage de la dernière connexion réussie (NULL = compte jamais utilisé) :
+    # permet à l'admin de repérer les candidats qui ne se sont pas encore connectés.
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     benefits: Mapped[list["Benefit"]] = relationship(
         back_populates="user", order_by="Benefit.date"

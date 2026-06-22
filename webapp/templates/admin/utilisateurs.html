@@ -70,6 +70,11 @@
 </div>
 
 <h3>Comptes</h3>
+{% set jamais = users | selectattr('last_login_at', 'none') | list %}
+{% if jamais %}
+<p class="warning"><small>{{ jamais|length }} compte(s) ne se sont <strong>jamais connectés</strong>
+   (colonne « Dernière connexion » → <em>jamais</em>) : pensez à relancer ces candidats.</small></p>
+{% endif %}
 <p><small>Cochez des comptes puis « Envoyer les identifiants » pour leur transmettre
    par e-mail un <strong>nouveau mot de passe provisoire</strong> (à changer à la première
    connexion). L'ancien mot de passe cesse alors d'être valable. Sans configuration SMTP,
@@ -84,7 +89,7 @@
         <th><a href="/admin/utilisateurs?tri=email">Email</a>{% if tri == 'email' %} ▾{% endif %}</th>
         <th>Nom</th>
         <th><a href="/admin/utilisateurs?tri=role">Rôle</a>{% if tri == 'role' %} ▾{% endif %}</th>
-        <th>Actif</th><th>Actions</th>
+        <th>Actif</th><th>Dernière connexion</th><th>Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -95,6 +100,10 @@
         <td>{{ u.nom }} {{ u.prenom }}</td>
         <td>{{ u.role }}</td>
         <td>{{ 'oui' if u.actif else 'non' }}</td>
+        <td>
+          {% if u.last_login_at %}{{ u.last_login_at.strftime('%d/%m/%Y %H:%M') }}
+          {% else %}<span class="warning" title="Ce compte ne s'est jamais connecté">jamais</span>{% endif %}
+        </td>
         <td>
           <div class="cellule-actions">
             <button class="secondary outline"

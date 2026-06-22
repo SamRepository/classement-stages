@@ -37,6 +37,25 @@ def test_liste_comptes_triable(client, db_session, campaign, admin):
     assert par_email.index("amir@test.dz") < par_email.index("zoe@test.dz")
 
 
+def test_colonne_derniere_connexion(client, db_session, campaign, admin, enseignant):
+    """La liste des comptes affiche la dernière connexion ; « jamais » sinon, et
+    signale les comptes qui ne se sont jamais connectés."""
+    login(client, "admin@test.dz")
+    page = client.get("/admin/utilisateurs").text
+    assert "Dernière connexion" in page
+    assert "jamais" in page  # l'enseignant ne s'est pas connecté
+    assert "jamais connectés" in page  # bandeau de relance
+
+    # Après une connexion de l'enseignant, l'horodatage apparaît.
+    client.post("/deconnexion")
+    login(client, "enseignant@test.dz")
+    client.post("/deconnexion")
+    login(client, "admin@test.dz")
+    db_session.refresh(enseignant)
+    page = client.get("/admin/utilisateurs").text
+    assert enseignant.last_login_at.strftime("%d/%m/%Y") in page
+
+
 def test_import_xlsx_cree_comptes_et_dossiers(client, db_session, campaign, admin):
     wb = Workbook()
     ws = wb.active

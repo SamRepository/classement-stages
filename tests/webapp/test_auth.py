@@ -22,6 +22,20 @@ def test_login_mauvais_mot_de_passe(client, enseignant):
     assert "incorrect" in r.text
 
 
+def test_login_enregistre_derniere_connexion(client, db_session, enseignant):
+    assert enseignant.last_login_at is None
+    r = login(client, "enseignant@test.dz")
+    assert r.status_code == 303
+    db_session.refresh(enseignant)
+    assert enseignant.last_login_at is not None
+
+
+def test_login_echoue_nenregistre_pas_de_connexion(client, db_session, enseignant):
+    login(client, "enseignant@test.dz", "faux")
+    db_session.refresh(enseignant)
+    assert enseignant.last_login_at is None
+
+
 def test_login_compte_inactif(client, db_session, enseignant):
     enseignant.actif = False
     db_session.commit()

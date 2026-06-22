@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
@@ -52,6 +54,8 @@ def login(
             {"erreur": "Adresse électronique ou mot de passe incorrect."},
             status_code=401,
         )
+    user.last_login_at = datetime.now(timezone.utc)
+    db.commit()
     request.session.clear()
     request.session["user_id"] = user.id
     request.session["role"] = user.role

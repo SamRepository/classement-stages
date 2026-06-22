@@ -1,8 +1,17 @@
-"""Espace commission : examen des dossiers, décisions motivées, classement, exports.
+"""Espace commission : relecture (membres) et décisions finales (responsable).
 
-Chaque élément déclaré est validé ou rejeté individuellement ; le rejet exige un
-motif (art. 14-15). Le score commission est recalculé par le moteur à chaque
-décision (les éléments rejetés sont exclus, les en attente restent comptés).
+Deux niveaux :
+
+- le **membre** (rôle ``commission``) relit les dossiers qui lui sont affectés et
+  pose, pour chaque élément déclaré, un avis (flag ``ok`` / ``pas_ok`` /
+  ``explication`` + observation). Cet avis est purement consultatif : il
+  n'influe **jamais** sur le score ;
+- le **responsable** (rôle ``responsable_commission``, ou ``admin``) répartit les
+  dossiers entre les membres, puis prend la décision finale par élément
+  (validation/rejet, motif obligatoire art. 14-15), gèle le classement et exporte.
+
+Le score commission est recalculé par le moteur à chaque décision du responsable
+(les éléments rejetés sont exclus, les en attente restent comptés).
 """
 
 from __future__ import annotations
@@ -19,7 +28,7 @@ from classement.budget import simulate_budget
 from webapp.auth import require_role
 from webapp.db import get_db
 from webapp.forms.grid_form import build_form_spec
-from webapp.models import Dossier, Entry, User
+from webapp.models import REVIEW_FLAGS, Dossier, ElementReview, Entry, User
 from webapp.services.dossier import get_campaign, log_event
 from webapp.services.exports import export_response, freeze_campaign, pending_entries_count
 from webapp.services.scoring import compute_ranking, compute_score, get_costs, get_grid
@@ -27,7 +36,10 @@ from webapp.templating import templates
 
 router = APIRouter(prefix="/commission")
 
-COMMISSION = Depends(require_role("commission", "admin"))
+# Lecture (liste, dossier, classement) : membres, responsable et admin.
+LECTURE = Depends(require_role("commission", "responsable_commission", "admin"))
+# Décisions, affectations, gel, budget, exports : responsable et admin seulement.
+RESPONSABLE = Depends(require_role("responsable_commission", "admin"))
 
 
 def _sections(dossier: Dossier, grid: dict) -> list[dict]:
@@ -54,7 +66,53 @@ def _render_score(request: Request, db: Session, dossier: Dossier, *, oob: bool)
     )
 
 
-def _render_element(request: Request, db: Session, entry: Entry, *, with_score: bool) -> HTMLResponse:
+def _is_responsable(user: User) -> bool:
+    return user.role in ("responsable_commission", "admin")
+
+
+def _decidable(dossier: Dossier) -> bool:
+    """Le responsable peut décider : dossier soumis et classement non gelé."""
+    return dossier.statut == "soumis" and dossier.campaign.statut != "gelee"
+
+
+def _reviewable(dossier: Dossier, user: User) -> bool:
+    """Le membre affecté peut émettre un avis (dossier soumis, non gelé).
+
+    L'admin est autorisé pour les cas d'assistance/correction.
+    """
+    if dossier.statut != "soumis" or dossier.campaign.statut == "gelee":
+        return False
+    return user.id == dossier.assigned_reviewer_id or user.role == "admin"
+
+
+def _review_of(entry: Entry, reviewer_id: int | None) -> ElementReview | None:
+    if reviewer_id is None:
+        return None
+    return next((r for r in entry.reviews if r.reviewer_id == reviewer_id), None)
+
+
+def _element_context(entry: Entry, user: User) -> dict:
+    """Contexte d'affichage d'un élément selon le rôle du visiteur.
+
+    - responsable/admin : contrôles de décision + avis du relecteur affecté ;
+    - membre affecté : formulaire d'avis (flag + observation), pas de décision ;
+    - autre membre : lecture seule de l'avis existant.
+    """
+    dossier = entry.dossier
+    can_decide = _is_responsable(user) and _decidable(dossier)
+    can_review = (
+        user.role == "commission"
+        and _reviewable(dossier, user)
+        and user.id == dossier.assigned_reviewer_id
+    )
+    # Avis montré : celui que le membre édite, sinon celui du relecteur affecté
+    # (pour éclairer le responsable et les autres lecteurs).
+    review = _review_of(entry, user.id if can_review else dossier.assigned_reviewer_id)
+    return {"can_decide": can_decide, "can_review": can_review, "review": review}
+
+
+def _render_element(request: Request, db: Session, entry: Entry, user: User,
+                    *, with_score: bool) -> HTMLResponse:
     grid = get_grid(entry.dossier.campaign.grid_id)
     labels: dict[str, str] = {}
     is_formula = False
@@ -64,16 +122,12 @@ def _render_element(request: Request, db: Session, entry: Entry, *, with_score: 
             is_formula = spec["widget"] == "formula"
             break
     html = templates.get_template("commission/fragments/element.html").render(
-        request=request, e=entry, labels=labels, decidable=_decidable(entry.dossier),
-        is_formula=is_formula,
+        request=request, e=entry, labels=labels, is_formula=is_formula,
+        **_element_context(entry, user),
     )
     if with_score:
         html += _render_score(request, db, entry.dossier, oob=True)
     return HTMLResponse(html)
-
-
-def _decidable(dossier: Dossier) -> bool:
-    return dossier.statut == "soumis" and dossier.campaign.statut != "gelee"
 
 
 def _get_dossier(db: Session, dossier_id: int) -> Dossier:
@@ -83,31 +137,53 @@ def _get_dossier(db: Session, dossier_id: int) -> Dossier:
     return dossier
 
 
+def _membres(db: Session) -> list[User]:
+    """Membres évaluateurs actifs (cibles d'affectation)."""
+    return list(
+        db.scalars(
+            select(User)
+            .where(User.role == "commission", User.actif.is_(True))
+            .order_by(User.nom, User.prenom)
+        )
+    )
+
+
 @router.get("/dossiers")
 def liste_dossiers(
     request: Request,
-    user: User = COMMISSION,
+    affectation: str = "tous",
+    user: User = LECTURE,
     db: Session = Depends(get_db),
 ):
     campaign = get_campaign(db)
-    dossiers = list(
-        db.scalars(select(Dossier).where(Dossier.campaign_id == campaign.id).order_by(Dossier.id))
-    )
+    # Un membre peut filtrer sur « mes dossiers » (ceux qui lui sont affectés).
+    mes_dossiers = affectation == "moi"
+    stmt = select(Dossier).where(Dossier.campaign_id == campaign.id)
+    if mes_dossiers:
+        stmt = stmt.where(Dossier.assigned_reviewer_id == user.id)
+    dossiers = list(db.scalars(stmt.order_by(Dossier.id)))
     lignes = []
     for d in dossiers:
         compte = {"en_attente": 0, "valide": 0, "rejete": 0}
+        avis = 0
         for e in d.entries:
             compte[e.statut] += 1
+            if _review_of(e, d.assigned_reviewer_id) is not None:
+                avis += 1
         score = None
         if d.statut in ("soumis", "gele"):
             breakdown, _ = compute_score(db, d, mode="commission")
             score = breakdown.total
-        lignes.append({"dossier": d, "compte": compte, "score": score})
+        lignes.append({"dossier": d, "compte": compte, "score": score,
+                       "avis": avis, "total": len(d.entries)})
     return templates.TemplateResponse(
         request,
         "commission/dossiers.html",
         {"user": user, "campaign": campaign, "lignes": lignes,
-         "grid": get_grid(campaign.grid_id)},
+         "grid": get_grid(campaign.grid_id),
+         "is_responsable": _is_responsable(user),
+         "membres": _membres(db) if _is_responsable(user) else [],
+         "affectation": affectation},
     )
 
 
@@ -115,13 +191,24 @@ def liste_dossiers(
 def vue_dossier(
     dossier_id: int,
     request: Request,
-    user: User = COMMISSION,
+    user: User = LECTURE,
     db: Session = Depends(get_db),
 ):
     dossier = _get_dossier(db, dossier_id)
     grid = get_grid(dossier.campaign.grid_id)
     breakdown, exclusions = compute_score(db, dossier, mode="commission")
     pending = sum(1 for e in dossier.entries if e.statut == "en_attente")
+    can_review = (
+        user.role == "commission"
+        and _reviewable(dossier, user)
+        and user.id == dossier.assigned_reviewer_id
+    )
+    # Synthèse des avis du relecteur affecté (pour le responsable).
+    flag_counts = {f: 0 for f in REVIEW_FLAGS}
+    for e in dossier.entries:
+        r = _review_of(e, dossier.assigned_reviewer_id)
+        if r is not None:
+            flag_counts[r.flag] += 1
     return templates.TemplateResponse(
         request,
         "commission/dossier.html",
@@ -134,6 +221,10 @@ def vue_dossier(
             "exclusions": exclusions,
             "pending": pending,
             "decidable": _decidable(dossier),
+            "is_responsable": _is_responsable(user),
+            "can_review": can_review,
+            "flag_counts": flag_counts,
+            "elem_ctx": {e.id: _element_context(e, user) for e in dossier.entries},
             "benefits": dossier.user.benefits,
         },
     )
@@ -143,18 +234,57 @@ def vue_dossier(
 def fragment_score(
     dossier_id: int,
     request: Request,
-    user: User = COMMISSION,
+    user: User = LECTURE,
     db: Session = Depends(get_db),
 ):
     dossier = _get_dossier(db, dossier_id)
     return HTMLResponse(_render_score(request, db, dossier, oob=False))
 
 
+@router.post("/entrees/{entry_id}/avis")
+async def avis(
+    entry_id: int,
+    request: Request,
+    user: User = LECTURE,
+    db: Session = Depends(get_db),
+):
+    """Avis consultatif du membre affecté sur un élément (flag + observation).
+
+    N'affecte jamais le score : aucun recalcul, pas de mise à jour OOB du total.
+    """
+    entry = db.get(Entry, entry_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Élément introuvable.")
+    dossier = entry.dossier
+    if not (user.role == "commission" and user.id == dossier.assigned_reviewer_id
+            and _reviewable(dossier, user)):
+        raise HTTPException(
+            status_code=403,
+            detail="Avis impossible : dossier non affecté, non soumis ou classement gelé.",
+        )
+    form = await request.form()
+    flag = form.get("flag")
+    if flag not in REVIEW_FLAGS:
+        raise HTTPException(status_code=422, detail=f"Avis inconnu : {flag!r}.")
+    observation = (form.get("observation") or "").strip() or None
+    review = _review_of(entry, user.id)
+    if review is None:
+        review = ElementReview(entry_id=entry.id, reviewer_id=user.id)
+        db.add(review)
+    review.flag = flag
+    review.observation = observation
+    log_event(db, user, "avis_membre", dossier,
+              detail=f"entry={entry.id} {entry.criterion_id}/{entry.item_id or '-'} flag={flag}")
+    db.commit()
+    db.refresh(entry)
+    return _render_element(request, db, entry, user, with_score=False)
+
+
 @router.post("/entrees/{entry_id}/decision")
 async def decision(
     entry_id: int,
     request: Request,
-    user: User = COMMISSION,
+    user: User = RESPONSABLE,
     db: Session = Depends(get_db),
 ):
     entry = db.get(Entry, entry_id)
@@ -184,14 +314,14 @@ async def decision(
                      + (f" motif={motif}" if motif else ""))
     db.commit()
     db.refresh(entry)
-    return _render_element(request, db, entry, with_score=True)
+    return _render_element(request, db, entry, user, with_score=True)
 
 
 @router.post("/entrees/{entry_id}/ajuster")
 async def ajuster_formule(
     entry_id: int,
     request: Request,
-    user: User = COMMISSION,
+    user: User = RESPONSABLE,
     db: Session = Depends(get_db),
 ):
     """Ajuste la valeur n (et N) d'un critère formule, puis la valide.
@@ -249,14 +379,14 @@ async def ajuster_formule(
               detail=f"entry={entry.id} {entry.criterion_id} n={payload.get('n', 'auto')}")
     db.commit()
     db.refresh(entry)
-    return _render_element(request, db, entry, with_score=True)
+    return _render_element(request, db, entry, user, with_score=True)
 
 
 @router.post("/dossiers/{dossier_id}/tout-valider")
 def tout_valider(
     dossier_id: int,
     request: Request,
-    user: User = COMMISSION,
+    user: User = RESPONSABLE,
     db: Session = Depends(get_db),
 ):
     """Passe les éléments encore en attente à « validé » (après revue du dossier)."""
@@ -277,10 +407,69 @@ def tout_valider(
     return RedirectResponse(f"/commission/dossiers/{dossier_id}", status_code=303)
 
 
+# ---------------------------------------------------------------------------
+# Affectation des dossiers aux membres (responsable)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/affectations")
+def affectations(
+    request: Request,
+    user: User = RESPONSABLE,
+    db: Session = Depends(get_db),
+):
+    campaign = get_campaign(db)
+    dossiers = list(
+        db.scalars(select(Dossier).where(Dossier.campaign_id == campaign.id).order_by(Dossier.id))
+    )
+    membres = _membres(db)
+    # Charge par membre (nombre de dossiers affectés) + non affectés.
+    charge = {m.id: 0 for m in membres}
+    non_affectes = 0
+    for d in dossiers:
+        if d.assigned_reviewer_id in charge:
+            charge[d.assigned_reviewer_id] += 1
+        elif d.assigned_reviewer_id is None:
+            non_affectes += 1
+    return templates.TemplateResponse(
+        request,
+        "commission/affectations.html",
+        {"user": user, "campaign": campaign, "dossiers": dossiers,
+         "membres": membres, "charge": charge, "non_affectes": non_affectes},
+    )
+
+
+@router.post("/dossiers/{dossier_id}/affecter")
+async def affecter(
+    dossier_id: int,
+    request: Request,
+    user: User = RESPONSABLE,
+    db: Session = Depends(get_db),
+):
+    """Affecte (ou retire) le relecteur d'un dossier. reviewer_id vide = retrait."""
+    dossier = _get_dossier(db, dossier_id)
+    form = await request.form()
+    raw = (form.get("reviewer_id") or "").strip()
+    if raw:
+        membre = db.get(User, int(raw)) if raw.isdigit() else None
+        if membre is None or membre.role != "commission" or not membre.actif:
+            raise HTTPException(status_code=422, detail="Relecteur invalide.")
+        dossier.assigned_reviewer_id = membre.id
+        detail = f"→ {membre.nom} {membre.prenom}".strip()
+    else:
+        dossier.assigned_reviewer_id = None
+        detail = "retrait"
+    log_event(db, user, "affectation_relecteur", dossier, detail=detail)
+    db.commit()
+    redirect = form.get("redirect") or "/commission/affectations"
+    request.session["flash"] = f"Affectation mise à jour pour {dossier.candidate_ref}."
+    return RedirectResponse(redirect, status_code=303)
+
+
 @router.get("/classement")
 def classement(
     request: Request,
-    user: User = COMMISSION,
+    user: User = LECTURE,
     db: Session = Depends(get_db),
 ):
     campaign = get_campaign(db)
@@ -307,6 +496,7 @@ def classement(
             "pending": pending_entries_count(db, campaign),
             "nb_brouillons": nb_brouillons,
             "nb_classes": len(result.dossiers),
+            "is_responsable": _is_responsable(user),
         },
     )
 
@@ -324,7 +514,7 @@ def simulation_budget(
     request: Request,
     budget: str | None = None,
     plafond_billet: str | None = None,
-    user: User = COMMISSION,
+    user: User = RESPONSABLE,
     db: Session = Depends(get_db),
 ):
     """Simulation budgétaire : qui peut bénéficier avec une enveloppe donnée.
@@ -390,7 +580,7 @@ def simulation_budget(
 @router.post("/classement/geler")
 def geler(
     request: Request,
-    user: User = COMMISSION,
+    user: User = RESPONSABLE,
     db: Session = Depends(get_db),
 ):
     campaign = get_campaign(db)
@@ -402,7 +592,7 @@ def geler(
 @router.get("/exports/{kind}")
 def telecharger_export(
     kind: str,
-    user: User = COMMISSION,
+    user: User = RESPONSABLE,
     db: Session = Depends(get_db),
 ):
     campaign = get_campaign(db)

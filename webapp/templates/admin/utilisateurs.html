@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block titre %}Utilisateurs{% endblock %}
 {% block contenu %}
+{% set role_labels = {'enseignant': 'Enseignant', 'commission': 'Membre commission',
+                      'responsable_commission': 'Responsable commission', 'admin': 'Administrateur'} %}
 <h1>Utilisateurs</h1>
 
 {% if nouveaux %}
@@ -52,6 +54,7 @@
         <select name="role">
           <option value="enseignant">Enseignant (candidat)</option>
           <option value="commission">Membre de la commission</option>
+          <option value="responsable_commission">Responsable de la commission</option>
           <option value="admin">Administrateur</option>
         </select>
       </label>
@@ -98,7 +101,7 @@
         <td><input type="checkbox" name="user_ids" value="{{ u.id }}"></td>
         <td>{{ u.email }}</td>
         <td>{{ u.nom }} {{ u.prenom }}</td>
-        <td>{{ u.role }}</td>
+        <td>{{ role_labels.get(u.role, u.role) }}</td>
         <td>{{ 'oui' if u.actif else 'non' }}</td>
         <td>
           {% if u.last_login_at %}{{ u.last_login_at.strftime('%d/%m/%Y %H:%M') }}

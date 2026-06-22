@@ -17,7 +17,7 @@ def dossier_soumis(db_session, dossier):
 
 
 def _geler(client, db_session, dossier_soumis):
-    login(client, "commission@test.dz")
+    login(client, "responsable@test.dz")
     client.post(f"/commission/dossiers/{dossier_soumis.id}/tout-valider")
     r = client.post("/commission/classement/geler")
     assert r.status_code == 303
@@ -25,7 +25,7 @@ def _geler(client, db_session, dossier_soumis):
 
 
 def test_rang_visible_apres_gel(client, db_session, campaign, dossier_soumis,
-                                membre_commission, enseignant):
+                                responsable, enseignant):
     _geler(client, db_session, dossier_soumis)
     login(client, "enseignant@test.dz")
     r = client.get("/mon-dossier")
@@ -45,7 +45,7 @@ def test_pas_de_resultat_avant_gel(client, db_session, campaign, dossier_soumis,
 
 
 def test_non_soumis_signale_apres_gel(client, db_session, campaign, dossier_soumis,
-                                      membre_commission, admin):
+                                      responsable, admin):
     """Un agent dont le dossier n'a jamais été soumis voit qu'il n'est pas classé."""
     _geler(client, db_session, dossier_soumis)
     # L'admin a accès à /mon-dossier ? Non : créer un second enseignant en brouillon.

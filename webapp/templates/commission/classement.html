@@ -36,6 +36,7 @@
 <p>Aucun dossier soumis : pas de classement à afficher.</p>
 {% endfor %}
 
+{% if is_responsable %}
 <article>
   <h3>Gel et documents officiels</h3>
   {% if campaign.statut == 'gelee' %}
@@ -59,4 +60,14 @@
   <p><a href="/commission/budget">Simulation budgétaire (qui peut bénéficier avec l'enveloppe disponible) →</a></p>
   <p><a href="/commission/dossiers">← retour aux dossiers</a></p>
 </article>
+{% else %}
+<article>
+  {% if campaign.statut == 'gelee' %}
+  <p>Classement gelé le {{ campaign.frozen_at.strftime('%d/%m/%Y %H:%M') }} : il fait foi.</p>
+  {% else %}
+  <p><small>Le gel du classement et les documents officiels sont du ressort du responsable de la commission.</small></p>
+  {% endif %}
+  <p><a href="/commission/dossiers">← retour aux dossiers</a></p>
+</article>
+{% endif %}
 {% endblock %}

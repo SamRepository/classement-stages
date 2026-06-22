@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block titre %}Affectations — commission{% endblock %}
+{% block contenu %}
+<hgroup>
+  <h1>Affectation des dossiers aux membres</h1>
+  <p>Répartissez les dossiers entre les membres de la commission. Chaque membre relit
+     ses dossiers et pose un avis par élément ; la décision finale vous revient.</p>
+</hgroup>
+
+{% if not membres %}
+<p class="warning">Aucun membre de commission actif. Créez des comptes « Membre de la commission »
+   depuis l'espace administrateur avant d'affecter les dossiers.</p>
+{% else %}
+<article>
+  <h3>Charge par membre</h3>
+  <ul>
+    {% for m in membres %}
+    <li>{{ m.nom }} {{ m.prenom }} — <strong>{{ charge[m.id] }}</strong> dossier(s)</li>
+    {% endfor %}
+    <li>Non affectés — <strong>{{ non_affectes }}</strong></li>
+  </ul>
+</article>
+{% endif %}
+
+<table>
+  <thead>
+    <tr><th>Réf.</th><th>Candidat</th><th>Département</th><th>Statut</th><th>Relecteur</th></tr>
+  </thead>
+  <tbody>
+    {% for d in dossiers %}
+    <tr>
+      <td>{{ d.candidate_ref }}</td>
+      <td>{{ d.user.nom }} {{ d.user.prenom }}</td>
+      <td>{{ d.departement or '—' }}</td>
+      <td><span class="badge {{ d.statut }}">{{ d.statut }}</span></td>
+      <td>
+        <form method="post" action="/commission/dossiers/{{ d.id }}/affecter" class="inline-form">
+          <input type="hidden" name="redirect" value="/commission/affectations">
+          <select name="reviewer_id" onchange="this.form.submit()" aria-label="Relecteur"
+                  {% if not membres %}disabled{% endif %}>
+            <option value="">— non affecté —</option>
+            {% for m in membres %}
+            <option value="{{ m.id }}" {% if d.assigned_reviewer_id == m.id %}selected{% endif %}>{{ m.nom }} {{ m.prenom }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Aucun dossier.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p><a href="/commission/dossiers" role="button" class="secondary">← Retour aux dossiers</a></p>
+{% endblock %}

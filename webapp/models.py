@@ -33,7 +33,13 @@ from webapp.db import Base
 CAMPAIGN_STATUTS = ("ouverte", "cloturee", "gelee")
 DOSSIER_STATUTS = ("brouillon", "soumis", "gele")
 ENTRY_STATUTS = ("en_attente", "valide", "rejete")
-ROLES = ("enseignant", "commission", "admin")
+# « commission » = membre évaluateur (émet un avis par élément) ;
+# « responsable_commission » = responsable (affecte les dossiers + décisions finales).
+ROLES = ("enseignant", "commission", "responsable_commission", "admin")
+# Avis du membre sur un élément : ok = conforme, pas_ok = non conforme,
+# explication = besoin d'explication / justificatif. Sans effet sur le score
+# (purement consultatif pour le responsable).
+REVIEW_FLAGS = ("ok", "pas_ok", "explication")
 
 
 def _now() -> datetime:
@@ -113,9 +119,14 @@ class Dossier(Base):
     habilitation_exercice: Mapped[bool] = mapped_column(Boolean, default=False)
     statut: Mapped[str] = mapped_column(String(20), default="brouillon")
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Membre de la commission chargé de relire ce dossier (avis par élément).
+    # Affecté par le responsable ; NULL = non encore réparti. La décision finale
+    # (validation/rejet, score) reste au responsable, quel que soit le relecteur.
+    assigned_reviewer_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
 
     campaign: Mapped[Campaign] = relationship(back_populates="dossiers")
-    user: Mapped[User] = relationship()
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
+    assigned_reviewer: Mapped["User | None"] = relationship(foreign_keys=[assigned_reviewer_id])
     entries: Mapped[list["Entry"]] = relationship(
         back_populates="dossier", cascade="all, delete-orphan", order_by="Entry.id"
     )
@@ -150,6 +161,9 @@ class Entry(Base):
         back_populates="entry", cascade="all, delete-orphan", uselist=False
     )
     decided_by_user: Mapped[User | None] = relationship(foreign_keys=[decided_by])
+    reviews: Mapped[list["ElementReview"]] = relationship(
+        back_populates="entry", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         CheckConstraint(f"statut IN {ENTRY_STATUTS}", name="ck_entry_statut"),
@@ -174,6 +188,36 @@ class Attachment(Base):
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     entry: Mapped[Entry] = relationship(back_populates="attachment")
+
+
+class ElementReview(Base):
+    """Avis d'un membre de commission sur un élément déclaré.
+
+    Couche purement consultative, distincte de la décision (``Entry.statut``) :
+    le membre signale un flag (``ok`` / ``pas_ok`` / ``explication``) et une
+    observation libre pour éclairer le responsable, sans toucher au score. La
+    décision finale qui agit sur le calcul reste au responsable (art. 14-15).
+    """
+
+    __tablename__ = "element_reviews"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    entry_id: Mapped[int] = mapped_column(ForeignKey("entries.id"))
+    reviewer_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    flag: Mapped[str] = mapped_column(String(20))
+    observation: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now
+    )
+
+    entry: Mapped[Entry] = relationship(back_populates="reviews")
+    reviewer: Mapped[User] = relationship()
+
+    __table_args__ = (
+        UniqueConstraint("entry_id", "reviewer_id", name="uq_review_entry_reviewer"),
+        CheckConstraint(f"flag IN {REVIEW_FLAGS}", name="ck_review_flag"),
+    )
 
 
 class Benefit(Base):

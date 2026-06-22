@@ -9,13 +9,24 @@
      · <a href="/commission/dossiers">← retour à la liste</a></p>
 </hgroup>
 
+{% if is_responsable %}
+<p><small><strong>Relecteur affecté :</strong>
+   {% if dossier.assigned_reviewer %}{{ dossier.assigned_reviewer.nom }} {{ dossier.assigned_reviewer.prenom }}
+     — avis : ✔ {{ flag_counts.ok }} · ✗ {{ flag_counts.pas_ok }} · ❓ {{ flag_counts.explication }}
+   {% else %}<span class="warning">aucun</span> (à affecter depuis
+     <a href="/commission/affectations">les affectations</a>){% endif %}</small></p>
+{% elif can_review %}
+<mark>Vous relisez ce dossier : indiquez pour chaque élément un avis (conforme / non conforme /
+   à expliquer) et une observation. La décision finale revient au responsable.</mark>
+{% endif %}
+
 {% if dossier.habilitation_exercice %}
 <mark>ℹ️ Le candidat déclare avoir obtenu son habilitation universitaire durant l'exercice
    budgétaire : les documents pédagogiques déjà utilisés dans le dossier d'habilitation
    ne doivent pas être comptés (art. règles transverses).</mark>
 {% endif %}
 
-{% if not decidable %}
+{% if is_responsable and not decidable %}
 <mark>{% if dossier.statut == 'brouillon' %}Dossier encore en brouillon : pas de décision possible avant soumission.
 {% else %}Dossier gelé : les décisions sont closes.{% endif %}</mark>
 {% endif %}
@@ -40,7 +51,9 @@
       <h3>{{ section.spec.label }}</h3>
       {% if section.rows %}
         {% for e in section.rows %}
-          {% with labels = section.labels, decidable = decidable, is_formula = (section.spec.widget == 'formula') %}
+          {% with labels = section.labels, is_formula = (section.spec.widget == 'formula'),
+                  can_decide = elem_ctx[e.id].can_decide, can_review = elem_ctx[e.id].can_review,
+                  review = elem_ctx[e.id].review %}
             {% include "commission/fragments/element.html" %}
           {% endwith %}
         {% endfor %}
@@ -50,7 +63,7 @@
     </article>
     {% endfor %}
 
-    {% if decidable and pending %}
+    {% if is_responsable and decidable and pending %}
     <form method="post" action="/commission/dossiers/{{ dossier.id }}/tout-valider"
           onsubmit="return confirm('Valider les {{ pending }} élément(s) restant(s) ?');">
       <button type="submit">Valider le reste du dossier ({{ pending }} en attente)</button>

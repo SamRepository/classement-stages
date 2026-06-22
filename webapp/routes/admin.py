@@ -60,7 +60,7 @@ async def creer_utilisateur(request: Request, user: User = ADMIN, db: Session = 
     role = form.get("role") or "enseignant"
     if not email or "@" not in email or not nom:
         raise HTTPException(status_code=422, detail="Email et nom obligatoires.")
-    if role not in ("enseignant", "commission", "admin"):
+    if role not in ("enseignant", "commission", "responsable_commission", "admin"):
         raise HTTPException(status_code=422, detail=f"Rôle inconnu : {role!r}.")
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(status_code=422, detail=f"{email} existe déjà.")

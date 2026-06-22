@@ -84,6 +84,11 @@ def membre_commission(db_session):
 
 
 @pytest.fixture()
+def responsable(db_session):
+    return _make_user(db_session, "responsable@test.dz", "responsable_commission", "Cherif")
+
+
+@pytest.fixture()
 def admin(db_session):
     return _make_user(db_session, "admin@test.dz", "admin", "Admin")
 

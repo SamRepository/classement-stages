@@ -6,10 +6,19 @@
   <p>{{ grid.title_fr }} — campagne du {{ campaign.campaign_date.strftime('%d/%m/%Y') }}
      · statut campagne : <span class="badge {{ campaign.statut }}">{{ campaign.statut }}</span></p>
 </hgroup>
+
+{% if user.role == 'commission' %}
+<p>
+  <a href="/commission/dossiers" {% if affectation != 'moi' %}role="button"{% endif %}>Tous les dossiers</a>
+  <a href="/commission/dossiers?affectation=moi" {% if affectation == 'moi' %}role="button"{% endif %}>Mes dossiers à relire</a>
+</p>
+{% endif %}
+
 <table>
   <thead>
     <tr>
       <th>Réf.</th><th>Candidat</th><th>Département</th><th>Statut</th>
+      <th>Relecteur</th>
       <th>En attente</th><th>Validés</th><th>Rejetés</th><th>Score commission</th><th></th>
     </tr>
   </thead>
@@ -20,16 +29,35 @@
       <td>{{ l.dossier.user.nom }} {{ l.dossier.user.prenom }}</td>
       <td>{{ l.dossier.departement or '—' }}</td>
       <td><span class="badge {{ l.dossier.statut }}">{{ l.dossier.statut }}</span></td>
+      <td>
+        {% if is_responsable %}
+        <form method="post" action="/commission/dossiers/{{ l.dossier.id }}/affecter" class="inline-form">
+          <input type="hidden" name="redirect" value="/commission/dossiers{% if affectation == 'moi' %}?affectation=moi{% endif %}">
+          <select name="reviewer_id" onchange="this.form.submit()" aria-label="Relecteur">
+            <option value="">— non affecté —</option>
+            {% for m in membres %}
+            <option value="{{ m.id }}" {% if l.dossier.assigned_reviewer_id == m.id %}selected{% endif %}>{{ m.nom }} {{ m.prenom }}</option>
+            {% endfor %}
+          </select>
+        </form>
+        {% elif l.dossier.assigned_reviewer %}
+          {{ l.dossier.assigned_reviewer.nom }} {{ l.dossier.assigned_reviewer.prenom }}
+          {% if l.total %}<br><small>avis {{ l.avis }}/{{ l.total }}</small>{% endif %}
+        {% else %}<span class="warning">—</span>{% endif %}
+      </td>
       <td>{% if l.compte.en_attente %}<span class="badge en_attente">{{ l.compte.en_attente }}</span>{% else %}0{% endif %}</td>
       <td>{{ l.compte.valide }}</td>
       <td>{{ l.compte.rejete }}</td>
       <td>{{ l.score|points if l.score is not none else '—' }}</td>
-      <td><a href="/commission/dossiers/{{ l.dossier.id }}">Examiner</a></td>
+      <td><a href="/commission/dossiers/{{ l.dossier.id }}">{% if is_responsable %}Examiner{% else %}Relire{% endif %}</a></td>
     </tr>
     {% else %}
-    <tr><td colspan="9">Aucun dossier.</td></tr>
+    <tr><td colspan="10">Aucun dossier.</td></tr>
     {% endfor %}
   </tbody>
 </table>
-<p><a href="/commission/classement" role="button">Voir le classement</a></p>
+<p>
+  <a href="/commission/classement" role="button">Voir le classement</a>
+  {% if is_responsable %}<a href="/commission/affectations" role="button" class="secondary">Gérer les affectations</a>{% endif %}
+</p>
 {% endblock %}

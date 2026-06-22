@@ -31,28 +31,39 @@ def deux_dossiers_soumis(db_session, campaign, dossier, enseignant):
     return dossier, d2
 
 
-def test_page_classement(client, db_session, campaign, deux_dossiers_soumis, membre_commission):
-    login(client, "commission@test.dz")
+def test_page_classement(client, db_session, campaign, deux_dossiers_soumis, responsable):
+    login(client, "responsable@test.dz")
     r = client.get("/commission/classement")
     assert r.status_code == 200
     assert "DC-2026-001" in r.text and "DC-2026-002" in r.text
     assert "Geler le classement" in r.text
 
 
+def test_membre_voit_classement_sans_gel(client, db_session, campaign, deux_dossiers_soumis,
+                                         membre_commission):
+    """Un membre voit le classement mais pas le gel ni les exports (responsable seul)."""
+    login(client, "commission@test.dz")
+    r = client.get("/commission/classement")
+    assert r.status_code == 200
+    assert "Geler le classement" not in r.text
+    assert client.post("/commission/classement/geler").status_code == 403
+    assert client.get("/commission/exports/pv.xlsx").status_code == 403
+
+
 def test_gel_refuse_si_en_attente(client, db_session, campaign, deux_dossiers_soumis,
-                                  membre_commission):
+                                  responsable):
     d1, _ = deux_dossiers_soumis
     db_session.add(Entry(dossier_id=d1.id, criterion_id="projet_international",
                          item_id="projet_intl", payload={"count": 1}))  # en_attente
     db_session.commit()
-    login(client, "commission@test.dz")
+    login(client, "responsable@test.dz")
     r = client.post("/commission/classement/geler")
     assert r.status_code == 403
     assert "en attente" in r.text
 
 
-def test_gel_et_snapshot(client, db_session, campaign, deux_dossiers_soumis, membre_commission):
-    login(client, "commission@test.dz")
+def test_gel_et_snapshot(client, db_session, campaign, deux_dossiers_soumis, responsable):
+    login(client, "responsable@test.dz")
     r = client.post("/commission/classement/geler")
     assert r.status_code == 303
     db_session.expire_all()
@@ -75,8 +86,8 @@ def test_gel_et_snapshot(client, db_session, campaign, deux_dossiers_soumis, mem
     assert r.status_code == 400
 
 
-def test_exports(client, db_session, campaign, deux_dossiers_soumis, membre_commission):
-    login(client, "commission@test.dz")
+def test_exports(client, db_session, campaign, deux_dossiers_soumis, responsable):
+    login(client, "responsable@test.dz")
     r = client.get("/commission/exports/pv.xlsx")
     assert r.status_code == 200
     assert r.headers["content-type"].startswith("application/vnd.openxmlformats")

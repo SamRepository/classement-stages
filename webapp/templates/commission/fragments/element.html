@@ -1,3 +1,4 @@
+{% set flag_labels = {'ok': '✔ Conforme', 'pas_ok': '✗ Non conforme', 'explication': '❓ À expliquer'} %}
 <div class="element" id="element-{{ e.id }}">
   <p>
     <strong>{{ labels.get(e.item_id, e.item_id) if e.item_id else '' }}</strong>
@@ -23,7 +24,31 @@
     <br><span class="motif-rejet">Motif du rejet : {{ e.decision_motif }}</span>
     {% endif %}
   </p>
-  {% if decidable %}
+
+  {# Avis du relecteur affecté — affiché au responsable et aux autres lecteurs. #}
+  {% if review and not can_review %}
+  <p class="avis-relecteur flag-{{ review.flag }}">
+    <small><strong>Avis du relecteur :</strong> {{ flag_labels.get(review.flag, review.flag) }}
+      {% if review.observation %}— {{ review.observation }}{% endif %}</small>
+  </p>
+  {% endif %}
+
+  {# Formulaire d'avis du membre affecté (consultatif, sans effet sur le score). #}
+  {% if can_review %}
+  <form class="avis-form" hx-post="/commission/entrees/{{ e.id }}/avis"
+        hx-target="#element-{{ e.id }}" hx-swap="outerHTML">
+    <fieldset class="avis-flags">
+      {% for value, libelle in flag_labels.items() %}
+      <label><input type="radio" name="flag" value="{{ value }}"
+             {% if review and review.flag == value %}checked{% endif %} required> {{ libelle }}</label>
+      {% endfor %}
+    </fieldset>
+    <textarea name="observation" rows="2" placeholder="Observation (facultative)">{{ review.observation if review else '' }}</textarea>
+    <button type="submit" class="secondary">Enregistrer mon avis</button>
+  </form>
+  {% endif %}
+
+  {% if can_decide %}
   <div class="grid">
     <form hx-post="/commission/entrees/{{ e.id }}/decision" hx-target="#element-{{ e.id }}" hx-swap="outerHTML">
       <input type="hidden" name="statut" value="valide">

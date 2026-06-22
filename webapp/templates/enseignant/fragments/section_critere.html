@@ -5,7 +5,7 @@
   <h3>{{ spec.label }}</h3>
 
   {% if spec.habilitation_hint %}
-  <p class="habilitation-hint"><small>ℹ️ Les travaux et documents pédagogiques déjà utilisés
+  <p class="habilitation-hint"><small>ℹ️ Les travaux et documents d'enseignement déjà utilisés
      dans votre dossier d'habilitation universitaire <strong>ne sont pas comptabilisés</strong> ici.</small></p>
   {% endif %}
 
@@ -184,6 +184,9 @@
                 {% if spec.has_reference %}<label>DOI <input name="doi" value="{{ r.payload.doi or '' }}" placeholder="10.xxxx/…"></label>{% endif %}
                 <label>{{ spec.url_label or 'URL' }} <input name="url" type="url" value="{{ r.payload.url or '' }}" placeholder="https://…"></label>
               </div>
+              <p class="ref-hint"><small>Champs <strong>facultatifs</strong> (ex. une revue classe C
+                 n'a pas toujours de DOI). Si la quantité est supérieure à 1, vous pouvez indiquer
+                 <strong>plusieurs DOI/URL</strong> en les séparant par une virgule ou un retour à la ligne.</small></p>
               {% endif %}
               <div class="grid">
                 <button type="submit">Enregistrer les modifications</button>
@@ -264,6 +267,9 @@
           {% if spec.has_reference %}<label>DOI <input name="doi" placeholder="10.xxxx/…"></label>{% endif %}
           <label>{{ spec.url_label or 'URL' }} <input name="url" type="url" placeholder="https://…"></label>
         </div>
+        <p class="ref-hint"><small>Champs <strong>facultatifs</strong> (ex. une revue classe C
+           n'a pas toujours de DOI). Si la quantité est supérieure à 1, vous pouvez indiquer
+           <strong>plusieurs DOI/URL</strong> en les séparant par une virgule ou un retour à la ligne.</small></p>
         {% endif %}
         {% if spec.has_leader %}
         <label>Dont porteur de projet (nombre) <input type="number" name="leader_count" min="0"></label>

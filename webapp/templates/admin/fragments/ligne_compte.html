@@ -1,0 +1,63 @@
+{% if edit %}
+<tr id="compte-{{ u.id }}" class="edition">
+  <td colspan="7">
+    <p><strong>Modifier le compte</strong> — <small>n° {{ u.id }}</small></p>
+    <div class="grid">
+      <label>Email (identifiant) <input name="email" type="email" value="{{ u.email }}" required></label>
+      <label>Rôle
+        <select name="role">
+          {% for value, libelle in role_choices %}
+          <option value="{{ value }}" {% if u.role == value %}selected{% endif %}>{{ libelle }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="grid">
+      <label>Nom <input name="nom" value="{{ u.nom }}" required></label>
+      <label>Prénom <input name="prenom" value="{{ u.prenom }}"></label>
+    </div>
+    <div class="cellule-actions">
+      <button type="button"
+              hx-post="/admin/utilisateurs/{{ u.id }}/modifier"
+              hx-include="closest tr" hx-target="#compte-{{ u.id }}" hx-swap="outerHTML">Enregistrer</button>
+      <button type="button" class="secondary outline"
+              hx-get="/admin/utilisateurs/{{ u.id }}/ligne"
+              hx-target="#compte-{{ u.id }}" hx-swap="outerHTML">Annuler</button>
+    </div>
+  </td>
+</tr>
+{% else %}
+<tr id="compte-{{ u.id }}">
+  <td><input type="checkbox" name="user_ids" value="{{ u.id }}"></td>
+  <td>{{ u.email }}</td>
+  <td>{{ u.nom }} {{ u.prenom }}</td>
+  <td>{{ role_labels.get(u.role, u.role) }}</td>
+  <td>{{ 'oui' if u.actif else 'non' }}</td>
+  <td>
+    {% if u.last_login_at %}{{ u.last_login_at.strftime('%d/%m/%Y %H:%M') }}
+    {% else %}<span class="warning" title="Ce compte ne s'est jamais connecté">jamais</span>{% endif %}
+  </td>
+  <td>
+    <div class="cellule-actions">
+      <button type="button" class="secondary outline"
+              hx-get="/admin/utilisateurs/{{ u.id }}/edition"
+              hx-target="#compte-{{ u.id }}" hx-swap="outerHTML">Modifier</button>
+      <button class="secondary outline"
+              formaction="/admin/utilisateurs/{{ u.id }}/basculer-actif">
+        {{ 'Désactiver' if u.actif else 'Réactiver' }}
+      </button>
+      <button class="secondary outline"
+              formaction="/admin/utilisateurs/{{ u.id }}/motdepasse"
+              onclick="return confirm('Générer un nouveau mot de passe pour {{ u.email }} et l\'envoyer par e-mail ?');">
+        Réinit. + envoyer
+      </button>
+      <button type="button" class="secondary outline supprimer"
+              hx-post="/admin/utilisateurs/{{ u.id }}/supprimer"
+              hx-target="#compte-{{ u.id }}" hx-swap="outerHTML"
+              hx-confirm="Supprimer définitivement le compte {{ u.email }} ? (refusé si le compte a des données liées — désactivez-le dans ce cas)">
+        ✕ Supprimer
+      </button>
+    </div>
+  </td>
+</tr>
+{% endif %}

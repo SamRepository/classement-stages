@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% block titre %}Utilisateurs{% endblock %}
 {% block contenu %}
-{% set role_labels = {'enseignant': 'Enseignant', 'commission': 'Membre commission',
-                      'responsable_commission': 'Responsable commission', 'admin': 'Administrateur'} %}
 <h1>Utilisateurs</h1>
 
 {% if nouveaux %}
@@ -97,30 +95,7 @@
     </thead>
     <tbody>
       {% for u in users %}
-      <tr>
-        <td><input type="checkbox" name="user_ids" value="{{ u.id }}"></td>
-        <td>{{ u.email }}</td>
-        <td>{{ u.nom }} {{ u.prenom }}</td>
-        <td>{{ role_labels.get(u.role, u.role) }}</td>
-        <td>{{ 'oui' if u.actif else 'non' }}</td>
-        <td>
-          {% if u.last_login_at %}{{ u.last_login_at.strftime('%d/%m/%Y %H:%M') }}
-          {% else %}<span class="warning" title="Ce compte ne s'est jamais connecté">jamais</span>{% endif %}
-        </td>
-        <td>
-          <div class="cellule-actions">
-            <button class="secondary outline"
-                    formaction="/admin/utilisateurs/{{ u.id }}/basculer-actif">
-              {{ 'Désactiver' if u.actif else 'Réactiver' }}
-            </button>
-            <button class="secondary outline"
-                    formaction="/admin/utilisateurs/{{ u.id }}/motdepasse"
-                    onclick="return confirm('Générer un nouveau mot de passe pour {{ u.email }} et l\'envoyer par e-mail ?');">
-              Réinit. + envoyer
-            </button>
-          </div>
-        </td>
-      </tr>
+      {% with edit = false %}{% include "admin/fragments/ligne_compte.html" %}{% endwith %}
       {% endfor %}
     </tbody>
   </table>

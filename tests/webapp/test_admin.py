@@ -56,6 +56,84 @@ def test_colonne_derniere_connexion(client, db_session, campaign, admin, enseign
     assert enseignant.last_login_at.strftime("%d/%m/%Y") in page
 
 
+# ---------------------------------------------------------------------------
+# Édition et suppression d'un compte
+# ---------------------------------------------------------------------------
+
+
+def test_modifier_role_et_identite(client, db_session, campaign, admin):
+    cible = User(email="membre@test.dz", password_hash="x", nom="Saidi",
+                 prenom="M", role="commission")
+    db_session.add(cible)
+    db_session.commit()
+    login(client, "admin@test.dz")
+    r = client.post(f"/admin/utilisateurs/{cible.id}/modifier",
+                    data={"email": "resp@test.dz", "nom": "Cherif", "prenom": "Amine",
+                          "role": "responsable_commission"})
+    assert r.status_code == 200
+    db_session.refresh(cible)
+    assert cible.email == "resp@test.dz"
+    assert cible.nom == "Cherif" and cible.prenom == "Amine"
+    assert cible.role == "responsable_commission"
+
+
+def test_modifier_email_duplique_refuse(client, db_session, campaign, admin, enseignant):
+    cible = User(email="membre@test.dz", password_hash="x", nom="Saidi", role="commission")
+    db_session.add(cible)
+    db_session.commit()
+    login(client, "admin@test.dz")
+    r = client.post(f"/admin/utilisateurs/{cible.id}/modifier",
+                    data={"email": "enseignant@test.dz", "nom": "Saidi", "role": "commission"})
+    assert r.status_code == 422
+    assert "déjà utilisé" in r.text
+
+
+def test_modifier_propre_role_refuse(client, db_session, campaign, admin):
+    login(client, "admin@test.dz")
+    r = client.post(f"/admin/utilisateurs/{admin.id}/modifier",
+                    data={"email": admin.email, "nom": admin.nom, "role": "enseignant"})
+    assert r.status_code == 422
+    assert "votre propre rôle" in r.text
+    db_session.refresh(admin)
+    assert admin.role == "admin"
+
+
+def test_edition_fragment_affiche_le_formulaire(client, db_session, campaign, admin):
+    cible = User(email="membre@test.dz", password_hash="x", nom="Saidi", role="commission")
+    db_session.add(cible)
+    db_session.commit()
+    login(client, "admin@test.dz")
+    r = client.get(f"/admin/utilisateurs/{cible.id}/edition")
+    assert r.status_code == 200
+    assert 'name="role"' in r.text and "Responsable de la commission" in r.text
+
+
+def test_supprimer_compte_vierge(client, db_session, campaign, admin):
+    cible = User(email="vide@test.dz", password_hash="x", nom="Test", role="commission")
+    db_session.add(cible)
+    db_session.commit()
+    cid = cible.id
+    login(client, "admin@test.dz")
+    r = client.post(f"/admin/utilisateurs/{cid}/supprimer")
+    assert r.status_code == 200
+    assert db_session.get(User, cid) is None
+
+
+def test_supprimer_compte_avec_dossier_refuse(client, db_session, campaign, admin, dossier):
+    login(client, "admin@test.dz")
+    r = client.post(f"/admin/utilisateurs/{dossier.user_id}/supprimer")
+    assert r.status_code == 422
+    assert "dossier de candidature" in r.text
+    assert db_session.get(User, dossier.user_id) is not None
+
+
+def test_supprimer_propre_compte_refuse(client, db_session, campaign, admin):
+    login(client, "admin@test.dz")
+    r = client.post(f"/admin/utilisateurs/{admin.id}/supprimer")
+    assert r.status_code == 422
+    assert db_session.get(User, admin.id) is not None
+
+
 def test_import_xlsx_cree_comptes_et_dossiers(client, db_session, campaign, admin):
     wb = Workbook()
     ws = wb.active

@@ -7,7 +7,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
@@ -16,7 +16,7 @@ from starlette.datastructures import UploadFile
 from webapp.auth import require_role
 from webapp.config import get_settings
 from webapp.db import Base, get_db
-from webapp.models import Benefit, Dossier, User
+from webapp.models import Benefit, Dossier, ElementReview, Entry, Event, User
 from webapp.security import generate_password, hash_password
 from webapp.services import backup
 from webapp.services.accounts import import_accounts, import_benefits
@@ -33,6 +33,21 @@ router = APIRouter(prefix="/admin")
 
 ADMIN = Depends(require_role("admin"))
 
+# Libellés et choix de rôles (une seule source pour la liste et l'édition).
+ROLE_CHOICES = [
+    ("enseignant", "Enseignant (candidat)"),
+    ("commission", "Membre de la commission"),
+    ("responsable_commission", "Responsable de la commission"),
+    ("admin", "Administrateur"),
+]
+ROLE_LABELS = {
+    "enseignant": "Enseignant",
+    "commission": "Membre commission",
+    "responsable_commission": "Responsable commission",
+    "admin": "Administrateur",
+}
+VALID_ROLES = tuple(value for value, _ in ROLE_CHOICES)
+
 
 def _page_utilisateurs(request: Request, db: Session, user: User, *, tri: str = "role", **extra):
     order = User.email if tri == "email" else (User.role, User.nom)
@@ -41,8 +56,42 @@ def _page_utilisateurs(request: Request, db: Session, user: User, *, tri: str = 
     stmt = select(User).order_by(*(order if isinstance(order, tuple) else (order,)))
     users = list(db.scalars(stmt))
     contexte = {"user": user, "users": users, "nouveaux": [], "ignores": [],
-                "envoi": None, "tri": tri, **extra}
+                "envoi": None, "tri": tri, "role_labels": ROLE_LABELS,
+                "role_choices": ROLE_CHOICES, **extra}
     return templates.TemplateResponse(request, "admin/utilisateurs.html", contexte)
+
+
+def _render_ligne(request: Request, u: User, *, edit: bool) -> HTMLResponse:
+    """Rend une seule ligne de compte (affichage ou édition) pour les échanges HTMX."""
+    html = templates.get_template("admin/fragments/ligne_compte.html").render(
+        request=request, u=u, edit=edit,
+        role_labels=ROLE_LABELS, role_choices=ROLE_CHOICES,
+    )
+    return HTMLResponse(html)
+
+
+def _donnees_liees(db: Session, u: User) -> list[str]:
+    """Libellés des données qui rattachent un compte (bloquent la suppression).
+
+    Tant que l'une existe, la suppression physique casserait l'intégrité ou
+    perdrait une donnée faisant foi : on refuse et on oriente vers la
+    désactivation (cf. décision commission, conservation des traces art. 14-15).
+    """
+    checks = [
+        ("dossier de candidature",
+         select(func.count(Dossier.id)).where(Dossier.user_id == u.id)),
+        ("dossier(s) affecté(s) en relecture",
+         select(func.count(Dossier.id)).where(Dossier.assigned_reviewer_id == u.id)),
+        ("décisions de commission",
+         select(func.count(Entry.id)).where(Entry.decided_by == u.id)),
+        ("avis de relecture",
+         select(func.count(ElementReview.id)).where(ElementReview.reviewer_id == u.id)),
+        ("historique de bénéfices",
+         select(func.count(Benefit.id)).where(Benefit.user_id == u.id)),
+        ("journal d'activité",
+         select(func.count(Event.id)).where(Event.user_id == u.id)),
+    ]
+    return [libelle for libelle, stmt in checks if db.scalar(stmt)]
 
 
 @router.get("/utilisateurs")
@@ -60,7 +109,7 @@ async def creer_utilisateur(request: Request, user: User = ADMIN, db: Session = 
     role = form.get("role") or "enseignant"
     if not email or "@" not in email or not nom:
         raise HTTPException(status_code=422, detail="Email et nom obligatoires.")
-    if role not in ("enseignant", "commission", "responsable_commission", "admin"):
+    if role not in VALID_ROLES:
         raise HTTPException(status_code=422, detail=f"Rôle inconnu : {role!r}.")
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(status_code=422, detail=f"{email} existe déjà.")
@@ -153,6 +202,90 @@ async def envoyer_identifiants(request: Request, user: User = ADMIN, db: Session
     db.commit()
     envoi = notify_new_accounts(created)
     return _page_utilisateurs(request, db, user, nouveaux=created, envoi=envoi)
+
+
+@router.get("/utilisateurs/{user_id}/edition")
+def editer_compte(request: Request, user_id: int, user: User = ADMIN, db: Session = Depends(get_db)):
+    cible = db.get(User, user_id)
+    if cible is None:
+        raise HTTPException(status_code=404)
+    return _render_ligne(request, cible, edit=True)
+
+
+@router.get("/utilisateurs/{user_id}/ligne")
+def ligne_compte(request: Request, user_id: int, user: User = ADMIN, db: Session = Depends(get_db)):
+    """Ligne d'affichage (utilisée pour annuler une édition)."""
+    cible = db.get(User, user_id)
+    if cible is None:
+        raise HTTPException(status_code=404)
+    return _render_ligne(request, cible, edit=False)
+
+
+@router.post("/utilisateurs/{user_id}/modifier")
+async def modifier_compte(
+    request: Request, user_id: int, user: User = ADMIN, db: Session = Depends(get_db)
+):
+    cible = db.get(User, user_id)
+    if cible is None:
+        raise HTTPException(status_code=404)
+    form = await request.form()
+    email = (form.get("email") or "").strip().lower()
+    nom = (form.get("nom") or "").strip()
+    prenom = (form.get("prenom") or "").strip()
+    role = form.get("role") or cible.role
+    if not email or "@" not in email or not nom:
+        raise HTTPException(status_code=422, detail="Email et nom obligatoires.")
+    if role not in VALID_ROLES:
+        raise HTTPException(status_code=422, detail=f"Rôle inconnu : {role!r}.")
+    if db.scalar(select(User).where(User.email == email, User.id != cible.id)):
+        raise HTTPException(status_code=422, detail=f"L'email {email} est déjà utilisé.")
+    if role != cible.role:
+        if cible.id == user.id:
+            raise HTTPException(
+                status_code=422,
+                detail="Vous ne pouvez pas changer votre propre rôle.",
+            )
+        if cible.role == "admin":
+            autres_admins = db.scalar(
+                select(func.count(User.id)).where(
+                    User.role == "admin", User.actif.is_(True), User.id != cible.id
+                )
+            )
+            if not autres_admins:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Au moins un administrateur actif doit subsister.",
+                )
+    cible.email, cible.nom, cible.prenom, cible.role = email, nom, prenom, role
+    log_event(db, user, "modif_compte", detail=f"{email} ({role})")
+    db.commit()
+    db.refresh(cible)
+    return _render_ligne(request, cible, edit=False)
+
+
+@router.post("/utilisateurs/{user_id}/supprimer")
+def supprimer_compte(
+    request: Request, user_id: int, user: User = ADMIN, db: Session = Depends(get_db)
+):
+    """Suppression physique — uniquement pour un compte sans aucune donnée liée."""
+    cible = db.get(User, user_id)
+    if cible is None:
+        raise HTTPException(status_code=404)
+    if cible.id == user.id:
+        raise HTTPException(status_code=422, detail="Impossible de supprimer son propre compte.")
+    liees = _donnees_liees(db, cible)
+    if liees:
+        raise HTTPException(
+            status_code=422,
+            detail=("Suppression impossible : ce compte a "
+                    + ", ".join(liees)
+                    + ". Désactivez-le plutôt (les traces sont conservées)."),
+        )
+    email = cible.email
+    db.delete(cible)
+    log_event(db, user, "suppression_compte", detail=email)
+    db.commit()
+    return HTMLResponse("")  # la ligne disparaît du tableau
 
 
 # ---------------------------------------------------------------------------

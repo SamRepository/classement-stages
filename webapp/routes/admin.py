@@ -9,6 +9,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
 from starlette.datastructures import UploadFile
@@ -47,6 +48,25 @@ ROLE_LABELS = {
     "admin": "Administrateur",
 }
 VALID_ROLES = tuple(value for value, _ in ROLE_CHOICES)
+
+
+def _commit(db: Session) -> None:
+    """Commit en transformant un refus d'intégrité en message clair (au lieu d'un 500).
+
+    Évite aussi de laisser la session dans un état cassé (rollback explicite).
+    Cas typique : base non migrée après mise à jour (la contrainte de rôle
+    ignore encore ``responsable_commission``) ou doublon d'e-mail concurrent.
+    """
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=422,
+            detail=("Enregistrement refusé par la base (valeur non autorisée ou doublon). "
+                    "Si le rôle « responsable de commission » est en cause, la base n'est "
+                    "pas à jour : appliquez les migrations (alembic upgrade head)."),
+        )
 
 
 def _page_utilisateurs(request: Request, db: Session, user: User, *, tri: str = "role", **extra):
@@ -119,7 +139,7 @@ async def creer_utilisateur(request: Request, user: User = ADMIN, db: Session = 
                    must_change_password=True)
     db.add(nouveau)
     log_event(db, user, "creation_compte", detail=f"{email} ({role})")
-    db.commit()
+    _commit(db)
     created = [{"email": email, "nom": nom, "prenom": nouveau.prenom, "password": password}]
     envoi = notify_new_accounts(created)
     return _page_utilisateurs(request, db, user, nouveaux=created, envoi=envoi)
@@ -258,7 +278,7 @@ async def modifier_compte(
                 )
     cible.email, cible.nom, cible.prenom, cible.role = email, nom, prenom, role
     log_event(db, user, "modif_compte", detail=f"{email} ({role})")
-    db.commit()
+    _commit(db)
     db.refresh(cible)
     return _render_ligne(request, cible, edit=False)
 

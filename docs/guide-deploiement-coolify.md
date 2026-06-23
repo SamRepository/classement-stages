@@ -135,8 +135,11 @@ Le mot de passe admin généré s'affiche — **le noter immédiatement** (ou pa
    s'affiche qu'une fois** → copier le tableau pour la distribution
    individuelle. Import idempotent (réimport sans doublon). Un CSV simple
    (`email, nom, …`) est aussi accepté.
-2. **Utilisateurs → Créer un compte** : les membres de la **commission**
-   (rôle *commission*).
+2. **Utilisateurs → Créer un compte** : les **membres de la commission**
+   (rôle *commission*, relecture + avis) et **un responsable de commission**
+   (rôle *responsable_commission*, affectation + décisions + gel + exports).
+   Comptes modifiables/supprimables ensuite depuis le tableau *Comptes*
+   (suppression refusée si des données sont rattachées → désactiver à la place).
 3. **Bénéfices → Importer l'historique** : déposer le fichier produit par
    `python scripts/extract_historique.py --source <export-sejours-odoo.xlsx>`
    (feuille *Historique* : colonnes `email`, `date_mobilite`, `date_cloture`).
@@ -178,6 +181,31 @@ Le mot de passe admin généré s'affiche — **le noter immédiatement** (ou pa
 - **Dépôt privé** : passer le dépôt GitHub en privé (Settings → Change
   visibility) puis reconnecter l'application via la GitHub App.
 
+## Redéploiement après une mise à jour
+
+Procédure quand une nouvelle version a été poussée sur `main`, **surtout si elle
+contient une migration de schéma** :
+
+1. **Sauvegarde d'abord** : portail admin → *Sauvegarde* → télécharger l'archive
+   ZIP (base + justificatifs). Indispensable avant toute migration structurelle.
+2. **Redeploy** dans Coolify (rebuild + redémarrage). Le `CMD` du conteneur lance
+   `alembic upgrade head` **automatiquement** avant le serveur — aucune commande
+   DB manuelle.
+3. **Contrôler les logs** : on doit voir les lignes `Running upgrade … -> …`
+   puis `Uvicorn running…`, et `/sante` répondre `{"statut":"ok"}`.
+4. **Vérifications rapides** : se connecter, ouvrir une page de chaque espace
+   (enseignant, commission, admin) et confirmer l'absence d'erreur.
+5. **Action d'administration si la version l'exige** : une montée de version peut
+   introduire un nouveau rôle ou de nouveaux droits nécessitant une action une
+   fois en ligne (ex. **désigner un responsable de commission** après l'ajout du
+   workflow à deux niveaux — sans lui, plus personne ne décide/gèle/exporte).
+6. **En cas d'échec** : restaurer l'archive ZIP via *Sauvegarde / Restauration*
+   (remet base **et** fichiers d'un coup) — plus sûr qu'un `alembic downgrade`.
+
+> Les migrations vivent dans `webapp/alembic/versions/` et forment une chaîne
+> linéaire à tête unique ; `alembic upgrade head` n'applique que les révisions
+> manquantes, dans l'ordre. Vérifiable avec `python -m alembic -c webapp/alembic.ini history`.
+
 ---
 
 ## Cycle de la campagne (rappel)
@@ -185,17 +213,21 @@ Le mot de passe admin généré s'affiche — **le noter immédiatement** (ou pa
 1. **Enseignants** : saisie du dossier (un élément déclaré = une ligne + son
    justificatif PDF), score provisoire en temps réel, soumission (gel du
    dossier côté candidat).
-2. **Commission** (`/commission/dossiers`) : examen élément par élément avec le
-   justificatif en visionneuse — *Valider* / *Rejeter avec motif obligatoire*
-   (art. 14-15) ; « Valider le reste du dossier » pour les éléments restants ;
-   les observations du moteur (plafonds, fenêtres, références manquantes)
-   restent affichées pour la traçabilité.
+2. **Commission — deux niveaux.** Le **responsable** (`/commission/affectations`)
+   répartit les dossiers entre les **membres** (un relecteur par dossier). Chaque
+   **membre** relit ses dossiers et pose un **avis par élément** (conforme / non
+   conforme / à expliquer + observation) — purement consultatif, sans effet sur le
+   score. Le **responsable** (`/commission/dossiers`) prend la décision finale
+   élément par élément — *Valider* / *Rejeter avec motif obligatoire* (art. 14-15) —
+   avec le justificatif en visionneuse et les avis des membres en regard ; « Valider
+   le reste du dossier » pour les éléments restants. Les observations du moteur
+   (plafonds, fenêtres, références manquantes) restent affichées pour la traçabilité.
 3. **Classement** (`/commission/classement`) : rang « compétition » (1, 2, 2, 4),
-   ex aequo signalés (pas de départage : choix du décret). **Gel** possible
-   uniquement quand plus aucun élément n'est en attente ; un instantané JSON
-   est archivé en base.
-4. **Exports** : PV de classement (.xlsx), fiches d'évaluation (.xlsx), document
-   imprimable (HTML → PDF navigateur) — générés par `classement.exports`.
+   ex aequo signalés (pas de départage : choix du décret). **Gel** (responsable)
+   possible uniquement quand plus aucun élément n'est en attente ; un instantané
+   JSON est archivé en base.
+4. **Exports** (responsable) : PV de classement (.xlsx), fiches d'évaluation (.xlsx),
+   document imprimable (HTML → PDF navigateur) — générés par `classement.exports`.
 5. L'admin peut **rouvrir** un dossier soumis (correction) tant que le
    classement n'est pas gelé.
 

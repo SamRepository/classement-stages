@@ -35,6 +35,13 @@
     "u4-perfectionnement": ["doctorant_non_salarie", "maitre_assistant", "enseignant_chercheur"]
   },
 
+  "label_overrides": {
+    "u3-residences-scientifiques": {
+      "publications": "Publications après le dernier bénéfice (affiliation ENSET-Skikda mentionnée)",
+      "communications": "Communications après le dernier bénéfice (affiliation ENSET-Skikda mentionnée)"
+    }
+  },
+
   "ranking_rules": [
     {
       "group_by": [],

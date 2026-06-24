@@ -35,6 +35,13 @@
     "u4-perfectionnement": ["doctorant_non_salarie", "maitre_assistant", "enseignant_chercheur"]
   },
 
+  "label_overrides": {
+    "_comment": "Optionnel. Surcharge des libellés affichés (titres de section, détail du score, exports) par grille -> criterion_id -> label_fr. Permet de personnaliser le texte générique du décret sans modifier les grilles (ex. « établissement mentionné » -> « affiliation <SIGLE> mentionnée »). Le scoring n'est pas affecté.",
+    "u3-residences-scientifiques": {
+      "publications": "Publications après le dernier bénéfice (affiliation <SIGLE> mentionnée)"
+    }
+  },
+
   "ranking_rules": [
     {
       "_comment": "Première règle qui matche (grid et/ou population, omis = joker). group_by liste des clés de candidate.grouping.",

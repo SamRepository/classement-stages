@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from webapp.forms.grid_form import build_form_spec
 from webapp.models import Dossier
-from webapp.services.scoring import compute_score, get_grid
+from webapp.services.scoring import compute_score, grid_for_campaign
 from webapp.templating import templates
 
 _UNSAFE = re.compile(r"[^A-Za-z0-9._-]+")
@@ -39,7 +39,7 @@ def build_dossier_archive(db: Session, dossier: Dossier) -> str:
 
     L'appelant est responsable de la suppression du fichier (BackgroundTask).
     """
-    grid = get_grid(dossier.campaign.grid_id)
+    grid = grid_for_campaign(dossier.campaign)
     breakdown, _ = compute_score(db, dossier, mode="declare")
 
     rows_by_cid: dict[str, list] = {}

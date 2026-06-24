@@ -49,6 +49,28 @@ def find_grid(grid_id: str, grids_dir: str | Path = DEFAULT_GRIDS_DIR) -> dict:
     raise FileNotFoundError(f"Grille '{grid_id}' introuvable dans {grids_dir}")
 
 
+def apply_label_overrides(grid: dict, overrides: dict[str, str] | None) -> dict:
+    """Surcharge les ``label_fr`` de certains critères pour un établissement donné.
+
+    Les grilles restent la transcription générique du décret (multi-établissements) ;
+    la personnalisation d'un libellé (ex. « établissement mentionné » →
+    « affiliation ENSET-Skikda mentionnée ») passe par le profil d'établissement,
+    jamais par le texte de la grille. Retourne une **copie** (la grille d'origine
+    n'est pas mutée) ; sans surcharge, renvoie la grille telle quelle.
+
+    ``overrides`` : ``{criterion_id: label_fr}``. Les ids inconnus sont ignorés.
+    """
+    if not overrides:
+        return grid
+    new_criteria = [
+        {**crit, "label_fr": overrides[crit["id"]]} if crit.get("id") in overrides else crit
+        for crit in grid.get("criteria", [])
+    ]
+    effective = {**grid, "criteria": new_criteria}
+    effective["_criteria_by_id"] = {c["id"]: c for c in new_criteria}
+    return effective
+
+
 def author_weights(shared_rules: dict | None) -> tuple[dict[int, float], float]:
     """Retourne (poids par position 1-4, poids 5 et plus)."""
     if shared_rules:

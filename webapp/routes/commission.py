@@ -31,7 +31,7 @@ from webapp.forms.grid_form import build_form_spec
 from webapp.models import REVIEW_FLAGS, Dossier, ElementReview, Entry, User
 from webapp.services.dossier import get_campaign, log_event
 from webapp.services.exports import export_response, freeze_campaign, pending_entries_count
-from webapp.services.scoring import compute_ranking, compute_score, get_costs, get_grid
+from webapp.services.scoring import compute_ranking, compute_score, get_costs, grid_for_campaign
 from webapp.templating import templates
 
 router = APIRouter(prefix="/commission")
@@ -113,7 +113,7 @@ def _element_context(entry: Entry, user: User) -> dict:
 
 def _render_element(request: Request, db: Session, entry: Entry, user: User,
                     *, with_score: bool) -> HTMLResponse:
-    grid = get_grid(entry.dossier.campaign.grid_id)
+    grid = grid_for_campaign(entry.dossier.campaign)
     labels: dict[str, str] = {}
     is_formula = False
     for spec in build_form_spec(grid):
@@ -180,7 +180,7 @@ def liste_dossiers(
         request,
         "commission/dossiers.html",
         {"user": user, "campaign": campaign, "lignes": lignes,
-         "grid": get_grid(campaign.grid_id),
+         "grid": grid_for_campaign(campaign),
          "is_responsable": _is_responsable(user),
          "membres": _membres(db) if _is_responsable(user) else [],
          "affectation": affectation},
@@ -195,7 +195,7 @@ def vue_dossier(
     db: Session = Depends(get_db),
 ):
     dossier = _get_dossier(db, dossier_id)
-    grid = get_grid(dossier.campaign.grid_id)
+    grid = grid_for_campaign(dossier.campaign)
     breakdown, exclusions = compute_score(db, dossier, mode="commission")
     pending = sum(1 for e in dossier.entries if e.statut == "en_attente")
     can_review = (
@@ -338,7 +338,7 @@ async def ajuster_formule(
             status_code=403,
             detail="Ajustement impossible : dossier non soumis ou classement gelé.",
         )
-    grid = get_grid(entry.dossier.campaign.grid_id)
+    grid = grid_for_campaign(entry.dossier.campaign)
     criterion = next((c for c in grid.get("criteria", []) if c["id"] == entry.criterion_id), None)
     if criterion is None or criterion.get("type") != "formula":
         raise HTTPException(status_code=422, detail="Ce critère n'est pas une formule.")
@@ -489,7 +489,7 @@ def classement(
         {
             "user": user,
             "campaign": campaign,
-            "grid": get_grid(campaign.grid_id),
+            "grid": grid_for_campaign(campaign),
             "groups": result.groups,
             "noms": noms,
             "departements": departements,
@@ -549,7 +549,7 @@ def simulation_budget(
         simulation = simulate_budget(
             result.candidates,
             result.groups,
-            get_grid(campaign.grid_id),
+            grid_for_campaign(campaign),
             get_costs(),
             montant,
             plafond,
@@ -565,7 +565,7 @@ def simulation_budget(
         {
             "user": user,
             "campaign": campaign,
-            "grid": get_grid(campaign.grid_id),
+            "grid": grid_for_campaign(campaign),
             "simulation": simulation,
             "noms": noms,
             "dossier_ids": dossier_ids,

@@ -16,6 +16,15 @@ def test_page_dossier_cree_brouillon(client, db_session, campaign, enseignant):
     assert len(dossiers) == 1
 
 
+def test_libelle_surcharge_par_etablissement(client, campaign, enseignant):
+    """Le profil ENSET surcharge le libellé générique du décret (u3)."""
+    login(client, "enseignant@test.dz")
+    r = client.get("/mon-dossier")
+    assert r.status_code == 200
+    assert "affiliation ENSET-Skikda mentionnée" in r.text
+    assert "(établissement mentionné)" not in r.text
+
+
 def test_infos_habilitation_preserve_budget(client, db_session, campaign, enseignant):
     """La saisie des infos coche l'habilitation et n'écrase pas le budget (service budget)."""
     from webapp.models import Dossier

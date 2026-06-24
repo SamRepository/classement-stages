@@ -22,7 +22,12 @@ from starlette.background import BackgroundTask
 from classement.exports import export_fiches, export_html, export_pv
 from webapp.models import Campaign, Dossier, Entry, RankingSnapshot, User
 from webapp.services.dossier import log_event
-from webapp.services.scoring import RankingResult, compute_ranking, get_grid, get_institution
+from webapp.services.scoring import (
+    RankingResult,
+    compute_ranking,
+    get_institution,
+    grid_for_campaign,
+)
 
 EXPORT_KINDS = {
     "pv.xlsx": ("PV de classement", ".xlsx",
@@ -119,7 +124,7 @@ def export_response(db: Session, campaign: Campaign, kind: str) -> FileResponse:
     result = compute_ranking(db, campaign, mode="commission")
     if not result.dossiers:
         raise HTTPException(status_code=400, detail="Aucun dossier soumis à exporter.")
-    grid = get_grid(campaign.grid_id)
+    grid = grid_for_campaign(campaign)
     institution = get_institution(campaign.institution_id)
     campaign_date = campaign.campaign_date.isoformat()
 

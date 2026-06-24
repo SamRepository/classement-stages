@@ -83,6 +83,15 @@ def validate_candidate(institution: dict, candidate: dict, grid: dict) -> list[s
     return warnings
 
 
+def label_overrides_for(institution: dict, grid_id: str) -> dict[str, str]:
+    """Surcharges de libellés (``criterion_id`` → ``label_fr``) du profil pour une grille.
+
+    Renseignées sous ``label_overrides[<grid_id>]`` dans le profil d'établissement ;
+    vide si non défini. Voir ``classement.grids.apply_label_overrides``.
+    """
+    return dict(institution.get("label_overrides", {}).get(grid_id, {}))
+
+
 def group_by_for(institution: dict, grid_id: str, population: str | None) -> list[str]:
     """Clés de regroupement du classement : première règle qui matche."""
     for rule in institution.get("ranking_rules", []):

@@ -23,7 +23,7 @@ from webapp.models import Benefit, Dossier, Entry, User
 from webapp.services.archive import build_dossier_archive
 from webapp.services.dossier import assert_editable, ensure_dossier, get_campaign, submit_dossier
 from webapp.services.exports import snapshot_rank_for
-from webapp.services.scoring import compute_score, get_grid, get_institution
+from webapp.services.scoring import compute_score, get_institution, grid_for_campaign
 from webapp.services.uploads import delete_justificatif, save_justificatif
 from webapp.templating import templates
 
@@ -35,7 +35,7 @@ SINGLE_WIDGETS = {"enum", "fixed", "fixed_cap", "capped", "count_simple", "formu
 def _context(db: Session, user: User):
     campaign = get_campaign(db)
     dossier = ensure_dossier(db, user, campaign)
-    grid = get_grid(campaign.grid_id)
+    grid = grid_for_campaign(campaign)
     return campaign, dossier, grid
 
 
@@ -58,7 +58,7 @@ def _find_section(dossier: Dossier, grid: dict, criterion_id: str) -> dict:
 
 def _render_score(request: Request, db: Session, dossier: Dossier, *, oob: bool) -> str:
     breakdown, _ = compute_score(db, dossier, mode="declare")
-    grid = get_grid(dossier.campaign.grid_id)
+    grid = grid_for_campaign(dossier.campaign)
     # Critères « formule » (pénalité de bénéfices) : toujours affichés dans le détail,
     # même à 0 point, avec le n et le calcul.
     formula_ids = {c["id"] for c in grid.get("criteria", []) if c.get("type") == "formula"}

@@ -3,10 +3,11 @@
 import pytest
 
 from classement.engine import score_candidate
-from classement.grids import find_grid, load_shared_rules
+from classement.grids import apply_label_overrides, find_grid, load_shared_rules
 from classement.institutions import (
     allocate_places,
     group_by_for,
+    label_overrides_for,
     load_institution,
     validate_candidate,
 )
@@ -16,6 +17,38 @@ from classement.ranking import rank_candidates
 @pytest.fixture(scope="module")
 def enset():
     return load_institution("enset-skikda")
+
+
+@pytest.fixture(scope="module")
+def u3():
+    return find_grid("u3-residences-scientifiques")
+
+
+def test_label_overrides_keys_reference_real_criteria(enset):
+    """Garde-fou : toute surcharge de libellé doit viser un critère existant."""
+    for grid_id, overrides in enset.get("label_overrides", {}).items():
+        grid = find_grid(grid_id)
+        known = {c["id"] for c in grid["criteria"]}
+        assert set(overrides) <= known, f"id(s) inconnu(s) dans {grid_id}: {set(overrides) - known}"
+
+
+def test_apply_label_overrides_enset_u3(enset, u3):
+    overrides = label_overrides_for(enset, "u3-residences-scientifiques")
+    assert overrides  # l'ENSET surcharge bien u3
+    effective = apply_label_overrides(u3, overrides)
+    libelles = {c["id"]: c["label_fr"] for c in effective["criteria"]}
+    assert "affiliation ENSET-Skikda" in libelles["publications"]
+    assert "affiliation ENSET-Skikda" in libelles["communications"]
+    # La grille d'origine (texte du décret) n'est pas mutée.
+    origine = {c["id"]: c["label_fr"] for c in u3["criteria"]}
+    assert origine["publications"] == "Publications après le dernier bénéfice (établissement mentionné)"
+    # L'index interne suit la surcharge.
+    assert effective["_criteria_by_id"]["publications"]["label_fr"] == libelles["publications"]
+
+
+def test_apply_label_overrides_sans_surcharge_renvoie_la_grille(u3):
+    assert apply_label_overrides(u3, {}) is u3
+    assert apply_label_overrides(u3, None) is u3
 
 
 @pytest.fixture(scope="module")

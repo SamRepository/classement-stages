@@ -16,8 +16,8 @@ from sqlalchemy.orm import Session
 
 from classement.costs import load_costs
 from classement.engine import score_candidate
-from classement.grids import find_grid, load_shared_rules
-from classement.institutions import group_by_for, load_institution
+from classement.grids import apply_label_overrides, find_grid, load_shared_rules
+from classement.institutions import group_by_for, label_overrides_for, load_institution
 from classement.models import RankedCandidate, ScoreBreakdown
 from classement.ranking import rank_candidates
 from webapp.models import Benefit, Campaign, Dossier, Entry
@@ -31,6 +31,22 @@ SINGLE_ENTRY_TYPES = {"enum", "fixed", "capped", "manual_scores", "formula"}
 @lru_cache
 def get_grid(grid_id: str) -> dict:
     return find_grid(grid_id)
+
+
+@lru_cache
+def get_effective_grid(grid_id: str, institution_id: str) -> dict:
+    """Grille du décret + surcharges de libellés du profil d'établissement.
+
+    Point d'entrée unique pour l'affichage et le scoring web : ainsi titres de
+    section, détail du score et exports partagent les mêmes libellés.
+    """
+    overrides = label_overrides_for(get_institution(institution_id), grid_id)
+    return apply_label_overrides(get_grid(grid_id), overrides)
+
+
+def grid_for_campaign(campaign: Campaign) -> dict:
+    """Grille effective d'une campagne (raccourci grid_id + institution_id)."""
+    return get_effective_grid(campaign.grid_id, campaign.institution_id)
 
 
 @lru_cache
@@ -137,7 +153,7 @@ def assemble_candidate(
 
 
 def _assemble_from_db(db: Session, dossier: Dossier, *, mode: Mode) -> AssembledCandidate:
-    grid = get_grid(dossier.campaign.grid_id)
+    grid = grid_for_campaign(dossier.campaign)
     benefits = list(db.scalars(select(Benefit).where(Benefit.user_id == dossier.user_id)))
     return assemble_candidate(dossier, dossier.entries, benefits, grid, mode=mode)
 
@@ -163,7 +179,7 @@ def compute_score(
     campaign = dossier.campaign
     assembled = _assemble_from_db(db, dossier, mode=mode)
     breakdown = score_candidate(
-        get_grid(campaign.grid_id),
+        grid_for_campaign(campaign),
         assembled.candidate,
         get_shared_rules(),
         campaign.campaign_date,
@@ -190,7 +206,7 @@ def compute_ranking(
     statuts: tuple[str, ...] = ("soumis", "gele"),
 ) -> RankingResult:
     """Classe les dossiers de la campagne (statuts soumis/gelé par défaut)."""
-    grid = get_grid(campaign.grid_id)
+    grid = grid_for_campaign(campaign)
     institution = get_institution(campaign.institution_id)
     dossiers = list(
         db.scalars(

@@ -204,7 +204,7 @@
       "items": [
         { "id": "membre_conseil", "label_ar": "المجلس العلمي، اللجنة العلمية، المجلس التأديبي، مجلس الإدارة، وخلية الجودة", "label_fr": "Conseil scientifique, comité scientifique, conseil de discipline, conseil d'administration, cellule qualité", "points_per_unit": 1, "unit": "appartenance de nature différente, hors membre de droit", "cap_points": 3 },
         { "id": "president_instance", "label_ar": "رؤساء الهيئات العلمية دون حساب العضوية بحكم الصفة", "label_fr": "Président d'instance scientifique (hors membre de droit)", "points_per_unit": 2 },
-        { "id": "editeur", "label_ar": "مدير النشر الجامعي، رئيس التحرير في مجلة مصنفة، عضو في المخبر", "label_fr": "Directeur des publications universitaires, rédacteur en chef d'une revue classée, membre de laboratoire", "points_per_unit": 1 }
+        { "id": "editeur_ou_membre", "label_ar": "مدير النشر الجامعي، رئيس التحرير في مجلة مصنفة، عضو في المخبر", "label_fr": "Directeur des publications universitaires, rédacteur en chef d'une revue classée, membre de laboratoire", "points_per_unit": 1 }
       ]
     },
     {

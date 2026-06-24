@@ -378,8 +378,84 @@ def circuit_excel(out: Path) -> None:
     d.dump(out)
 
 
+# === Diagramme 4 : Pipeline de déploiement =================================
+def deployment(out: Path) -> None:
+    d = Diagram()
+    d.text(40, 24, "Du prompt au déploiement — pipeline de livraison",
+           color=TITLE, size=28)
+    d.text(40, 66, "Claude Code (VS Code) → tests locaux → GitHub → Coolify "
+                   "(Docker) · projet classement-stages", color=BODY, size=16)
+
+    # Bandeaux de phase (niveau 2)
+    d.text(40, 165, "DÉVELOPPEMENT (local)", color=SUBTITLE, size=16)
+    d.text(528, 165, "VALIDATION", color=SUBTITLE, size=16)
+    d.text(1012, 165, "GITHUB", color=SUBTITLE, size=16)
+    d.text(1286, 165, "DÉPLOIEMENT — COOLIFY (serveur)", color=SUBTITLE, size=16)
+
+    cy = 290  # centre vertical de la rangée principale
+
+    prompt = d.box(40, 240, 220, 100, START, "Prompt dans Claude Code",
+                   sublabel="(VS Code)", size=17)
+    claude = d.box(300, 240, 220, 100, AI, "Claude édite le code",
+                   sublabel="fichiers du dépôt", text_color="#ffffff", size=17)
+    dia = d.diamond(560, 200, 200, 180, DECISION, "pytest\npasse ?", size=17)
+    git = d.box(810, 240, 220, 100, PRIMARY, "git commit",
+                sublabel="+ git push origin main", text_color="#ffffff", size=16)
+    github = d.box(1070, 240, 240, 100, SECONDARY, "Dépôt GitHub",
+                   sublabel="SamRepository /\nclassement-stages",
+                   text_color="#ffffff", size=16)
+    coolify = d.box(1360, 240, 230, 100, START, "Coolify · clic « Deploy »",
+                    sublabel="déclenchement MANUEL", size=15)
+    docker = d.box(1640, 240, 240, 100, PRIMARY, "Build + Run Docker",
+                   sublabel="Dockerfile → uvicorn :8000", text_color="#ffffff",
+                   size=15)
+    live = d.box(1930, 240, 240, 100, SUCCESS, "Application en ligne",
+                 sublabel="stages.panel.enset-skikda.dz", size=15)
+
+    # Flux principal (niveau 1)
+    d.arrow(260, cy, 300, cy, color=START[1], start=prompt, end=claude)
+    d.arrow(520, cy, 560, cy, color=AI[1], start=claude, end=dia)
+    d.arrow(760, cy, 810, cy, color=SUCCESS[1], start=dia, end=git)
+    d.text(770, 258, "oui", color="#047857", size=14)
+    d.arrow(1030, cy, 1070, cy, color=PRIMARY[1], start=git, end=github)
+    d.arrow(1310, cy, 1360, cy, color=SECONDARY[1], start=github, end=coolify)
+    d.arrow(1590, cy, 1640, cy, color=START[1], start=coolify, end=docker)
+    d.arrow(1880, cy, 1930, cy, color=PRIMARY[1], start=docker, end=live)
+
+    # Boucle de correction (pytest échoue → retour à Claude)
+    d.arrow(600, 215, 430, 240, color=BODY, start=dia, end=claude, dashed=True)
+    d.text(470, 196, "non → corriger", color=BODY, size=13)
+
+    # Artefacts de preuve (niveau 3)
+    d.code(560, 420, 300, 70,
+           "$ python -m pytest -q\n182 passed")
+    d.arrow(660, 380, 700, 420, color=BODY, dashed=True)
+
+    d.code(940, 420, 360, 70,
+           "$ git push origin main\n  4bccad4..4fa88f5  main -> main")
+    d.arrow(1110, 340, 1110, 420, color=BODY, dashed=True)
+
+    d.code(1500, 420, 470, 150,
+           "# Dockerfile\n"
+           "FROM python:3.12-slim\n"
+           "RUN pip install -e .[webapp]\n"
+           "EXPOSE 8000\n"
+           "CMD alembic upgrade head &&\n"
+           "    uvicorn webapp.main:app\n"
+           "      --host 0.0.0.0 --port 8000")
+    d.arrow(1740, 340, 1735, 420, color=BODY, dashed=True)
+
+    # Flux résumé (niveau 1, rappel en bas)
+    d.text(40, 620, "Résumé :  Prompt  →  Code  →  Tests ✓  →  Push GitHub  →  "
+                    "Deploy Coolify (manuel)  →  Conteneur Docker  →  En ligne",
+           color=SUBTITLE, size=16)
+
+    d.dump(out)
+
+
 if __name__ == "__main__":
     here = Path(__file__).parent
     architecture(here / "architecture.excalidraw")
     scoring(here / "notation-dossier.excalidraw")
     circuit_excel(here / "circuit-excel.excalidraw")
+    deployment(here / "deploiement.excalidraw")

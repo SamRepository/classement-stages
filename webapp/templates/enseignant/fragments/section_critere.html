@@ -212,7 +212,8 @@
               <form hx-post="/mon-dossier/activites/{{ r.id }}/justificatif" hx-target="#section-{{ spec.criterion_id }}"
                     hx-swap="outerHTML" hx-encoding="multipart/form-data" class="inline-form">
                 <input type="file" name="fichier" accept="application/pdf" required
-                       onchange="this.form.requestSubmit ? htmx.trigger(this.form,'submit') : null">
+                       title="PDF — {{ max_upload_mb() }} Mo maximum. Compressez le fichier au besoin (ex. iLovePDF, Smallpdf)."
+                       onchange="if(!pdfTropVolumineux(this)){ this.form.requestSubmit ? htmx.trigger(this.form,'submit') : null }">
               </form>
             {% else %}—{% endif %}
           </td>
@@ -282,7 +283,12 @@
         </label>
         {% endif %}
         <label>Justificatif (PDF)
-          <input type="file" name="fichier" accept="application/pdf">
+          <input type="file" name="fichier" accept="application/pdf"
+                 onchange="pdfTropVolumineux(this)">
+          <small class="ref-hint">{{ max_upload_mb() }} Mo maximum par fichier. Si le PDF est plus
+             lourd, réduisez-le avant l'envoi avec un service de compression PDF
+             (ex. <a href="https://www.ilovepdf.com/fr/compresser_pdf" target="_blank" rel="noopener">iLovePDF</a>,
+             <a href="https://smallpdf.com/fr/compresser-pdf" target="_blank" rel="noopener">Smallpdf</a>).</small>
         </label>
         <button type="submit">Ajouter</button>
       </form>

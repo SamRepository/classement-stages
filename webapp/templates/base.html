@@ -57,6 +57,24 @@
     Contact : <a href="mailto:stages@enset-skikda.dz">stages@enset-skikda.dz</a></small>
 </footer>
 <script>
+  // Taille maximale d'un justificatif PDF (Mo), alignée sur le contrôle serveur.
+  window.MAX_UPLOAD_MB = {{ max_upload_mb() }};
+
+  // Vérifie la taille d'un PDF avant l'envoi : évite d'attendre un refus serveur
+  // et invite à compresser le fichier. Retourne true si le fichier est trop gros
+  // (le champ est alors vidé).
+  window.pdfTropVolumineux = function (input) {
+    var f = input.files && input.files[0];
+    if (f && f.size > window.MAX_UPLOAD_MB * 1024 * 1024) {
+      alert('Ce PDF fait ' + (f.size / 1048576).toFixed(1) + ' Mo, au-delà de la limite de '
+        + window.MAX_UPLOAD_MB + ' Mo.\n\nCompressez-le avant l\'envoi avec un service de '
+        + 'compression PDF (ex. iLovePDF, Smallpdf), puis réessayez.');
+      input.value = '';
+      return true;
+    }
+    return false;
+  };
+
   // Les erreurs des requêtes HTMX (texte brut en français) sont montrées à l'utilisateur,
   // sinon un refus (motif manquant, dossier gelé…) resterait invisible.
   document.body.addEventListener('htmx:responseError', function (e) {

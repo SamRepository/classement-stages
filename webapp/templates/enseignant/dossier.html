@@ -11,6 +11,14 @@
 <p class="cloture-info">⏳ Fermeture de la plateforme (clôture des dépôts) :
   <strong>{% if campaign.date_cloture %}{{ campaign.date_cloture.strftime('%d/%m/%Y à %H:%M') }}{% else %}à préciser par l'administration{% endif %}</strong></p>
 
+{% if editable %}
+<p class="upload-info">📎 <strong>Justificatifs PDF :</strong> {{ max_upload_mb() }} Mo maximum par fichier.
+   Si un PDF dépasse cette taille, réduisez-le <strong>avant l'envoi</strong> avec un service de
+   compression PDF (ex.
+   <a href="https://www.ilovepdf.com/fr/compresser_pdf" target="_blank" rel="noopener">iLovePDF</a>,
+   <a href="https://smallpdf.com/fr/compresser-pdf" target="_blank" rel="noopener">Smallpdf</a>).</p>
+{% endif %}
+
 {% if campaign.statut == 'gelee' %}
 <article>
   <h3>Résultat du classement</h3>

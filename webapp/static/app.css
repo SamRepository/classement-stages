@@ -10,6 +10,8 @@ small { color: var(--pico-muted-color, #6c757d); }
 
 /* Date de fermeture de la plateforme (en-tête Mon dossier) */
 .cloture-info { background: #fff3cd; color: #664d03; border: 1px solid #ffe69c; border-radius: 8px; padding: .5rem .9rem; margin: 0 0 1rem; display: inline-block; }
+.upload-info { background: #cfe2ff; color: #084298; border: 1px solid #b6d4fe; border-radius: 8px; padding: .5rem .9rem; margin: 0 0 1rem; font-size: .9rem; }
+.upload-info a { color: #084298; }
 
 /* Pied de page du portail */
 .site-footer { margin-top: 2.5rem; padding: 1rem 0; border-top: 1px solid var(--pico-muted-border-color, #ddd); text-align: center; }

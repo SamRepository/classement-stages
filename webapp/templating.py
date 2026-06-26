@@ -36,9 +36,17 @@ def consume_flash(request) -> str | None:
     return request.session.pop("flash", None)
 
 
+def max_upload_mb() -> int:
+    """Taille maximale d'un justificatif PDF (Mo), depuis la configuration."""
+    from webapp.config import get_settings
+
+    return get_settings().max_upload_mb
+
+
 templates.env.globals["static_version"] = static_version()
 templates.env.globals["current_year"] = lambda: datetime.now().year
 templates.env.globals["consume_flash"] = consume_flash
+templates.env.globals["max_upload_mb"] = max_upload_mb
 
 
 def fmt_points(value: float | int | None) -> str:

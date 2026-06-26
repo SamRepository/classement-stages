@@ -141,6 +141,35 @@ def test_justificatif_pdf_invalide(client, campaign, enseignant, upload_dir):
     assert "PDF" in r.text
 
 
+def test_consigne_taille_justificatif(client, campaign, enseignant):
+    """Le portail rappelle la limite de taille et l'usage d'un service de compression."""
+    login(client, "enseignant@test.dz")
+    r = client.get("/mon-dossier")
+    assert r.status_code == 200
+    assert "10 Mo maximum" in r.text
+    assert "compression PDF" in r.text
+
+
+def test_justificatif_trop_volumineux_refuse(
+    client, db_session, campaign, enseignant, upload_dir, monkeypatch
+):
+    from webapp.config import get_settings
+
+    monkeypatch.setenv("MAX_UPLOAD_MB", "1")
+    get_settings.cache_clear()
+    login(client, "enseignant@test.dz")
+    client.get("/mon-dossier")
+    gros_pdf = b"%PDF-" + b"0" * 1_200_000  # ~1,2 Mo, au-delà de la limite de 1 Mo
+    r = client.post(
+        "/mon-dossier/activites",
+        data={"criterion_id": "publications", "item": "classe_a", "date": "2025-03-10"},
+        files={"fichier": ("gros.pdf", gros_pdf, "application/pdf")},
+    )
+    assert r.status_code == 422
+    assert "trop volumineux" in r.text
+    get_settings.cache_clear()
+
+
 def test_suppression_activite(client, db_session, campaign, enseignant, upload_dir):
     login(client, "enseignant@test.dz")
     client.get("/mon-dossier")

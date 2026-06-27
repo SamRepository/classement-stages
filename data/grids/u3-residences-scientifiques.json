@@ -63,7 +63,7 @@
     {
       "id": "encadrement_doctoral",
       "label_ar": "الإشراف على أطروحات الدكتوراه",
-      "label_fr": "Encadrement doctoral",
+      "label_fr": "Encadrement doctoral / co-encadrement / membre de jury",
       "type": "count",
       "window": "after_last_benefit",
       "items": [

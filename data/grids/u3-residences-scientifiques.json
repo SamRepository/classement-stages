@@ -73,7 +73,7 @@
       ]
     },
     { "id": "encadrement_arrete_1275", "label_ar": "الإشراف على طالب في إطار القرار الوزاري رقم 1275 المؤرخ في 27 سبتمبر 2022", "label_fr": "Encadrement arrêté 1275 (mémoire startup / brevet)", "type": "count", "items": [{ "id": "projet_1275", "points_per_unit": 2, "unit": "projet", "cap_units": 2 }] },
-    { "id": "encadrement_projet_labelise", "label_ar": "الإشراف على مشروع حصل على وسم لابل، مشروع مبتكر، مشروع مؤسسة ناشئة", "label_fr": "Encadrement projet labellisé / innovant / startup", "type": "count", "items": [{ "id": "projet_labelise", "label_fr": "Projet labellisé / innovant / startup", "points_per_unit": 5, "cap_points": 5, "unit": "projet" }] },
+    { "id": "encadrement_projet_labelise", "label_ar": "الإشراف على مشروع حصل على وسم لابل، مشروع مبتكر، مشروع مؤسسة ناشئة", "label_fr": "Encadrement projet (labellisé / innovant / startup)", "type": "count", "items": [{ "id": "projet_labelise", "label_fr": "Projet labellisé / innovant / startup", "points_per_unit": 5, "cap_points": 5, "unit": "projet" }] },
     { "id": "encadrement_master", "label_ar": "تأطير طلبة الماستر", "label_fr": "Encadrement master (ou équivalent BAC+5 - PES)", "type": "count", "window": "after_last_benefit", "items": [{ "id": "memoire_master", "points_per_unit": 1, "cap_points": 3 }] },
     { "id": "encadrement_licence", "label_ar": "تأطير طلبة الليسانس", "label_fr": "Encadrement licence", "type": "count", "window": "after_last_benefit", "items": [{ "id": "sujet_licence", "points_per_unit": 0.5, "cap_points": 3 }] },
     { "id": "cours_tronc_commun", "label_ar": "تدريس محاضرة في جذع مشترك", "label_fr": "Cours magistral en tronc commun", "type": "count", "items": [{ "id": "cours_tc", "points_per_unit": 4, "cap_units": 2 }] },

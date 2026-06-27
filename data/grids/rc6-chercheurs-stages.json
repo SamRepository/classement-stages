@@ -144,7 +144,7 @@
     {
       "id": "encadrement_projet_labelise",
       "label_ar": "تأطير مشروع حصل على وسم لابل، مشروع مبتكر، مشروع مؤسسة ناشئة",
-      "label_fr": "Encadrement projet labellisé / innovant / startup",
+      "label_fr": "Encadrement projet (labellisé / innovant / startup)",
       "type": "count",
       "items": [{ "id": "projet_labelise", "points_per_unit": 10, "cap_units": 3 }]
     },

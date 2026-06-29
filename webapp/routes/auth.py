@@ -21,6 +21,7 @@ router = APIRouter()
 HOME_BY_ROLE = {
     "enseignant": "/mon-dossier",
     "commission": "/commission/dossiers",
+    "responsable_commission": "/commission/dossiers",
     "admin": "/admin/utilisateurs",
 }
 

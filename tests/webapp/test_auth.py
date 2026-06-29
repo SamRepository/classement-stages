@@ -3,17 +3,27 @@
 from tests.webapp.conftest import login
 
 
-def test_login_trois_roles(client, enseignant, membre_commission, admin):
+def test_login_tous_roles(client, enseignant, membre_commission, responsable, admin):
     cas = [
         ("enseignant@test.dz", "/mon-dossier"),
         ("commission@test.dz", "/commission/dossiers"),
+        ("responsable@test.dz", "/commission/dossiers"),
         ("admin@test.dz", "/admin/utilisateurs"),
     ]
     for email, home in cas:
         r = login(client, email)
         assert r.status_code == 303, email
-        assert r.headers["location"] == home
+        assert r.headers["location"] == home, email
         client.post("/deconnexion")
+
+
+def test_responsable_ne_rebondit_pas_vers_connexion(client, responsable):
+    """Régression : un responsable de commission connecté doit atterrir sur son
+    espace, pas être renvoyé au formulaire de connexion (rôle absent de HOME_BY_ROLE)."""
+    login(client, "responsable@test.dz")
+    r = client.get("/")
+    assert r.status_code == 303
+    assert r.headers["location"] == "/commission/dossiers"
 
 
 def test_login_mauvais_mot_de_passe(client, enseignant):

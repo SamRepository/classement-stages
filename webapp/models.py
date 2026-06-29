@@ -80,7 +80,9 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     nom: Mapped[str] = mapped_column(String(120))
     prenom: Mapped[str] = mapped_column(String(120), default="")
-    role: Mapped[str] = mapped_column(String(20), default="enseignant")
+    # 40 : « responsable_commission » fait 22 caractères ; VARCHAR(20) tronquait
+    # (rejet PostgreSQL). On garde une marge pour d'éventuels rôles futurs.
+    role: Mapped[str] = mapped_column(String(40), default="enseignant")
     actif: Mapped[bool] = mapped_column(default=True)
     # Vrai pour un compte dont le mot de passe est temporaire (généré par
     # l'admin et communiqué par e-mail) : la connexion force alors le changement.

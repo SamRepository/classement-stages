@@ -6,7 +6,14 @@ from openpyxl import Workbook
 from sqlalchemy import select
 
 from tests.webapp.conftest import login
-from webapp.models import Benefit, Dossier, User
+from webapp.models import ROLES, Benefit, Dossier, User
+
+
+def test_colonne_role_assez_longue_pour_tous_les_roles():
+    """Garde-fou : la colonne role doit tenir le plus long rôle (« responsable_commission »
+    = 22). VARCHAR(20) tronquait sous PostgreSQL ; SQLite n'applique pas la longueur,
+    ce test la vérifie donc indépendamment du moteur."""
+    assert User.__table__.c.role.type.length >= max(len(r) for r in ROLES)
 
 
 def test_creation_compte_et_connexion(client, db_session, campaign, admin):
@@ -19,6 +26,18 @@ def test_creation_compte_et_connexion(client, db_session, campaign, admin):
     # Le mot de passe initial apparaît une seule fois dans la réponse.
     nouveau = db_session.scalar(select(User).where(User.email == "nouveau@test.dz"))
     assert nouveau.role == "enseignant"
+
+
+def test_creation_compte_responsable_commission(client, db_session, campaign, admin):
+    """Régression : créer un compte « responsable_commission » (22 car.) ne doit pas
+    échouer (colonne role assez longue)."""
+    login(client, "admin@test.dz")
+    r = client.post("/admin/utilisateurs",
+                    data={"email": "resp@test.dz", "nom": "Cherif", "prenom": "R",
+                          "role": "responsable_commission"})
+    assert r.status_code == 200
+    cree = db_session.scalar(select(User).where(User.email == "resp@test.dz"))
+    assert cree.role == "responsable_commission"
 
 
 def test_liste_comptes_triable(client, db_session, campaign, admin):

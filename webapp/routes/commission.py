@@ -116,13 +116,18 @@ def _render_element(request: Request, db: Session, entry: Entry, user: User,
     grid = grid_for_campaign(entry.dossier.campaign)
     labels: dict[str, str] = {}
     is_formula = False
+    is_count = False
+    has_position = False
     for spec in build_form_spec(grid):
         if spec["criterion_id"] == entry.criterion_id:
             labels = {i["id"]: i["label"] for i in spec.get("items", [])}
             is_formula = spec["widget"] == "formula"
+            is_count = spec["widget"] == "count_detail"
+            has_position = spec.get("has_position", False)
             break
     html = templates.get_template("commission/fragments/element.html").render(
         request=request, e=entry, labels=labels, is_formula=is_formula,
+        is_count=is_count, has_position=has_position,
         **_element_context(entry, user),
     )
     if with_score:
@@ -377,6 +382,79 @@ async def ajuster_formule(
     entry.decision_motif = None
     log_event(db, user, "ajustement_formule", entry.dossier,
               detail=f"entry={entry.id} {entry.criterion_id} n={payload.get('n', 'auto')}")
+    db.commit()
+    db.refresh(entry)
+    return _render_element(request, db, entry, user, with_score=True)
+
+
+@router.post("/entrees/{entry_id}/ajuster-quantite")
+async def ajuster_quantite(
+    entry_id: int,
+    request: Request,
+    user: User = RESPONSABLE,
+    db: Session = Depends(get_db),
+):
+    """Rectifie la quantité (et la position d'auteur) d'un élément détaillé.
+
+    Corrige la confusion fréquente « nombre d'auteurs saisi dans la quantité » :
+    le responsable remet la quantité réelle (en général 1 par publication) et,
+    le cas échéant, la position d'auteur. Réservé au responsable (modifie le
+    score, comme l'ajustement des formules). La rectification est tracée ;
+    le statut de validation/rejet de l'élément n'est pas modifié ici.
+    """
+    entry = db.get(Entry, entry_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Élément introuvable.")
+    if not _decidable(entry.dossier):
+        raise HTTPException(
+            status_code=403,
+            detail="Rectification impossible : dossier non soumis ou classement gelé.",
+        )
+    grid = grid_for_campaign(entry.dossier.campaign)
+    spec = next(
+        (s for s in build_form_spec(grid) if s["criterion_id"] == entry.criterion_id),
+        None,
+    )
+    if spec is None or spec["widget"] != "count_detail":
+        raise HTTPException(
+            status_code=422,
+            detail="Ce critère ne se saisit pas par éléments comptés.",
+        )
+
+    form = await request.form()
+    payload = dict(entry.payload or {})
+    ancienne_qte = payload.get("count", 1)
+
+    raw_count = (form.get("quantite") or "").strip()
+    try:
+        count = int(raw_count)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="La quantité doit être un entier.")
+    if count < 1:
+        raise HTTPException(status_code=422, detail="La quantité doit être ≥ 1.")
+    payload["count"] = count
+
+    detail = f"entry={entry.id} {entry.criterion_id}/{entry.item_id or '-'} " \
+             f"quantité {ancienne_qte}→{count}"
+    if spec.get("has_position"):
+        raw_pos = (form.get("author_position") or "").strip()
+        ancienne_pos = payload.get("author_position")
+        if raw_pos:
+            try:
+                position = int(raw_pos)
+            except ValueError:
+                raise HTTPException(status_code=422, detail="La position doit être un entier.")
+            if position < 1:
+                raise HTTPException(status_code=422, detail="La position doit être ≥ 1.")
+            payload["author_position"] = position
+        else:
+            payload.pop("author_position", None)
+        nouvelle_pos = payload.get("author_position")
+        if nouvelle_pos != ancienne_pos:
+            detail += f", position {ancienne_pos or '-'}→{nouvelle_pos or '-'}"
+
+    entry.payload = payload
+    log_event(db, user, "rectification_quantite", entry.dossier, detail=detail)
     db.commit()
     db.refresh(entry)
     return _render_element(request, db, entry, user, with_score=True)

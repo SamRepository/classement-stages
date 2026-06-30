@@ -139,6 +139,63 @@ def test_ajuster_refuse_critere_non_formule(client, db_session, campaign, dossie
     assert r.status_code == 422
 
 
+def test_rectifier_quantite(client, db_session, campaign, dossier, responsable):
+    """Le responsable corrige une quantité gonflée (nb d'auteurs) → 1, et la position."""
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="publications",
+                         item_id="classe_a_plus",
+                         payload={"count": 4, "author_position": 1, "date": "2025-01-01"}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    entry = db_session.scalar(select(Entry).where(Entry.criterion_id == "publications"))
+    r = client.post(f"/commission/entrees/{entry.id}/ajuster-quantite",
+                    data={"quantite": "1", "author_position": "2"})
+    assert r.status_code == 200
+    assert "score-box" in r.text  # score recalculé en oob
+    db_session.refresh(entry)
+    assert entry.payload["count"] == 1
+    assert entry.payload["author_position"] == 2
+    # La rectification ne décide pas l'élément : il reste en attente.
+    assert entry.statut == "en_attente"
+
+
+def test_rectifier_quantite_position_videe(client, db_session, campaign, dossier, responsable):
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="publications",
+                         item_id="classe_b",
+                         payload={"count": 3, "author_position": 3, "date": "2025-02-01"}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    entry = db_session.scalar(select(Entry).where(Entry.criterion_id == "publications"))
+    r = client.post(f"/commission/entrees/{entry.id}/ajuster-quantite",
+                    data={"quantite": "1", "author_position": ""})
+    assert r.status_code == 200
+    db_session.refresh(entry)
+    assert entry.payload["count"] == 1
+    assert "author_position" not in entry.payload
+
+
+def test_rectifier_quantite_refusee_au_membre(client, db_session, campaign, dossier_soumis,
+                                              membre_commission):
+    login(client, "commission@test.dz")
+    entry = db_session.scalar(select(Entry).where(Entry.item_id == "classe_b"))
+    r = client.post(f"/commission/entrees/{entry.id}/ajuster-quantite",
+                    data={"quantite": "1"})
+    assert r.status_code == 403
+
+
+def test_rectifier_quantite_refuse_critere_non_compte(client, db_session, campaign, dossier,
+                                                      responsable):
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="rang_scientifique",
+                         payload={"value": "professeur"}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    entry = db_session.scalar(select(Entry).where(Entry.criterion_id == "rang_scientifique"))
+    r = client.post(f"/commission/entrees/{entry.id}/ajuster-quantite", data={"quantite": "1"})
+    assert r.status_code == 422
+
+
 def test_decision_sur_brouillon_refusee(client, db_session, campaign, dossier, responsable):
     db_session.add(Entry(dossier_id=dossier.id, criterion_id="rang_scientifique",
                          payload={"value": "mca"}))

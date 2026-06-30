@@ -52,6 +52,8 @@
       {% if section.rows %}
         {% for e in section.rows %}
           {% with labels = section.labels, is_formula = (section.spec.widget == 'formula'),
+                  is_count = (section.spec.widget == 'count_detail'),
+                  has_position = section.spec.has_position,
                   can_decide = elem_ctx[e.id].can_decide, can_review = elem_ctx[e.id].can_review,
                   review = elem_ctx[e.id].review %}
             {% include "commission/fragments/element.html" %}

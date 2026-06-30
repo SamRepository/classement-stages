@@ -83,5 +83,29 @@
     </form>
   </details>
   {% endif %}
+  {% if is_count %}
+  <details {% if has_position and (e.payload.count or 1) > 1 %}open{% endif %}>
+    <summary role="button" class="secondary outline">Rectifier la quantité…</summary>
+    <form hx-post="/commission/entrees/{{ e.id }}/ajuster-quantite" hx-target="#element-{{ e.id }}" hx-swap="outerHTML">
+      {% if has_position %}
+      <p><small>Confusion fréquente : le candidat a pu saisir le <strong>nombre d'auteurs</strong>
+         dans la quantité. Pour une publication, la quantité vaut en général <strong>1</strong> ;
+         le rang parmi les auteurs va dans « position d'auteur ».</small></p>
+      {% endif %}
+      <div class="grid">
+        <label>Quantité (nombre d'éléments)
+          <input type="number" name="quantite" min="1" step="1" value="{{ e.payload.count or 1 }}" required>
+        </label>
+        {% if has_position %}
+        <label>Position d'auteur (vide si non applicable)
+          <input type="number" name="author_position" min="1" step="1"
+                 value="{{ e.payload.author_position or '' }}">
+        </label>
+        {% endif %}
+      </div>
+      <button type="submit" class="secondary">Enregistrer la rectification</button>
+    </form>
+  </details>
+  {% endif %}
   {% endif %}
 </div>

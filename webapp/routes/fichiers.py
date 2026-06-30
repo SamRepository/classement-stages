@@ -28,7 +28,8 @@ def justificatif(
     entry = db.get(Entry, entry_id)
     if entry is None or entry.attachment is None:
         raise HTTPException(status_code=404, detail="Justificatif introuvable.")
-    if user.role not in ("commission", "admin") and entry.dossier.user_id != user.id:
+    staff = user.role in ("commission", "responsable_commission", "admin")
+    if not staff and entry.dossier.user_id != user.id:
         raise HTTPException(status_code=403, detail="Accès refusé.")
     path = Path(entry.attachment.stored_path)
     if not path.is_file():

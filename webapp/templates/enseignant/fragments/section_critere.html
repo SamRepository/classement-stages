@@ -140,19 +140,6 @@
   {% elif spec.widget == 'count_detail' %}
     {% set editing_id = editing_id|default(None) %}
     {% set show_ref = spec.has_reference or spec.url_label %}
-    {% if editable %}
-    <p class="qte-alert">⚠️ <strong>« Quantité » = nombre d'éléments, pas le nombre d'auteurs.</strong>
-      {% if spec.has_position %}
-        Pour une publication ou communication, la quantité vaut <strong>en général 1</strong> : déclarez
-        <strong>une ligne par publication</strong>. Votre rang parmi les auteurs se saisit dans le champ
-        <strong>« Position d'auteur »</strong> (il applique la décote : 1 = 100 %, 2 = 90 %, 3 = 80 %, 4 = 70 %, 5+ = 50 %),
-        <strong>pas</strong> dans la quantité.
-      {% else %}
-        Indiquez le <strong>nombre d'activités</strong> que vous avez réellement déclarées (encadrements, projets, cours…),
-        et non le nombre de personnes ou de co-auteurs impliqués.
-      {% endif %}
-    </p>
-    {% endif %}
     {% set ncols = 4 + (1 if spec.has_date else 0) + (1 if spec.has_position else 0) + (1 if show_ref else 0) + (1 if editable else 0) %}
     {% if rows %}
     <div class="table-wrap">

@@ -29,6 +29,9 @@ small { color: var(--pico-muted-color, #6c757d); }
 .cloture-info { background: #fff3cd; color: #664d03; border: 1px solid #ffe69c; border-radius: 8px; padding: .5rem .9rem; margin: 0 0 1rem; display: inline-block; }
 .upload-info { background: #cfe2ff; color: #084298; border: 1px solid #b6d4fe; border-radius: 8px; padding: .5rem .9rem; margin: 0 0 1rem; font-size: .9rem; }
 .upload-info a { color: #084298; }
+/* Mise en garde sur le champ Quantité (confusion fréquente avec le nombre d'auteurs) */
+.qte-alert { background: #fff3cd; color: #664d03; border: 1px solid #ffe69c; border-left: 4px solid #d39e00; border-radius: 8px; padding: .55rem .9rem; margin: 0 0 1rem; font-size: .9rem; }
+.qte-alert strong { color: #7a5b00; }
 
 /* Pied de page du portail */
 .site-footer { margin-top: 2.5rem; padding: 1rem 0; border-top: 1px solid var(--pico-muted-border-color, #ddd); text-align: center; }

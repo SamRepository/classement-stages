@@ -284,3 +284,19 @@ def test_exports_pv_fiches_html(u4, enset, tmp_path):
     content = html_path.read_text(encoding="utf-8")
     assert "Fiche d'évaluation — Bouzid Sara (D101)" in content
     assert "École Normale Supérieure" in content
+
+
+def test_export_fiches_reference_avec_slash(u4, enset, tmp_path):
+    """Régression : une référence candidat avec « / » (import Odoo, ex. DC/2026/264)
+    ne doit pas casser l'export — Excel interdit « / » dans un nom de feuille."""
+    from classement.models import RankedCandidate, ScoreBreakdown, ScoreLine
+
+    cand = {"id": "DC/2026/264", "nom": "Test", "prenom": "X", "population": "doctorant"}
+    bd = ScoreBreakdown(candidate_id="DC/2026/264", grid_id=u4["id"], population="doctorant",
+                        lines=[ScoreLine("rang", "Rang", 5.0, ["5 pts"], [])], total=5.0)
+    groups = {("u4", "doctorant"): [RankedCandidate("DC/2026/264", 5.0, 1, False)]}
+
+    out = tmp_path / "fiches.xlsx"
+    export_fiches(out, [bd], [cand], groups, u4, enset, "2026-06-30")
+    wb = load_workbook(out)
+    assert wb.sheetnames == ["DC-2026-264"]  # « / » remplacé, feuille créée sans erreur

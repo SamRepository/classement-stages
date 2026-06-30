@@ -10,6 +10,7 @@ Formats produits :
 from __future__ import annotations
 
 import html
+import re
 from datetime import date
 from pathlib import Path
 
@@ -25,6 +26,22 @@ _SUB_FONT = Font(bold=True, size=11)
 _HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
 _HEADER_FONT = Font(bold=True, color="FFFFFF")
 _THIN = Border(*(Side(style="thin"),) * 4)
+
+# Excel interdit ces caractères dans un nom de feuille (et limite à 31 car.).
+# Les références candidat importées (ex. « DC/2026/264 ») en contiennent.
+_INVALID_SHEET_CHARS = re.compile(r"[\\/?*\[\]:]")
+
+
+def _safe_sheet_title(raw: object, used: set[str]) -> str:
+    """Nom de feuille Excel valide, ≤ 31 car. et unique (sans caractères interdits)."""
+    title = _INVALID_SHEET_CHARS.sub("-", str(raw)).strip()[:31] or "candidat"
+    base, n = title, 2
+    while title.lower() in used:
+        suffix = f"-{n}"
+        title = base[: 31 - len(suffix)] + suffix
+        n += 1
+    used.add(title.lower())
+    return title
 
 
 def _group_title(key: tuple) -> str:
@@ -79,9 +96,10 @@ def export_pv(
     wb = Workbook()
     wb.remove(wb.active)
 
+    used_titles: set[str] = set()
     for index, (key, ranked) in enumerate(groups.items(), start=1):
         title = _group_title(key)
-        ws = wb.create_sheet(f"{index:02d} {title}"[:31])
+        ws = wb.create_sheet(_safe_sheet_title(f"{index:02d} {title}", used_titles))
         row = _header_block(ws, institution, grid, campaign_date)
         ws.cell(row=row, column=1, value=f"Classement : {title}").font = _SUB_FONT
         row += 1
@@ -152,9 +170,10 @@ def export_fiches(
     wb = Workbook()
     wb.remove(wb.active)
 
+    used_titles: set[str] = set()
     for breakdown in breakdowns:
         candidate = by_id.get(breakdown.candidate_id, {})
-        ws = wb.create_sheet(str(breakdown.candidate_id)[:31])
+        ws = wb.create_sheet(_safe_sheet_title(breakdown.candidate_id, used_titles))
         row = _header_block(ws, institution, grid, campaign_date)
 
         ws.cell(row=row, column=1, value="Fiche d'évaluation du candidat").font = _SUB_FONT

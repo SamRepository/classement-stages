@@ -6,6 +6,23 @@
 .cellule-actions button { width: auto; margin: 0; padding: .25rem .75rem; white-space: nowrap; }
 .erreur { color: #b71c1c; font-weight: 600; }
 .connexion { max-width: 28rem; margin: 3rem auto; }
+
+/* Champ mot de passe avec bouton afficher/masquer (œil). Le bouton est posé
+   par-dessus l'input ; on déplace la marge basse de l'input vers le conteneur
+   pour que l'œil reste centré verticalement sur le champ. */
+.champ-mdp { position: relative; margin-bottom: var(--pico-spacing); }
+.champ-mdp input { margin-bottom: 0; padding-right: 3rem; }
+.bascule-mdp {
+  position: absolute; top: 50%; right: .25rem; transform: translateY(-50%);
+  width: auto; margin: 0; padding: .35rem; line-height: 0;
+  background: none; border: none; color: var(--pico-muted-color, #6c757d);
+  cursor: pointer;
+}
+.bascule-mdp:hover, .bascule-mdp:focus-visible { color: var(--pico-color, inherit); background: none; }
+.bascule-mdp svg { display: block; width: 1.25rem; height: 1.25rem; }
+.bascule-mdp .icone-masquer { display: none; }
+.bascule-mdp[aria-pressed="true"] .icone-afficher { display: none; }
+.bascule-mdp[aria-pressed="true"] .icone-masquer { display: block; }
 small { color: var(--pico-muted-color, #6c757d); }
 
 /* Date de fermeture de la plateforme (en-tête Mon dossier) */

@@ -273,9 +273,11 @@ def test_exports_pv_fiches_html(u4, enset, tmp_path):
     fiches = tmp_path / "fiches.xlsx"
     export_fiches(fiches, breakdowns, candidates, groups, u4, enset, "2026-06-30")
     wb = load_workbook(fiches)
-    assert set(wb.sheetnames) == {b.candidate_id for b in breakdowns}
-    d101 = wb["D101"]
-    values = [cell.value for row in d101.iter_rows() for cell in row if cell.value is not None]
+    # Une feuille par candidat, nommée « rang - Nom Prénom ».
+    assert len(wb.sheetnames) == len(breakdowns)
+    assert all(n.split(" - ", 1)[0].strip().isdigit() for n in wb.sheetnames)
+    bouzid = next(n for n in wb.sheetnames if "Bouzid Sara" in n)
+    values = [cell.value for row in wb[bouzid].iter_rows() for cell in row if cell.value is not None]
     assert "TOTAL" in values
     assert 28 in values or 28.0 in values
 
@@ -286,12 +288,13 @@ def test_exports_pv_fiches_html(u4, enset, tmp_path):
     assert "École Normale Supérieure" in content
 
 
-def test_export_fiches_reference_avec_slash(u4, enset, tmp_path):
-    """Régression : une référence candidat avec « / » (import Odoo, ex. DC/2026/264)
-    ne doit pas casser l'export — Excel interdit « / » dans un nom de feuille."""
+def test_export_fiches_nom_feuille_rang_et_assainissement(u4, enset, tmp_path):
+    """La feuille est nommée « rang - Nom » ; les caractères interdits par Excel
+    (ex. « / » d'une réf. Odoo utilisée en repli de nom) sont assainis."""
     from classement.models import RankedCandidate, ScoreBreakdown, ScoreLine
 
-    cand = {"id": "DC/2026/264", "nom": "Test", "prenom": "X", "population": "doctorant"}
+    # Sans nom : repli sur l'identifiant « DC/2026/264 » → « / » à assainir.
+    cand = {"id": "DC/2026/264", "population": "doctorant"}
     bd = ScoreBreakdown(candidate_id="DC/2026/264", grid_id=u4["id"], population="doctorant",
                         lines=[ScoreLine("rang", "Rang", 5.0, ["5 pts"], [])], total=5.0)
     groups = {("u4", "doctorant"): [RankedCandidate("DC/2026/264", 5.0, 1, False)]}
@@ -299,4 +302,4 @@ def test_export_fiches_reference_avec_slash(u4, enset, tmp_path):
     out = tmp_path / "fiches.xlsx"
     export_fiches(out, [bd], [cand], groups, u4, enset, "2026-06-30")
     wb = load_workbook(out)
-    assert wb.sheetnames == ["DC-2026-264"]  # « / » remplacé, feuille créée sans erreur
+    assert wb.sheetnames == ["01 - DC-2026-264"]  # rang + réf assainie, sans erreur

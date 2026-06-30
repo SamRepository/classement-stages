@@ -170,10 +170,20 @@ def export_fiches(
     wb = Workbook()
     wb.remove(wb.active)
 
+    # Feuilles nommées « rang - Nom Prénom » et ordonnées par rang (par groupe) :
+    # le classeur se lit dans l'ordre du classement. Repli sur l'identifiant si le
+    # candidat n'est pas classé.
+    def _order(b: ScoreBreakdown):
+        info = ranks.get(b.candidate_id)
+        return (info[2] if info else "", info[0] if info else 10**9, b.candidate_id)
+
     used_titles: set[str] = set()
-    for breakdown in breakdowns:
+    for breakdown in sorted(breakdowns, key=_order):
         candidate = by_id.get(breakdown.candidate_id, {})
-        ws = wb.create_sheet(_safe_sheet_title(breakdown.candidate_id, used_titles))
+        info = ranks.get(breakdown.candidate_id)
+        name = _candidate_name(candidate)
+        sheet_label = f"{info[0]:02d} - {name}" if info else name
+        ws = wb.create_sheet(_safe_sheet_title(sheet_label, used_titles))
         row = _header_block(ws, institution, grid, campaign_date)
 
         ws.cell(row=row, column=1, value="Fiche d'évaluation du candidat").font = _SUB_FONT

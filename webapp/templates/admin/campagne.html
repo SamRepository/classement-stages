@@ -75,6 +75,7 @@
         <td>{{ d.submitted_at.strftime('%d/%m/%Y %H:%M') if d.submitted_at else '—' }}</td>
         <td>
           {% if campaign.statut != 'gelee' %}
+          <div class="actions-dossier">
           <details>
             <summary role="button" class="secondary outline">Infos…</summary>
             <form method="post" action="/admin/dossiers/{{ d.id }}/infos" class="infos-dossier">
@@ -119,6 +120,7 @@
             <button class="secondary outline">Rouvrir</button>
           </form>
           {% endif %}
+          </div>
           {% endif %}
         </td>
       </tr>

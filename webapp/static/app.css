@@ -4,6 +4,10 @@
 /* Boutons d'action de la liste des comptes : côte à côte, compacts. */
 .cellule-actions { display: flex; gap: .5rem; flex-wrap: nowrap; }
 .cellule-actions button { width: auto; margin: 0; padding: .25rem .75rem; white-space: nowrap; }
+/* Actions d'un dossier admin : « Infos… » et « Rouvrir » côte à côte (alignés en
+   haut pour que le formulaire déplié ne fasse pas grandir le bouton voisin). */
+.actions-dossier { display: flex; gap: .5rem; align-items: flex-start; }
+.actions-dossier .inline-form button, .actions-dossier summary { white-space: nowrap; }
 .erreur { color: #b71c1c; font-weight: 600; }
 .connexion { max-width: 28rem; margin: 3rem auto; }
 

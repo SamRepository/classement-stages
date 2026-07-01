@@ -460,6 +460,67 @@ async def ajuster_quantite(
     return _render_element(request, db, entry, user, with_score=True)
 
 
+@router.post("/dossiers/{dossier_id}/critere/{criterion_id}/valeur")
+async def definir_valeur(
+    dossier_id: int,
+    criterion_id: str,
+    request: Request,
+    user: User = RESPONSABLE,
+    db: Session = Depends(get_db),
+):
+    """Renseigne/corrige un critère à choix (enum), ex. le rang scientifique.
+
+    Utile quand le candidat a laissé le critère vide (« Rien de déclaré ») ou
+    s'est trompé de rang. Réservé au responsable (modifie le score, comme les
+    autres corrections). Crée l'entrée si absente, la met à jour, ou la supprime
+    si « non renseigné » est choisi. L'élément créé reste « en attente » (compté
+    au score) : le responsable peut le valider/rejeter ensuite comme les autres.
+    """
+    dossier = _get_dossier(db, dossier_id)
+    if not _decidable(dossier):
+        raise HTTPException(
+            status_code=403,
+            detail="Dossier non soumis ou classement gelé.",
+        )
+    grid = grid_for_campaign(dossier.campaign)
+    spec = next(
+        (s for s in build_form_spec(grid) if s["criterion_id"] == criterion_id),
+        None,
+    )
+    if spec is None or spec["widget"] != "enum":
+        raise HTTPException(status_code=422, detail="Ce critère n'est pas un critère à choix.")
+
+    form = await request.form()
+    value = (form.get("value") or "").strip()
+    entry = next((e for e in dossier.entries if e.criterion_id == criterion_id), None)
+
+    if not value:
+        if entry is not None:
+            db.delete(entry)
+            log_event(db, user, "critere_efface", dossier, detail=criterion_id)
+            db.commit()
+        request.session["flash"] = f"{spec['label']} : valeur effacée."
+        return RedirectResponse(f"/commission/dossiers/{dossier_id}", status_code=303)
+
+    if value not in {o["value"] for o in spec["options"]}:
+        raise HTTPException(status_code=422, detail=f"Option inconnue : {value!r}.")
+    payload: dict = {"value": value}
+    if form.get("option_bonus"):
+        payload["option_bonus"] = True
+
+    if entry is None:
+        entry = Entry(dossier_id=dossier.id, criterion_id=criterion_id, payload=payload)
+        db.add(entry)
+        action = "critere_defini"
+    else:
+        entry.payload = payload
+        action = "critere_corrige"
+    log_event(db, user, action, dossier, detail=f"{criterion_id}={value}")
+    db.commit()
+    request.session["flash"] = f"{spec['label']} enregistré : {value}."
+    return RedirectResponse(f"/commission/dossiers/{dossier_id}", status_code=303)
+
+
 @router.post("/dossiers/{dossier_id}/tout-valider")
 def tout_valider(
     dossier_id: int,

@@ -196,6 +196,67 @@ def test_rectifier_quantite_refuse_critere_non_compte(client, db_session, campai
     assert r.status_code == 422
 
 
+def test_definir_rang_absent(client, db_session, campaign, dossier, responsable):
+    """Le responsable renseigne le rang laissé vide par le candidat (entrée créée)."""
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    r = client.post(f"/commission/dossiers/{dossier.id}/critere/rang_scientifique/valeur",
+                    data={"value": "professeur"})
+    assert r.status_code == 303
+    entry = db_session.scalar(select(Entry).where(Entry.criterion_id == "rang_scientifique"))
+    assert entry is not None
+    assert entry.payload["value"] == "professeur"
+    assert entry.statut == "en_attente"  # compté au score, décidable ensuite
+
+
+def test_corriger_rang_existant(client, db_session, campaign, dossier, responsable):
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="rang_scientifique",
+                         payload={"value": "mca"}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    r = client.post(f"/commission/dossiers/{dossier.id}/critere/rang_scientifique/valeur",
+                    data={"value": "professeur"})
+    assert r.status_code == 303
+    entries = list(db_session.scalars(
+        select(Entry).where(Entry.criterion_id == "rang_scientifique")))
+    assert len(entries) == 1  # corrigé, pas dupliqué
+    assert entries[0].payload["value"] == "professeur"
+
+
+def test_effacer_rang(client, db_session, campaign, dossier, responsable):
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="rang_scientifique",
+                         payload={"value": "professeur"}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    r = client.post(f"/commission/dossiers/{dossier.id}/critere/rang_scientifique/valeur",
+                    data={"value": ""})
+    assert r.status_code == 303
+    assert db_session.scalar(
+        select(Entry).where(Entry.criterion_id == "rang_scientifique")) is None
+
+
+def test_definir_rang_refuse_au_membre(client, db_session, campaign, dossier_soumis,
+                                       membre_commission):
+    login(client, "commission@test.dz")
+    r = client.post(
+        f"/commission/dossiers/{dossier_soumis.id}/critere/rang_scientifique/valeur",
+        data={"value": "professeur"})
+    assert r.status_code == 403
+
+
+def test_definir_valeur_refuse_critere_non_enum(client, db_session, campaign, dossier,
+                                                responsable):
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    r = client.post(f"/commission/dossiers/{dossier.id}/critere/publications/valeur",
+                    data={"value": "professeur"})
+    assert r.status_code == 422
+
+
 def test_decision_sur_brouillon_refusee(client, db_session, campaign, dossier, responsable):
     db_session.add(Entry(dossier_id=dossier.id, criterion_id="rang_scientifique",
                          payload={"value": "mca"}))

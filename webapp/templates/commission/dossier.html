@@ -62,6 +62,29 @@
       {% else %}
         <p><small>Rien de déclaré.</small></p>
       {% endif %}
+
+      {% if is_responsable and decidable and section.spec.widget == 'enum' %}
+      {% set courant = section.rows[0].payload if section.rows else {} %}
+      <form method="post" class="rang-responsable"
+            action="/commission/dossiers/{{ dossier.id }}/critere/{{ section.spec.criterion_id }}/valeur">
+        <label><small><strong>Renseigner / corriger (responsable)</strong>
+          {% if not section.rows %}— le candidat n'a rien déclaré{% endif %}</small>
+          <select name="value">
+            <option value="">— non renseigné —</option>
+            {% for o in section.spec.options %}
+            <option value="{{ o.value }}" {% if courant.get('value') == o.value %}selected{% endif %}>
+              {{ o.label }} ({{ o.points|points }} pts)</option>
+            {% endfor %}
+          </select>
+        </label>
+        {% for o in section.spec.options if o.bonus_condition %}
+        <label><input type="checkbox" name="option_bonus" value="1"
+               {% if courant.get('option_bonus') %}checked{% endif %}>
+          <small>{{ o.bonus_condition }} (+{{ o.bonus_points|points }} pts)</small></label>
+        {% endfor %}
+        <button type="submit" class="secondary">Enregistrer</button>
+      </form>
+      {% endif %}
     </article>
     {% endfor %}
 

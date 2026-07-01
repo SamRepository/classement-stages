@@ -28,6 +28,7 @@ from webapp.services.dossier import (
     reopen_dossier,
 )
 from webapp.services.mailer import notify_new_accounts
+from webapp.services.scoring import get_institution
 from webapp.templating import templates
 
 router = APIRouter(prefix="/admin")
@@ -399,10 +400,13 @@ def campagne(request: Request, user: User = ADMIN, db: Session = Depends(get_db)
     dossiers = list(
         db.scalars(select(Dossier).where(Dossier.campaign_id == camp.id).order_by(Dossier.id))
     )
+    institution = get_institution(camp.institution_id)
     return templates.TemplateResponse(
         request,
         "admin/campagne.html",
-        {"user": user, "campaign": camp, "dossiers": dossiers},
+        {"user": user, "campaign": camp, "dossiers": dossiers,
+         "departements": institution.get("departements", []),
+         "populations": institution.get("populations", [])},
     )
 
 
@@ -481,6 +485,46 @@ def reouvrir(
         raise HTTPException(status_code=404)
     reopen_dossier(db, dossier, user)
     request.session["flash"] = "Dossier rouvert pour modification."
+    return RedirectResponse("/admin/campagne", status_code=303)
+
+
+@router.post("/dossiers/{dossier_id}/infos")
+async def maj_infos_dossier(
+    request: Request, dossier_id: int, user: User = ADMIN, db: Session = Depends(get_db)
+):
+    """Corrige les infos administratives d'un dossier (département, population).
+
+    Permet à l'admin de rectifier la classification d'un candidat sans rouvrir
+    tout le dossier (ex. mauvais département saisi). Refusé après gel du
+    classement (l'instantané figé ne doit plus bouger). Ces champs déterminent
+    le groupe de classement — la modification est tracée.
+    """
+    dossier = db.get(Dossier, dossier_id)
+    if dossier is None:
+        raise HTTPException(status_code=404)
+    if dossier.campaign.statut == "gelee":
+        raise HTTPException(status_code=403, detail="Classement gelé : correction impossible.")
+    institution = get_institution(dossier.campaign.institution_id)
+    form = await request.form()
+
+    dep = (form.get("departement") or "").strip()
+    if dep:
+        if dep not in {d["id"] for d in institution.get("departements", [])}:
+            raise HTTPException(status_code=422, detail=f"Département inconnu : {dep!r}.")
+        dossier.departement = dep
+    else:
+        dossier.departement = None
+
+    pop = (form.get("population") or "").strip()
+    if pop:
+        if pop not in set(institution.get("populations", [])):
+            raise HTTPException(status_code=422, detail=f"Population inconnue : {pop!r}.")
+        dossier.population = pop
+
+    log_event(db, user, "maj_infos_dossier", dossier,
+              detail=f"departement={dossier.departement} population={dossier.population}")
+    db.commit()
+    request.session["flash"] = f"Informations administratives de {dossier.candidate_ref} mises à jour."
     return RedirectResponse("/admin/campagne", status_code=303)
 
 

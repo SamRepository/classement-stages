@@ -74,11 +74,34 @@
         <td><span class="badge {{ d.statut }}">{{ d.statut }}</span></td>
         <td>{{ d.submitted_at.strftime('%d/%m/%Y %H:%M') if d.submitted_at else '—' }}</td>
         <td>
-          {% if d.statut == 'soumis' and campaign.statut != 'gelee' %}
+          {% if campaign.statut != 'gelee' %}
+          <details>
+            <summary role="button" class="secondary outline">Infos…</summary>
+            <form method="post" action="/admin/dossiers/{{ d.id }}/infos" class="infos-dossier">
+              <label>Département
+                <select name="departement">
+                  <option value="">— non renseigné —</option>
+                  {% for dep in departements %}
+                  <option value="{{ dep.id }}" {% if d.departement == dep.id %}selected{% endif %}>{{ dep.label_fr }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>Population
+                <select name="population">
+                  {% for pop in populations %}
+                  <option value="{{ pop }}" {% if d.population == pop %}selected{% endif %}>{{ pop }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <button type="submit" class="secondary">Enregistrer</button>
+            </form>
+          </details>
+          {% if d.statut == 'soumis' %}
           <form method="post" action="/admin/dossiers/{{ d.id }}/reouvrir" class="inline-form"
                 onsubmit="return confirm('Rouvrir le dossier {{ d.candidate_ref }} ? Les décisions déjà prises sont conservées.');">
             <button class="secondary outline">Rouvrir</button>
           </form>
+          {% endif %}
           {% endif %}
         </td>
       </tr>

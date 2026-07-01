@@ -335,6 +335,36 @@ def test_reouverture_dossier(client, db_session, campaign, dossier, admin):
     assert dossier.statut == "brouillon"
 
 
+def test_admin_corrige_departement_et_population(client, db_session, campaign, dossier, admin):
+    """L'admin corrige le département/population d'un dossier soumis sans le rouvrir."""
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "admin@test.dz")
+    r = client.post(f"/admin/dossiers/{dossier.id}/infos",
+                    data={"departement": "mathematiques-informatique",
+                          "population": "maitre_assistant"})
+    assert r.status_code == 303
+    db_session.expire_all()
+    assert dossier.departement == "mathematiques-informatique"
+    assert dossier.population == "maitre_assistant"
+
+
+def test_admin_infos_departement_invalide_refuse(client, db_session, campaign, dossier, admin):
+    login(client, "admin@test.dz")
+    r = client.post(f"/admin/dossiers/{dossier.id}/infos",
+                    data={"departement": "genie-civil"})
+    assert r.status_code == 422
+
+
+def test_admin_infos_refuse_apres_gel(client, db_session, campaign, dossier, admin):
+    campaign.statut = "gelee"
+    db_session.commit()
+    login(client, "admin@test.dz")
+    r = client.post(f"/admin/dossiers/{dossier.id}/infos",
+                    data={"departement": "technologie"})
+    assert r.status_code == 403
+
+
 def test_admin_interdit_aux_autres_roles(client, campaign, enseignant, membre_commission):
     login(client, "enseignant@test.dz")
     assert client.get("/admin/utilisateurs").status_code == 403

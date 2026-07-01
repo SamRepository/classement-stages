@@ -335,18 +335,31 @@ def test_reouverture_dossier(client, db_session, campaign, dossier, admin):
     assert dossier.statut == "brouillon"
 
 
-def test_admin_corrige_departement_et_population(client, db_session, campaign, dossier, admin):
-    """L'admin corrige le département/population d'un dossier soumis sans le rouvrir."""
+def test_admin_corrige_infos_dossier(client, db_session, campaign, dossier, admin):
+    """L'admin corrige toutes les infos administratives d'un dossier soumis."""
     dossier.statut = "soumis"
     db_session.commit()
     login(client, "admin@test.dz")
     r = client.post(f"/admin/dossiers/{dossier.id}/infos",
-                    data={"departement": "mathematiques-informatique",
-                          "population": "maitre_assistant"})
+                    data={"candidate_ref": "DC/2026/999",
+                          "departement": "mathematiques-informatique",
+                          "population": "maitre_assistant",
+                          "pays": "Espagne", "duree_jours": "12",
+                          "habilitation_exercice": "1"})
     assert r.status_code == 303
     db_session.expire_all()
+    assert dossier.candidate_ref == "DC/2026/999"
     assert dossier.departement == "mathematiques-informatique"
     assert dossier.population == "maitre_assistant"
+    assert dossier.pays == "Espagne"
+    assert dossier.duree_jours == 12
+    assert dossier.habilitation_exercice is True
+
+
+def test_admin_infos_duree_invalide_refuse(client, db_session, campaign, dossier, admin):
+    login(client, "admin@test.dz")
+    r = client.post(f"/admin/dossiers/{dossier.id}/infos", data={"duree_jours": "0"})
+    assert r.status_code == 422
 
 
 def test_admin_infos_departement_invalide_refuse(client, db_session, campaign, dossier, admin):

@@ -492,12 +492,14 @@ def reouvrir(
 async def maj_infos_dossier(
     request: Request, dossier_id: int, user: User = ADMIN, db: Session = Depends(get_db)
 ):
-    """Corrige les infos administratives d'un dossier (département, population).
+    """Corrige les infos administratives d'un dossier.
 
-    Permet à l'admin de rectifier la classification d'un candidat sans rouvrir
-    tout le dossier (ex. mauvais département saisi). Refusé après gel du
-    classement (l'instantané figé ne doit plus bouger). Ces champs déterminent
-    le groupe de classement — la modification est tracée.
+    Champs corrigibles : référence candidat, département, population, pays et
+    durée de mobilité, déclaration d'habilitation. Permet à l'admin de rectifier
+    sans rouvrir tout le dossier (ex. mauvais département saisi). Refusé après
+    gel du classement (l'instantané figé ne doit plus bouger). Département et
+    population déterminent le groupe de classement — la modification est tracée.
+    Le billet et les frais divers restent gérés dans /admin/budget.
     """
     dossier = db.get(Dossier, dossier_id)
     if dossier is None:
@@ -506,6 +508,10 @@ async def maj_infos_dossier(
         raise HTTPException(status_code=403, detail="Classement gelé : correction impossible.")
     institution = get_institution(dossier.campaign.institution_id)
     form = await request.form()
+
+    ref = (form.get("candidate_ref") or "").strip()
+    if ref:
+        dossier.candidate_ref = ref[:40]
 
     dep = (form.get("departement") or "").strip()
     if dep:
@@ -521,8 +527,26 @@ async def maj_infos_dossier(
             raise HTTPException(status_code=422, detail=f"Population inconnue : {pop!r}.")
         dossier.population = pop
 
+    dossier.pays = (form.get("pays") or "").strip() or None
+
+    raw_duree = (form.get("duree_jours") or "").strip()
+    if raw_duree:
+        try:
+            duree = int(raw_duree)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Durée (jours) : entier attendu.")
+        if duree < 1:
+            raise HTTPException(status_code=422, detail="Durée (jours) : doit être ≥ 1.")
+        dossier.duree_jours = duree
+    else:
+        dossier.duree_jours = None
+
+    dossier.habilitation_exercice = bool(form.get("habilitation_exercice"))
+
     log_event(db, user, "maj_infos_dossier", dossier,
-              detail=f"departement={dossier.departement} population={dossier.population}")
+              detail=f"ref={dossier.candidate_ref} departement={dossier.departement} "
+                     f"population={dossier.population} pays={dossier.pays} "
+                     f"duree={dossier.duree_jours}")
     db.commit()
     request.session["flash"] = f"Informations administratives de {dossier.candidate_ref} mises à jour."
     return RedirectResponse("/admin/campagne", status_code=303)

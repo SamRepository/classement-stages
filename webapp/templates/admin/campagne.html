@@ -78,6 +78,9 @@
           <details>
             <summary role="button" class="secondary outline">Infos…</summary>
             <form method="post" action="/admin/dossiers/{{ d.id }}/infos" class="infos-dossier">
+              <label>Référence candidat
+                <input name="candidate_ref" value="{{ d.candidate_ref }}" maxlength="40">
+              </label>
               <label>Département
                 <select name="departement">
                   <option value="">— non renseigné —</option>
@@ -93,7 +96,21 @@
                   {% endfor %}
                 </select>
               </label>
+              <div class="grid">
+                <label>Pays de destination
+                  <input name="pays" value="{{ d.pays or '' }}">
+                </label>
+                <label>Durée (jours)
+                  <input type="number" name="duree_jours" min="1" value="{{ d.duree_jours or '' }}">
+                </label>
+              </div>
+              <label>
+                <input type="checkbox" name="habilitation_exercice" value="1"
+                       {% if d.habilitation_exercice %}checked{% endif %}>
+                Habilitation universitaire obtenue durant l'exercice
+              </label>
               <button type="submit" class="secondary">Enregistrer</button>
+              <small>Billet et frais divers : voir <a href="/admin/budget">Budget</a>.</small>
             </form>
           </details>
           {% if d.statut == 'soumis' %}

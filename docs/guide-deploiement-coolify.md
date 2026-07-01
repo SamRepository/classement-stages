@@ -222,6 +222,25 @@ contient une migration de schéma** :
    avec le justificatif en visionneuse et les avis des membres en regard ; « Valider
    le reste du dossier » pour les éléments restants. Les observations du moteur
    (plafonds, fenêtres, références manquantes) restent affichées pour la traçabilité.
+
+   > **Contrôle des quantités avant instruction.** Confusion fréquente : des
+   > candidats saisissent le *nombre d'auteurs* dans le champ « Quantité » au lieu
+   > de 1 (une publication comptée plusieurs fois). Après la clôture de la saisie,
+   > lancer la détection — **lecture seule, ne modifie rien** — depuis un terminal
+   > du conteneur applicatif (Coolify → l'application → **Terminal**) :
+   >
+   > ```bash
+   > python -m webapp.scripts.detecter_quantites                     # campagnes en cours, dossiers soumis
+   > python -m webapp.scripts.detecter_quantites --campaign-id 1
+   > python -m webapp.scripts.detecter_quantites --csv rapport-quantites.csv
+   > ```
+   >
+   > Le rapport liste, par dossier, les entrées `count_detail` de quantité > 1
+   > (sévérité **HAUTE** pour les publications/communications, où la quantité vaut
+   > en général 1). Les éléments signalés se corrigent ensuite dans la vue dossier :
+   > **« Rectifier la quantité… »** (quantité + position d'auteur) et
+   > **« Renseigner / corriger »** pour un rang scientifique laissé vide — actions
+   > du **responsable**, tracées, avec recalcul immédiat du score.
 3. **Classement** (`/commission/classement`) : rang « compétition » (1, 2, 2, 4),
    ex aequo signalés (pas de départage : choix du décret). **Gel** (responsable)
    possible uniquement quand plus aucun élément n'est en attente ; un instantané

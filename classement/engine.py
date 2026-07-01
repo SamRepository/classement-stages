@@ -257,6 +257,16 @@ def _score_formula(
         result = max(result, 0.0)
         line.details.append(f"Plafond N-1 = {names['N'] - 1:g} appliqué")
 
+    # Plancher optionnel déclaré dans la grille (ex. `"floor": 0` sur `3 - n` :
+    # la pénalité de bénéfices ne descend pas sous 0, cf. art. 13 — décision
+    # commission, propriété de la grille, pas codée en dur).
+    floor = criterion.get("floor")
+    if floor is not None:
+        floor = float(floor)
+        if result < floor:
+            line.details.append(f"Plancher {floor:g} appliqué (résultat brut {result:g})")
+            result = floor
+
     line.points = result
     line.details.append(f"{formula} = {result:g} pts")
     return line

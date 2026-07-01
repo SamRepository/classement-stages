@@ -252,6 +252,22 @@ def test_formula_3_minus_n_from_benefits(u1, shared):
     assert _line(b, "penalite_beneficies_3ans").points == 1  # 3 - 2
 
 
+def test_formula_3_minus_n_floored_at_zero(u1, shared):
+    """4 bénéfices dans la fenêtre : 3 - 4 = -1, borné à 0 par `"floor": 0`."""
+    candidate = {
+        "id": "X",
+        "benefits": [
+            {"date": "2024-01-01"},
+            {"date": "2024-09-01"},
+            {"date": "2025-03-01"},
+            {"date": "2025-11-01"},
+        ],
+        "entries": {"penalite_beneficies_3ans": {}},
+    }
+    b = score_candidate(u1, candidate, shared, CAMPAIGN)
+    assert _line(b, "penalite_beneficies_3ans").points == 0  # -1 ramené à 0
+
+
 def test_formula_minus_5_per_stage(u2, shared):
     candidate = {
         "id": "X",

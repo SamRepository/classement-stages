@@ -27,7 +27,8 @@
       "label_fr": "Bénéfices antérieurs sur les trois dernières années",
       "type": "formula",
       "formula": "3 - n",
-      "variable": "n = nombre de bénéfices durant les 3 dernières années"
+      "variable": "n = nombre de bénéfices durant les 3 dernières années",
+      "floor": 0
     },
     {
       "id": "prix_distinctions",

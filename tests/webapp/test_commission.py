@@ -257,6 +257,54 @@ def test_definir_valeur_refuse_critere_non_enum(client, db_session, campaign, do
     assert r.status_code == 422
 
 
+def test_forcer_n_formule_absent(client, db_session, campaign, dossier, responsable):
+    """Le responsable force n d'un critère formule sans entrée (calcul auto par défaut)."""
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    r = client.post(f"/commission/dossiers/{dossier.id}/formule/penalite_beneficies_3ans",
+                    data={"n": "1"})
+    assert r.status_code == 303
+    entry = db_session.scalar(
+        select(Entry).where(Entry.criterion_id == "penalite_beneficies_3ans"))
+    assert entry is not None
+    assert entry.payload["n"] == 1
+    assert entry.statut == "valide"
+    assert entry.decided_by == responsable.id
+
+
+def test_forcer_n_vide_revient_auto(client, db_session, campaign, dossier, responsable):
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="penalite_beneficies_3ans",
+                         payload={"n": 2}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    r = client.post(f"/commission/dossiers/{dossier.id}/formule/penalite_beneficies_3ans",
+                    data={"n": ""})
+    assert r.status_code == 303
+    assert db_session.scalar(
+        select(Entry).where(Entry.criterion_id == "penalite_beneficies_3ans")) is None
+
+
+def test_definir_formule_refuse_critere_non_formule(client, db_session, campaign, dossier,
+                                                    responsable):
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    r = client.post(f"/commission/dossiers/{dossier.id}/formule/rang_scientifique",
+                    data={"n": "1"})
+    assert r.status_code == 422
+
+
+def test_definir_formule_refuse_au_membre(client, db_session, campaign, dossier_soumis,
+                                          membre_commission):
+    login(client, "commission@test.dz")
+    r = client.post(
+        f"/commission/dossiers/{dossier_soumis.id}/formule/penalite_beneficies_3ans",
+        data={"n": "1"})
+    assert r.status_code == 403
+
+
 def test_decision_sur_brouillon_refusee(client, db_session, campaign, dossier, responsable):
     db_session.add(Entry(dossier_id=dossier.id, criterion_id="rang_scientifique",
                          payload={"value": "mca"}))

@@ -59,8 +59,26 @@
             {% include "commission/fragments/element.html" %}
           {% endwith %}
         {% endfor %}
+      {% elif section.spec.widget == 'formula' %}
+        <p><small>Calculé automatiquement depuis l'historique des bénéfices
+           (aucune valeur forcée). Formule : <code>{{ section.spec.formula }}</code>.</small></p>
       {% else %}
         <p><small>Rien de déclaré.</small></p>
+      {% endif %}
+
+      {% if is_responsable and decidable and section.spec.widget == 'formula' and not section.rows %}
+      <form method="post" class="rang-responsable"
+            action="/commission/dossiers/{{ dossier.id }}/formule/{{ section.spec.criterion_id }}">
+        <label><small><strong>Forcer n (responsable)</strong> — remplace le calcul
+          automatique ; laisser vide pour conserver l'historique.
+          {% if section.spec.variable %}{{ section.spec.variable }}.{% endif %}</small>
+          <input type="number" name="n" min="0" step="1" placeholder="ex. 1">
+        </label>
+        {% if section.spec.needs_N %}
+        <label><small>N</small><input type="number" name="N" min="0" step="1"></label>
+        {% endif %}
+        <button type="submit" class="secondary">Enregistrer n</button>
+      </form>
       {% endif %}
 
       {% if is_responsable and decidable and section.spec.widget == 'enum' %}

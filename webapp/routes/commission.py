@@ -60,8 +60,10 @@ def _sections(dossier: Dossier, grid: dict) -> list[dict]:
     sections = []
     for spec in build_form_spec(grid):
         rows = rows_by_cid.get(spec["criterion_id"], [])
-        if not rows and spec["widget"] in ("formula", "manual"):
-            continue  # rien à examiner
+        # « manual » sans entrée : rien à examiner. « formula » est conservé même
+        # vide, pour laisser le responsable forcer n (ex. bénéfices sur 3 ans).
+        if not rows and spec["widget"] == "manual":
+            continue
         labels = {i["id"]: i["label"] for i in spec.get("items", [])}
         sections.append({"spec": spec, "rows": rows, "labels": labels})
     return sections
@@ -528,6 +530,89 @@ async def definir_valeur(
     log_event(db, user, action, dossier, detail=f"{criterion_id}={value}")
     db.commit()
     request.session["flash"] = f"{spec['label']} enregistré : {value}."
+    return RedirectResponse(f"/commission/dossiers/{dossier_id}", status_code=303)
+
+
+@router.post("/dossiers/{dossier_id}/formule/{criterion_id}")
+async def definir_formule(
+    dossier_id: int,
+    criterion_id: str,
+    request: Request,
+    user: User = RESPONSABLE,
+    db: Session = Depends(get_db),
+):
+    """Force la valeur n (et N) d'un critère formule sans entrée déclarée.
+
+    Cas normal : n (ex. bénéfices antérieurs sur 3 ans) est calculé
+    automatiquement depuis l'historique — aucune entrée n'existe, la section est
+    « Rien de déclaré ». Ce contrôle laisse le responsable forcer n quand
+    l'historique est incomplet/erroné : crée l'entrée d'override, la valide.
+    n vide + entrée existante => suppression => retour au calcul automatique.
+    Réservé au responsable (modifie le score). Quand une entrée existe déjà,
+    l'ajustement passe par « Ajuster n… » sur l'élément (route /entrees/.../ajuster).
+    """
+    dossier = _get_dossier(db, dossier_id)
+    if not _decidable(dossier):
+        raise HTTPException(status_code=403, detail="Dossier non soumis ou classement gelé.")
+    grid = grid_for_campaign(dossier.campaign)
+    criterion = next((c for c in grid.get("criteria", []) if c["id"] == criterion_id), None)
+    if criterion is None or criterion.get("type") != "formula":
+        raise HTTPException(status_code=422, detail="Ce critère n'est pas une formule.")
+
+    form = await request.form()
+
+    def _int_field(name: str) -> int | None:
+        raw = form.get(name)
+        if raw is None or not str(raw).strip():
+            return None
+        try:
+            value = int(str(raw).strip())
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"{name} doit être un entier.")
+        if value < 0:
+            raise HTTPException(status_code=422, detail=f"{name} doit être ≥ 0.")
+        return value
+
+    entry = next((e for e in dossier.entries if e.criterion_id == criterion_id), None)
+    payload: dict = dict(entry.payload) if entry else {}
+
+    n = _int_field("n")
+    if n is None:
+        payload.pop("n", None)
+    else:
+        payload["n"] = n
+    if "N" in (criterion.get("formula") or ""):
+        big_n = _int_field("N")
+        if big_n is None:
+            payload.pop("N", None)
+        else:
+            payload["N"] = big_n
+
+    label = criterion.get("label_fr", criterion_id)
+    if not payload:
+        # Aucune valeur forcée : revenir au calcul automatique.
+        if entry is not None:
+            db.delete(entry)
+            log_event(db, user, "formule_reset", dossier, detail=criterion_id)
+            db.commit()
+        request.session["flash"] = f"{label} : retour au calcul automatique."
+        return RedirectResponse(f"/commission/dossiers/{dossier_id}", status_code=303)
+
+    now = datetime.now(timezone.utc)
+    if entry is None:
+        entry = Entry(dossier_id=dossier.id, criterion_id=criterion_id, payload=payload,
+                      statut="valide", decided_by=user.id, decided_at=now)
+        db.add(entry)
+    else:
+        entry.payload = payload
+        entry.statut = "valide"
+        entry.decided_by = user.id
+        entry.decided_at = now
+        entry.decision_motif = None
+    log_event(db, user, "ajustement_formule", dossier,
+              detail=f"{criterion_id} n={payload.get('n', 'auto')}")
+    db.commit()
+    request.session["flash"] = f"{label} : n = {payload.get('n')} enregistré."
     return RedirectResponse(f"/commission/dossiers/{dossier_id}", status_code=303)
 
 

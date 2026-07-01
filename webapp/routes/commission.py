@@ -533,6 +533,73 @@ async def definir_valeur(
     return RedirectResponse(f"/commission/dossiers/{dossier_id}", status_code=303)
 
 
+@router.post("/dossiers/{dossier_id}/critere/{criterion_id}/nombre")
+async def definir_nombre(
+    dossier_id: int,
+    criterion_id: str,
+    request: Request,
+    user: User = RESPONSABLE,
+    db: Session = Depends(get_db),
+):
+    """Ajuste un critère à saisie simple (nombre + URL), ex. citations Scopus.
+
+    Le responsable corrige le nombre déclaré (et l'URL du profil). Crée l'entrée
+    si absente, la met à jour, ou l'efface si le nombre est vide/0. Réservé au
+    responsable (modifie le score) ; l'élément reste « en attente » (compté),
+    décidable ensuite ; action tracée.
+    """
+    dossier = _get_dossier(db, dossier_id)
+    if not _decidable(dossier):
+        raise HTTPException(status_code=403, detail="Dossier non soumis ou classement gelé.")
+    grid = grid_for_campaign(dossier.campaign)
+    spec = next(
+        (s for s in build_form_spec(grid) if s["criterion_id"] == criterion_id),
+        None,
+    )
+    if spec is None or spec["widget"] != "count_simple":
+        raise HTTPException(status_code=422, detail="Ce critère n'est pas à saisie simple.")
+
+    form = await request.form()
+    raw = (form.get("count") or "").strip()
+    count: int | None = None
+    if raw:
+        try:
+            count = int(raw)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Nombre entier attendu.")
+        if count < 0:
+            raise HTTPException(status_code=422, detail="Le nombre doit être ≥ 0.")
+
+    entry = next((e for e in dossier.entries if e.criterion_id == criterion_id), None)
+
+    if not count:  # None (vide) ou 0 → effacer
+        if entry is not None:
+            db.delete(entry)
+            log_event(db, user, "nombre_efface", dossier, detail=criterion_id)
+            db.commit()
+        request.session["flash"] = f"{spec['label']} : effacé."
+        return RedirectResponse(f"/commission/dossiers/{dossier_id}", status_code=303)
+
+    payload: dict = {"count": count}
+    url = (form.get("url") or "").strip()
+    if url:
+        payload["url"] = url
+
+    if entry is None:
+        entry = Entry(dossier_id=dossier.id, criterion_id=criterion_id,
+                      item_id=spec["item_id"], payload=payload)
+        db.add(entry)
+        action = "nombre_defini"
+    else:
+        entry.payload = payload
+        entry.item_id = spec["item_id"]
+        action = "nombre_corrige"
+    log_event(db, user, action, dossier, detail=f"{criterion_id}={count}")
+    db.commit()
+    request.session["flash"] = f"{spec['label']} : {count} enregistré."
+    return RedirectResponse(f"/commission/dossiers/{dossier_id}", status_code=303)
+
+
 @router.post("/dossiers/{dossier_id}/formule/{criterion_id}")
 async def definir_formule(
     dossier_id: int,

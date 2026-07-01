@@ -305,6 +305,68 @@ def test_definir_formule_refuse_au_membre(client, db_session, campaign, dossier_
     assert r.status_code == 403
 
 
+def test_ajuster_citations_declare(client, db_session, campaign, dossier, responsable):
+    """Le responsable corrige le nombre de citations Scopus déclaré."""
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="citations_scopus",
+                         item_id="citation", payload={"count": 5}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    r = client.post(f"/commission/dossiers/{dossier.id}/critere/citations_scopus/nombre",
+                    data={"count": "8", "url": "https://scopus.com/x"})
+    assert r.status_code == 303
+    entries = list(db_session.scalars(
+        select(Entry).where(Entry.criterion_id == "citations_scopus")))
+    assert len(entries) == 1
+    assert entries[0].payload["count"] == 8
+    assert entries[0].payload["url"] == "https://scopus.com/x"
+
+
+def test_ajuster_citations_cree_si_absent(client, db_session, campaign, dossier, responsable):
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    r = client.post(f"/commission/dossiers/{dossier.id}/critere/citations_scopus/nombre",
+                    data={"count": "3"})
+    assert r.status_code == 303
+    entry = db_session.scalar(select(Entry).where(Entry.criterion_id == "citations_scopus"))
+    assert entry is not None
+    assert entry.item_id == "citation"
+    assert entry.payload["count"] == 3
+
+
+def test_ajuster_citations_zero_efface(client, db_session, campaign, dossier, responsable):
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="citations_scopus",
+                         item_id="citation", payload={"count": 4}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    r = client.post(f"/commission/dossiers/{dossier.id}/critere/citations_scopus/nombre",
+                    data={"count": "0"})
+    assert r.status_code == 303
+    assert db_session.scalar(
+        select(Entry).where(Entry.criterion_id == "citations_scopus")) is None
+
+
+def test_definir_nombre_refuse_critere_non_simple(client, db_session, campaign, dossier,
+                                                  responsable):
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    r = client.post(f"/commission/dossiers/{dossier.id}/critere/publications/nombre",
+                    data={"count": "3"})
+    assert r.status_code == 422
+
+
+def test_definir_nombre_refuse_au_membre(client, db_session, campaign, dossier_soumis,
+                                         membre_commission):
+    login(client, "commission@test.dz")
+    r = client.post(
+        f"/commission/dossiers/{dossier_soumis.id}/critere/citations_scopus/nombre",
+        data={"count": "3"})
+    assert r.status_code == 403
+
+
 def test_decision_sur_brouillon_refusee(client, db_session, campaign, dossier, responsable):
     db_session.add(Entry(dossier_id=dossier.id, criterion_id="rang_scientifique",
                          payload={"value": "mca"}))

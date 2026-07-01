@@ -81,6 +81,24 @@
       </form>
       {% endif %}
 
+      {% if is_responsable and decidable and section.spec.widget == 'count_simple' %}
+      {% set courant = section.rows[0].payload if section.rows else {} %}
+      <form method="post" class="rang-responsable"
+            action="/commission/dossiers/{{ dossier.id }}/critere/{{ section.spec.criterion_id }}/nombre">
+        <label><small><strong>Ajuster (responsable)</strong>
+          — {{ section.spec.points_per_unit|points }} pt/unité ; 0 ou vide pour effacer.</small>
+          <input type="number" name="count" min="0" step="1"
+                 value="{{ courant.get('count', '') }}" placeholder="nombre">
+        </label>
+        {% if section.spec.url_profil %}
+        <label><small>URL du profil (Scopus / Google Scholar)</small>
+          <input type="url" name="url" value="{{ courant.get('url', '') }}" placeholder="https://…">
+        </label>
+        {% endif %}
+        <button type="submit" class="secondary">Enregistrer</button>
+      </form>
+      {% endif %}
+
       {% if is_responsable and decidable and section.spec.widget == 'enum' %}
       {% set courant = section.rows[0].payload if section.rows else {} %}
       <form method="post" class="rang-responsable"

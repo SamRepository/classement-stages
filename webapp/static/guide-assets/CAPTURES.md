@@ -19,5 +19,9 @@ Les captures peuvent être annotées (flèches, encadrés) sous Excalidraw avant
 | `11-soumettre.png` | Section « Soumission » + bouton Soumettre |
 | `12-resultat.png` | Encadré « Résultat du classement » (campagne gelée) |
 | `13-archive-zip.png` | Bouton « Télécharger mon dossier complet (ZIP) » (dossier soumis/gelé) |
+| `14-classement-provisoire.png` | Page « Mon classement » en période de recours : bandeau « Résultats provisoires » + liste du groupe (rang, réf, nom, score), sa ligne surlignée |
+| `15-recours.png` | Section « Recours — contestation des décisions » : liste des éléments avec décision + formulaire « Contester » (motif déroulant + message) déplié |
 
 Conseil : largeur ~1000 px, format PNG. Recadrer sur la zone utile.
+Pour `14`/`15`, se placer sur une campagne **clôturée avec la période de recours ouverte**
+(bouton « Ouvrir la période de recours » côté responsable ou admin).

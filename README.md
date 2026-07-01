@@ -13,7 +13,8 @@ détail du score par critère ainsi que le classement par population et par grou
 Deux circuits d'utilisation : le **circuit Excel** (phase 1, piloté par la CLI) et
 l'**application web** ([webapp/](webapp/), phase 2) qui couvre la campagne de bout en
 bout — déclaration en ligne avec justificatifs PDF, validation par la commission avec
-rejets motivés, classement gelé et exports officiels.
+rejets motivés, **classement provisoire ouvert aux recours**, classement gelé et exports
+officiels.
 
 ## Prérequis
 
@@ -55,14 +56,20 @@ logique réglementaire dupliquée. Trois espaces :
 - **Enseignant** : connexion par e-mail (le même identifiant que le portail Odoo),
   formulaire généré depuis la grille JSON, une ligne par activité avec son **justificatif
   PDF**, **édition et suppression en place** des activités, score provisoire affiché en
-  barre épinglée, soumission = dossier gelé, **rang publié après le gel** ; si l'historique
-  des bénéfices n'est pas encore importé, possibilité de **saisir directement le nombre de
-  bénéfices `n`** (vérifié ensuite par la commission) ;
+  barre épinglée, soumission = dossier gelé ; si l'historique des bénéfices n'est pas encore
+  importé, possibilité de **saisir directement le nombre de bénéfices `n`** (vérifié ensuite
+  par la commission) ; après l'examen, **classement provisoire** de son groupe (rang, réf,
+  nom, score total — jamais le détail des autres) et **recours par élément** pendant la
+  période de recours (motif + message, texte seul, retrait possible), **rang définitif publié
+  après le gel** ;
 - **Commission** : chaque élément déclaré face à son justificatif, **valider / rejeter
   avec motif obligatoire** (art. 14-15), recalcul immédiat, **ajustement de `n`** sur le
   critère de pénalité, classement avec ex aequo signalés, **simulation budgétaire**
-  (enveloppe, plafond billet, ordre de financement), **gel** (bloqué tant qu'un élément
-  reste en attente, instantané d'audit en base), exports PV / fiches / HTML ;
+  (enveloppe, plafond billet, ordre de financement), **ouverture de la période de recours** et
+  **traitement des recours** (accepté / rejeté / irrecevable, réponse motivée obligatoire ;
+  un recours accepté se répercute en corrigeant l'élément), **gel** (bloqué tant qu'un
+  élément reste en attente **ou qu'un recours est ouvert**, instantané d'audit en base),
+  exports PV / fiches / HTML ;
 - **Admin** : import des comptes et dossiers **directement depuis `dossier-u3.xlsx`**
   (produit par [scripts/import_odoo.py](scripts/import_odoo.py) : comptes, mobilité et
   historique des bénéfices en une opération idempotente), **import dédié de l'historique
@@ -73,7 +80,7 @@ logique réglementaire dupliquée. Trois espaces :
   connexion** ; sans configuration SMTP, les mots de passe restent affichés pour
   communication manuelle), réglage du **repère de la fenêtre « après dernier bénéfice »**
   (clôture de plateforme, date de mobilité, ou date de clôture uniforme), gestion de la
-  campagne, réouverture de dossiers.
+  campagne, **ouverture / fermeture de la période de recours**, réouverture de dossiers.
 
 Démarrage local (SQLite par défaut) :
 
@@ -86,9 +93,11 @@ python -m uvicorn webapp.main:app --reload
 Déploiement : Dockerfile + PostgreSQL + volume pour les pièces jointes — guide pas-à-pas
 Coolify : **[docs/guide-deploiement-coolify.md](docs/guide-deploiement-coolify.md)**.
 
-**Envoi des comptes par e-mail** (optionnel) : renseigner `SMTP_HOST`, `SMTP_PORT`,
+**Envoi des e-mails** (optionnel) : renseigner `SMTP_HOST`, `SMTP_PORT`,
 `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_STARTTLS` et `BASE_URL` (voir
-[.env.example](.env.example) et la section dédiée du guide Coolify). Cible prévue : boîte
+[.env.example](.env.example) et la section dédiée du guide Coolify). La même configuration
+alimente l'envoi des identifiants **et les notifications de recours** (dépôt → responsable,
+décision → enseignant). Cible prévue : boîte
 Google Workspace `stages@enset-skikda.dz` via `smtp.gmail.com:587` STARTTLS avec un **mot
 de passe d'application** (la 2FA doit être active ; le mot de passe du compte est refusé
 par Google). Tant que ces variables ne sont pas toutes renseignées, l'application reste en
@@ -316,7 +325,7 @@ aequo sont signalés (`ex_aequo: true`) et laissés à l'arbitrage de la commiss
 python -m pytest -q
 ```
 
-196 tests : le moteur (six types de critères, plafonds, pondération auteur, fenêtres
+261 tests : le moteur (six types de critères, plafonds, pondération auteur, fenêtres
 temporelles, formules, classement, profils d'établissement, coûts/budget) et le circuit
 Excel (modèle, menus en libellés français, import avec rapport d'erreurs, équivalence
 Excel/JSON, exports PV/fiches/HTML), plus l'application web
@@ -330,8 +339,11 @@ français, publication du rang à l'enseignant après le gel, édition en place 
 saisie/ajustement du nombre de bénéfices `n`, import de l'historique des bénéfices par
 e-mail, fenêtre configurable (intervalle d'exercice budgétaire uniforme ou repère par
 bénéfice clôture/mobilité), déclaration d'habilitation, saisie budget par bénéficiaire,
-**auto-soumission des brouillons à la fermeture de la saisie** et **téléchargement du
-dossier complet en archive ZIP** (récapitulatif + justificatifs).
+**auto-soumission des brouillons à la fermeture de la saisie**, **téléchargement du
+dossier complet en archive ZIP** (récapitulatif + justificatifs) et la **phase de recours**
+(dépôt/retrait par l'enseignant, classement provisoire de son groupe sans le détail
+d'autrui, traitement par le responsable avec réponse motivée, gel bloqué tant qu'un recours
+est ouvert, notifications e-mail, fenêtre de recours pilotable côté responsable et admin).
 
 ## Structure du projet
 

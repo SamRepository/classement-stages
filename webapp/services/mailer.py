@@ -53,6 +53,18 @@ def _build_message(settings: Settings, to_email: str, nom: str, password: str) -
     return message
 
 
+def _dispatch(settings: Settings, message: EmailMessage) -> None:
+    """Envoi bas niveau (STARTTLS + login), transforme tout échec en ``MailError``."""
+    try:
+        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=20) as smtp:
+            if settings.smtp_starttls:
+                smtp.starttls()
+            smtp.login(settings.smtp_user, settings.smtp_password)
+            smtp.send_message(message)
+    except (smtplib.SMTPException, OSError) as exc:  # réseau, auth, refus serveur
+        raise MailError(f"Échec de l'envoi à {message['To']} : {exc}") from exc
+
+
 def send_credentials(
     to_email: str, nom: str, password: str, *, settings: Settings | None = None
 ) -> None:
@@ -64,15 +76,41 @@ def send_credentials(
     settings = settings or get_settings()
     if not settings.mail_configure:
         raise MailError("Envoi SMTP non configuré (SMTP_HOST/SMTP_USER/SMTP_PASSWORD).")
-    message = _build_message(settings, to_email, nom, password)
+    _dispatch(settings, _build_message(settings, to_email, nom, password))
+
+
+def send_email(
+    to_email: str, subject: str, body: str, *, settings: Settings | None = None
+) -> None:
+    """Envoie un e-mail texte simple. Lève ``MailError`` (config ou envoi)."""
+    settings = settings or get_settings()
+    if not settings.mail_configure:
+        raise MailError("Envoi SMTP non configuré (SMTP_HOST/SMTP_USER/SMTP_PASSWORD).")
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = settings.smtp_from
+    message["To"] = to_email
+    message.set_content(body)
+    _dispatch(settings, message)
+
+
+def notify(
+    to_email: str, subject: str, body: str, *, settings: Settings | None = None
+) -> bool:
+    """Notification « au mieux » : n'interrompt jamais le flux appelant.
+
+    Retourne True si l'e-mail est parti, False si la config SMTP est absente (mode
+    hors-ligne) ou si l'envoi a échoué (échec journalisé, non propagé).
+    """
+    settings = settings or get_settings()
+    if not settings.mail_configure:
+        return False
     try:
-        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=20) as smtp:
-            if settings.smtp_starttls:
-                smtp.starttls()
-            smtp.login(settings.smtp_user, settings.smtp_password)
-            smtp.send_message(message)
-    except (smtplib.SMTPException, OSError) as exc:  # réseau, auth, refus serveur
-        raise MailError(f"Échec de l'envoi à {to_email} : {exc}") from exc
+        send_email(to_email, subject, body, settings=settings)
+        return True
+    except MailError as exc:
+        logger.warning("Notification e-mail échouée (%s) : %s", to_email, exc)
+        return False
 
 
 def notify_new_accounts(created: list[dict], *, settings: Settings | None = None) -> dict:

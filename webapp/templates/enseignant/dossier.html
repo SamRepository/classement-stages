@@ -43,6 +43,16 @@
      (dossier non soumis avant la clôture de l'examen).</p>
   {% endif %}
 </article>
+{% elif en_recours %}
+<article class="recours-banner">
+  <h3>Résultats provisoires — période de recours ouverte</h3>
+  <p>La commission a examiné votre dossier. Les résultats sont <strong>provisoires</strong> :
+     vous pouvez contester ci-dessous la décision prise sur chaque élément
+     {% if campaign.recours_deadline %}jusqu'au
+     <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong>{% endif %}.
+     Le classement sera figé après le traitement des recours.</p>
+  <p><a href="/mon-dossier/classement" role="button">Voir le classement provisoire →</a></p>
+</article>
 {% elif not editable %}
 <mark>Votre dossier a été soumis{% if dossier.submitted_at %} le {{ dossier.submitted_at.strftime('%d/%m/%Y') }}{% endif %} :
 il est en cours d'examen et ne peut plus être modifié.</mark>
@@ -53,6 +63,10 @@ il est en cours d'examen et ne peut plus être modifié.</mark>
 {% endif %}
 
 <div id="score-host" hx-get="/mon-dossier/score" hx-trigger="load"></div>
+
+{% if show_recours %}
+{% include "enseignant/fragments/recours.html" %}
+{% endif %}
 
 <div class="dossier-content">
     <article class="critere">

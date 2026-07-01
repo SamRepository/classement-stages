@@ -1,0 +1,69 @@
+<div id="recours-panel">
+<article class="recours-panel">
+  <h3>Recours — contestation des décisions</h3>
+  {% if en_recours %}
+  <p>Pour chaque élément, vous pouvez contester la décision de la commission en la motivant.
+     Votre recours sera examiné par le responsable de la commission
+     {% if campaign.recours_deadline %}(période ouverte jusqu'au
+     <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong>){% endif %}.</p>
+  {% else %}
+  <p><small>La période de recours est close. L'état de vos recours est indiqué ci-dessous.</small></p>
+  {% endif %}
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Élément déclaré</th><th>Décision</th><th>Recours</th></tr></thead>
+    <tbody>
+      {% for row in recours_rows %}
+      {% set e = row.entry %}
+      <tr>
+        <td><strong>{{ row.titre }}</strong>{% if row.desc %}<br><small>{{ row.desc }}</small>{% endif %}</td>
+        <td>
+          {% if e.statut == 'valide' %}<span class="badge valide">Validé</span>
+          {% elif e.statut == 'rejete' %}<span class="badge rejete">Rejeté</span>
+          {% else %}<span class="badge en_attente">En attente</span>{% endif %}
+          {% if e.statut == 'rejete' and e.decision_motif %}
+          <br><small class="warning">Motif : {{ e.decision_motif }}</small>{% endif %}
+        </td>
+        <td>
+          {% set r = row.recours %}
+          {% if r %}
+            <span class="badge recours-{{ r.statut }}">{{ recours_statut_labels[r.statut] }}</span>
+            <br><small>{{ recours_motif_labels[r.motif] }}</small>
+            <br><small>« {{ r.message }} »</small>
+            {% if r.reponse_motif %}
+            <br><small><strong>Réponse de la commission :</strong> {{ r.reponse_motif }}</small>{% endif %}
+            {% if en_recours and r.statut == 'ouvert' %}
+            <br><button type="button" class="secondary outline"
+                        hx-delete="/mon-dossier/recours/{{ r.id }}"
+                        hx-target="#recours-panel" hx-swap="outerHTML"
+                        hx-confirm="Retirer ce recours ?">Retirer</button>
+            {% endif %}
+          {% elif en_recours %}
+            <details>
+              <summary role="button" class="outline">Contester</summary>
+              <form hx-post="/mon-dossier/recours/{{ e.id }}"
+                    hx-target="#recours-panel" hx-swap="outerHTML">
+                <label>Motif du recours
+                  <select name="motif" required>
+                    {% for value, label in recours_motifs %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label>Précisions (obligatoire)
+                  <textarea name="message" rows="3" required
+                            placeholder="Expliquez votre contestation à l'attention de la commission."></textarea>
+                </label>
+                <button type="submit">Envoyer le recours</button>
+              </form>
+            </details>
+          {% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</article>
+</div>

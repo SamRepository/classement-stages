@@ -28,9 +28,19 @@ from classement.budget import simulate_budget
 from webapp.auth import require_role
 from webapp.db import get_db
 from webapp.forms.grid_form import build_form_spec
-from webapp.models import REVIEW_FLAGS, Dossier, ElementReview, Entry, User
+from webapp.models import REVIEW_FLAGS, Dossier, ElementReview, Entry, Recours, User
 from webapp.services.dossier import get_campaign, log_event
 from webapp.services.exports import export_response, freeze_campaign, pending_entries_count
+from webapp.services.recours import (
+    MOTIF_LABELS,
+    STATUT_LABELS,
+    close_recours_window,
+    decide_recours,
+    list_open_recours,
+    open_recours_count,
+    open_recours_window,
+    recours_phase,
+)
 from webapp.services.scoring import compute_ranking, compute_score, get_costs, grid_for_campaign
 from webapp.templating import templates
 
@@ -636,6 +646,7 @@ def classement(
             "nb_brouillons": nb_brouillons,
             "nb_classes": len(result.dossiers),
             "is_responsable": _is_responsable(user),
+            "recours_ouverts_count": open_recours_count(db, campaign),
         },
     )
 
@@ -726,6 +737,97 @@ def geler(
     freeze_campaign(db, campaign, user)
     request.session["flash"] = "Le classement a été gelé."
     return RedirectResponse("/commission/classement", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Recours (responsable) : ouverture de la fenêtre + traitement de la file
+# ---------------------------------------------------------------------------
+
+
+def _recours_ligne(spec_map: dict, recours: Recours) -> dict:
+    """Résumé d'un recours pour la file du responsable (élément, décision, avis)."""
+    entry = recours.entry
+    spec = spec_map.get(entry.criterion_id)
+    item_label = None
+    if entry.item_id and spec:
+        item_label = next((i["label"] for i in spec.get("items", [])
+                           if i["id"] == entry.item_id), entry.item_id)
+    return {
+        "recours": recours,
+        "dossier": entry.dossier,
+        "entry": entry,
+        "titre": spec["label"] if spec else entry.criterion_id,
+        "item_label": item_label,
+        "intitule": (entry.payload or {}).get("intitule"),
+        "review": _review_of(entry, entry.dossier.assigned_reviewer_id),
+    }
+
+
+@router.post("/recours/fenetre")
+async def basculer_fenetre_recours(
+    request: Request,
+    user: User = RESPONSABLE,
+    db: Session = Depends(get_db),
+):
+    """Ouvre ou ferme la période de recours (publication des résultats provisoires)."""
+    campaign = get_campaign(db)
+    form = await request.form()
+    action = form.get("action")
+    if action == "ouvrir":
+        open_recours_window(db, campaign, user, form.get("recours_deadline"))
+        flash = "Période de recours ouverte : les enseignants voient le classement provisoire."
+    elif action == "fermer":
+        close_recours_window(db, campaign, user)
+        flash = "Période de recours fermée."
+    else:
+        raise HTTPException(status_code=422, detail="Action inconnue.")
+    request.session["flash"] = flash
+    return RedirectResponse("/commission/classement", status_code=303)
+
+
+@router.get("/recours")
+def recours_a_traiter(
+    request: Request,
+    user: User = RESPONSABLE,
+    db: Session = Depends(get_db),
+):
+    campaign = get_campaign(db)
+    grid = grid_for_campaign(campaign)
+    spec_map = {s["criterion_id"]: s for s in build_form_spec(grid)}
+    lignes = [_recours_ligne(spec_map, r) for r in list_open_recours(db, campaign)]
+    return templates.TemplateResponse(
+        request,
+        "commission/recours.html",
+        {
+            "user": user,
+            "campaign": campaign,
+            "grid": grid,
+            "lignes": lignes,
+            "recours_motif_labels": MOTIF_LABELS,
+            "recours_statut_labels": STATUT_LABELS,
+            "en_recours": recours_phase(campaign),
+        },
+    )
+
+
+@router.post("/recours/{recours_id}/decision")
+async def trancher_recours(
+    recours_id: int,
+    request: Request,
+    user: User = RESPONSABLE,
+    db: Session = Depends(get_db),
+):
+    recours = db.get(Recours, recours_id)
+    if recours is None:
+        raise HTTPException(status_code=404, detail="Recours introuvable.")
+    form = await request.form()
+    decide_recours(db, recours, user, form.get("decision") or "",
+                   form.get("reponse_motif") or "")
+    request.session["flash"] = (
+        "Recours traité. Pour un recours accepté, corrigez l'élément dans le dossier "
+        "(re-validation ou ajustement) : le score sera recalculé."
+    )
+    return RedirectResponse("/commission/recours", status_code=303)
 
 
 @router.get("/exports/{kind}")

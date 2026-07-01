@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block titre %}Recours{% endblock %}
+{% block contenu %}
+<hgroup>
+  <h1>Recours à traiter</h1>
+  <p>{{ grid.title_fr }} — campagne du {{ campaign.campaign_date.strftime('%d/%m/%Y') }}
+     · <span class="badge {{ campaign.statut }}">{{ campaign.statut }}</span>
+     {% if campaign.recours_ouverts %} · <span class="badge en_attente">recours ouverts</span>{% endif %}</p>
+</hgroup>
+
+{% if not en_recours %}
+<mark>La période de recours n'est pas ouverte. Ouvrez-la depuis le
+  <a href="/commission/classement">classement</a> pour publier les résultats provisoires
+  aux enseignants.</mark>
+{% endif %}
+
+{% if not lignes %}
+<p>Aucun recours en attente de traitement.</p>
+{% else %}
+<p>{{ lignes|length }} recours en attente. Accepter un recours ne modifie pas le score : après
+   acceptation, corrigez l'élément dans le dossier (re-validation, ajustement de quantité, de rang…)
+   pour déclencher le recalcul.</p>
+
+{% for l in lignes %}
+{% set e = l.entry %}
+{% set r = l.recours %}
+<article>
+  <header>
+    <strong>{{ l.dossier.candidate_ref }}</strong> — {{ l.dossier.user.nom }} {{ l.dossier.user.prenom }}
+    · <a href="/commission/dossiers/{{ l.dossier.id }}">ouvrir le dossier →</a>
+  </header>
+
+  <p><strong>Élément :</strong> {{ l.titre }}{% if l.item_label %} — {{ l.item_label }}{% endif %}
+     {% if l.intitule %}<br><small>« {{ l.intitule }} »</small>{% endif %}</p>
+
+  <p><strong>Décision actuelle :</strong>
+     {% if e.statut == 'valide' %}<span class="badge valide">Validé</span>
+     {% elif e.statut == 'rejete' %}<span class="badge rejete">Rejeté</span>
+     {% else %}<span class="badge en_attente">En attente</span>{% endif %}
+     {% if e.statut == 'rejete' and e.decision_motif %}<br><small class="warning">Motif : {{ e.decision_motif }}</small>{% endif %}
+  </p>
+
+  {% if l.review %}
+  <p><small><strong>Avis du relecteur :</strong> {{ l.review.flag }}
+     {% if l.review.observation %}— {{ l.review.observation }}{% endif %}</small></p>
+  {% endif %}
+
+  <blockquote>
+    <strong>Recours de l'enseignant</strong> — {{ recours_motif_labels[r.motif] }}<br>
+    {{ r.message }}
+    <footer><small>déposé le {{ r.created_at.strftime('%d/%m/%Y') }}</small></footer>
+  </blockquote>
+
+  <form method="post" action="/commission/recours/{{ r.id }}/decision">
+    <div class="grid">
+      <label>Décision
+        <select name="decision" required>
+          <option value="accepte">Accepter le recours</option>
+          <option value="rejete">Rejeter le recours</option>
+          <option value="irrecevable">Irrecevable (hors délai / non motivé)</option>
+        </select>
+      </label>
+    </div>
+    <label>Réponse motivée (obligatoire, art. 14-15)
+      <textarea name="reponse_motif" rows="2" required
+                placeholder="Motivez votre décision à l'attention de l'enseignant."></textarea>
+    </label>
+    <button type="submit">Enregistrer la décision</button>
+  </form>
+</article>
+{% endfor %}
+{% endif %}
+
+<p><a href="/commission/classement">← retour au classement</a></p>
+{% endblock %}

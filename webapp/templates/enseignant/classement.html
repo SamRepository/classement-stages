@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block titre %}Mon classement{% endblock %}
+{% block contenu %}
+<hgroup>
+  <h1>Classement {% if definitif %}définitif{% else %}provisoire{% endif %}</h1>
+  <p>{{ grid.title_fr }} — campagne du {{ campaign.campaign_date.strftime('%d/%m/%Y') }}
+     · Référence : <strong>{{ dossier.candidate_ref }}</strong></p>
+</hgroup>
+
+{% if not published %}
+<article>
+  <p>Le classement n'est pas encore publié. Il vous sera accessible dès l'ouverture de la
+     période de recours (résultats provisoires), puis à titre définitif après le gel du
+     classement par la commission.</p>
+</article>
+
+{% elif not ranking %}
+<article>
+  <p>Votre dossier ne figure pas dans le classement (dossier non soumis avant la clôture).</p>
+</article>
+
+{% else %}
+{% if not definitif %}
+<p class="recours-banner"><strong>⚠️ Résultats provisoires.</strong> Ce classement n'est pas
+   définitif : la période de recours est ouverte
+   {% if campaign.recours_deadline %}jusqu'au <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong>{% endif %}.
+   Il peut évoluer après le traitement des recours. Pour contester un élément, rendez-vous sur
+   <a href="/mon-dossier">votre dossier</a>.</p>
+{% else %}
+<p class="cloture-info">Classement gelé{% if campaign.frozen_at %} le
+   {{ campaign.frozen_at.strftime('%d/%m/%Y à %H:%M') }}{% endif %} : il fait foi.</p>
+{% endif %}
+
+<article>
+  <p>Vous êtes classé(e) <strong>{{ ranking.my_rank }}{{ 'ᵉʳ' if ranking.my_rank == 1 else 'ᵉ' }}
+     sur {{ ranking.taille }}</strong>
+     {% if ranking.groupe %}(groupe : {{ ranking.groupe }}){% endif %}
+     avec un score de <strong>{{ ranking.my_total|points }} points</strong>{% if ranking.my_ex_aequo %}
+     <span class="badge en_attente">ex aequo</span>{% endif %}.</p>
+
+  <table>
+    <thead><tr><th>Rang</th><th>Réf.</th><th>Candidat</th><th>Score</th><th></th></tr></thead>
+    <tbody>
+      {% for r in ranking.rows %}
+      <tr {% if r.is_me %}class="ma-ligne"{% endif %}>
+        <td><strong>{{ r.rank }}</strong></td>
+        <td>{{ r.candidate_ref }}</td>
+        <td>{{ r.nom }}{% if r.is_me %} <small>(vous)</small>{% endif %}</td>
+        <td>{{ r.total|points }}</td>
+        <td>{% if r.ex_aequo %}<span class="badge en_attente">ex aequo</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p><small>Le rang ne vaut pas décision d'attribution : la liste des bénéficiaires dépend du
+     budget de l'exercice et de la décision de la commission. Seuls le rang et le score total
+     sont publiés ; le détail des dossiers des autres candidats reste confidentiel.</small></p>
+</article>
+{% endif %}
+
+<p><a href="/mon-dossier">← retour à mon dossier</a></p>
+{% endblock %}

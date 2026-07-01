@@ -36,6 +36,38 @@
 <p>Aucun dossier soumis : pas de classement à afficher.</p>
 {% endfor %}
 
+{% if is_responsable and campaign.statut != 'gelee' %}
+<article>
+  <h3>Période de recours</h3>
+  {% if campaign.statut != 'cloturee' %}
+    <p><small>La période de recours s'ouvre une fois la saisie clôturée (résultats provisoires).
+       Statut actuel : {{ campaign.statut }}.</small></p>
+  {% elif campaign.recours_ouverts %}
+    <p>Recours <strong>ouverts</strong> : les enseignants voient le classement provisoire et
+       peuvent contester leurs éléments.
+       {% if campaign.recours_deadline %}Date limite indicative :
+       {{ campaign.recours_deadline.strftime('%d/%m/%Y') }}.{% endif %}</p>
+    <p>{% if recours_ouverts_count %}<strong>{{ recours_ouverts_count }}</strong> recours en attente —
+       <a href="/commission/recours">traiter les recours →</a>
+       {% else %}Aucun recours en attente.{% endif %}</p>
+    <form method="post" action="/commission/recours/fenetre"
+          onsubmit="return confirm('Fermer la période de recours ?');">
+      <input type="hidden" name="action" value="fermer">
+      <button type="submit" class="secondary outline">Fermer la période de recours</button>
+    </form>
+  {% else %}
+    <p>Ouvrez la période de recours pour publier le classement provisoire aux enseignants.</p>
+    <form method="post" action="/commission/recours/fenetre">
+      <input type="hidden" name="action" value="ouvrir">
+      <label>Date limite indicative (optionnelle)
+        <input type="date" name="recours_deadline">
+      </label>
+      <button type="submit">Ouvrir la période de recours</button>
+    </form>
+  {% endif %}
+</article>
+{% endif %}
+
 {% if is_responsable %}
 <article>
   <h3>Gel et documents officiels</h3>
@@ -44,6 +76,9 @@
   {% elif pending %}
     <p class="warning">Gel impossible pour l'instant : <strong>{{ pending }}</strong> élément(s)
     encore en attente de décision (revue exhaustive exigée, art. 14-15).</p>
+  {% elif recours_ouverts_count %}
+    <p class="warning">Gel impossible pour l'instant : <strong>{{ recours_ouverts_count }}</strong>
+    recours encore en instance. Traitez-les avant de figer le classement définitif.</p>
   {% elif nb_classes == 0 %}
     <p class="warning">Aucun dossier soumis : rien à geler.</p>
   {% else %}

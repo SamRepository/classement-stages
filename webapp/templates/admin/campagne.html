@@ -62,6 +62,37 @@
   {% endif %}
 </article>
 
+{% if campaign.statut != 'gelee' %}
+<article>
+  <h3>Période de recours</h3>
+  {% if campaign.statut != 'cloturee' %}
+    <p><small>La période de recours ne s'ouvre qu'une fois la saisie <strong>clôturée</strong>
+       (résultats provisoires). Statut actuel : {{ campaign.statut }}.</small></p>
+  {% elif campaign.recours_ouverts %}
+    <p>Recours <strong>ouverts</strong> : les enseignants voient le classement provisoire et
+       peuvent contester leurs éléments.
+       {% if campaign.recours_deadline %}Date limite indicative :
+       {{ campaign.recours_deadline.strftime('%d/%m/%Y') }}.{% endif %}</p>
+    <p>{% if recours_ouverts_count %}<strong>{{ recours_ouverts_count }}</strong> recours en attente
+       de traitement (par le responsable de la commission).{% else %}Aucun recours en attente.{% endif %}</p>
+    <form method="post" action="/admin/campagne/recours"
+          onsubmit="return confirm('Fermer la période de recours ?');">
+      <input type="hidden" name="action" value="fermer">
+      <button type="submit" class="secondary outline">Fermer la période de recours</button>
+    </form>
+  {% else %}
+    <p>Ouvrez la période de recours pour publier le classement provisoire aux enseignants.</p>
+    <form method="post" action="/admin/campagne/recours">
+      <input type="hidden" name="action" value="ouvrir">
+      <label>Date limite indicative (optionnelle)
+        <input type="date" name="recours_deadline">
+      </label>
+      <button type="submit">Ouvrir la période de recours</button>
+    </form>
+  {% endif %}
+</article>
+{% endif %}
+
 <article>
   <h3>Dossiers ({{ dossiers|length }})</h3>
   <table>

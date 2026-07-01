@@ -22,6 +22,7 @@ from starlette.background import BackgroundTask
 from classement.exports import export_fiches, export_html, export_pv
 from webapp.models import Campaign, Dossier, Entry, RankingSnapshot, User
 from webapp.services.dossier import log_event
+from webapp.services.recours import open_recours_count
 from webapp.services.scoring import (
     RankingResult,
     compute_ranking,
@@ -65,7 +66,7 @@ def pending_entries_count(db: Session, campaign: Campaign) -> int:
 
 
 def freeze_campaign(db: Session, campaign: Campaign, user: User) -> RankingSnapshot:
-    """Gèle le classement : tout élément des dossiers soumis doit être décidé."""
+    """Gèle le classement : tout élément décidé et aucun recours en instance."""
     if campaign.statut == "gelee":
         raise HTTPException(status_code=400, detail="Le classement est déjà gelé.")
     pending = pending_entries_count(db, campaign)
@@ -74,6 +75,13 @@ def freeze_campaign(db: Session, campaign: Campaign, user: User) -> RankingSnaps
             status_code=403,
             detail=f"Gel impossible : {pending} élément(s) encore en attente de décision "
                    "(la revue exhaustive est exigée par l'art. 14-15).",
+        )
+    recours_ouverts = open_recours_count(db, campaign)
+    if recours_ouverts:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Gel impossible : {recours_ouverts} recours encore en instance. "
+                   "Traitez tous les recours avant de figer le classement définitif.",
         )
     result = compute_ranking(db, campaign, mode="commission")
     snapshot = RankingSnapshot(campaign_id=campaign.id, payload=snapshot_payload(result))
@@ -112,6 +120,47 @@ def snapshot_rank_for(db: Session, campaign: Campaign, candidate_ref: str) -> di
                     "groupe": label,
                     "taille": len(ranked),
                 }
+    return None
+
+
+def candidate_group_ranking(
+    db: Session, campaign: Campaign, candidate_ref: str
+) -> dict | None:
+    """Classement (provisoire ou définitif) du GROUPE d'un candidat, liste complète.
+
+    Recalculé en direct (identique au snapshot après gel) : sert la vue enseignant
+    de la phase de recours. Ne renvoie que le groupe où concourt le candidat, avec
+    seulement rang / réf / nom / score total — jamais le détail des autres. Retourne
+    ``None`` si le candidat n'est pas classé (dossier non soumis).
+    """
+    result = compute_ranking(db, campaign, mode="commission")
+    noms = {
+        d.candidate_ref: f"{d.user.nom} {d.user.prenom}".strip() for d in result.dossiers
+    }
+    for key, ranked in result.groups.items():
+        if not any(r.candidate_id == candidate_ref for r in ranked):
+            continue
+        rows = [
+            {
+                "rank": r.rank,
+                "candidate_ref": r.candidate_id,
+                "nom": noms.get(r.candidate_id, "?"),
+                "total": r.total,
+                "ex_aequo": r.ex_aequo,
+                "is_me": r.candidate_id == candidate_ref,
+            }
+            for r in ranked
+        ]
+        me = next(r for r in rows if r["is_me"])
+        # clé « grille / population[ / groupe] » : la grille est déjà à l'écran.
+        return {
+            "groupe": " · ".join(str(part) for part in key[1:]),
+            "rows": rows,
+            "taille": len(ranked),
+            "my_rank": me["rank"],
+            "my_total": me["total"],
+            "my_ex_aequo": me["ex_aequo"],
+        }
     return None
 
 

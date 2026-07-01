@@ -19,10 +19,19 @@ from sqlalchemy.orm import Session
 from webapp.auth import require_role
 from webapp.db import get_db
 from webapp.forms.grid_form import build_form_spec
-from webapp.models import Benefit, Dossier, Entry, User
+from webapp.models import Benefit, Dossier, Entry, Recours, User
 from webapp.services.archive import build_dossier_archive
 from webapp.services.dossier import assert_editable, ensure_dossier, get_campaign, submit_dossier
-from webapp.services.exports import snapshot_rank_for
+from webapp.services.exports import candidate_group_ranking, snapshot_rank_for
+from webapp.services.recours import (
+    MOTIF_LABELS,
+    RECOURS_MOTIFS,
+    STATUT_LABELS,
+    active_recours,
+    file_recours,
+    recours_phase,
+    withdraw_recours,
+)
 from webapp.services.scoring import compute_score, get_institution, grid_for_campaign
 from webapp.services.uploads import delete_justificatif, save_justificatif
 from webapp.templating import templates
@@ -84,6 +93,59 @@ def _section_response(
     return HTMLResponse(html)
 
 
+def _entry_display(spec_map: dict, entry: Entry) -> tuple[str, str]:
+    """(titre, description courte) d'un élément déclaré, pour la liste des recours."""
+    spec = spec_map.get(entry.criterion_id)
+    titre = spec["label"] if spec else entry.criterion_id
+    payload = entry.payload or {}
+    parts: list[str] = []
+    if entry.item_id and spec:
+        parts.append(next((i["label"] for i in spec.get("items", [])
+                           if i["id"] == entry.item_id), entry.item_id))
+    if payload.get("intitule"):
+        parts.append(str(payload["intitule"]))
+    elif spec and spec.get("widget") == "enum" and payload.get("value"):
+        parts.append(next((o["label"] for o in spec.get("options", [])
+                          if o["value"] == payload["value"]), str(payload["value"])))
+    if payload.get("date"):
+        parts.append(str(payload["date"]))
+    return titre, " — ".join(parts)
+
+
+def _recours_rows(dossier: Dossier, grid: dict) -> list[dict]:
+    """Éléments du dossier avec leur décision et l'éventuel recours en cours."""
+    spec_map = {s["criterion_id"]: s for s in build_form_spec(grid)}
+    rows = []
+    for entry in dossier.entries:
+        titre, desc = _entry_display(spec_map, entry)
+        rows.append({"entry": entry, "titre": titre, "desc": desc,
+                     "recours": active_recours(entry)})
+    return rows
+
+
+def _recours_context(dossier: Dossier, grid: dict, en_recours: bool) -> dict:
+    rows = _recours_rows(dossier, grid)
+    return {
+        "recours_rows": rows,
+        "show_recours": en_recours or any(r["recours"] for r in rows),
+        "recours_motifs": [(m, MOTIF_LABELS[m]) for m in RECOURS_MOTIFS],
+        "recours_motif_labels": MOTIF_LABELS,
+        "recours_statut_labels": STATUT_LABELS,
+    }
+
+
+def _recours_panel_response(
+    request: Request, db: Session, dossier: Dossier, grid: dict
+) -> HTMLResponse:
+    db.refresh(dossier)
+    en_recours = recours_phase(dossier.campaign)
+    html = templates.get_template("enseignant/fragments/recours.html").render(
+        request=request, dossier=dossier, campaign=dossier.campaign,
+        en_recours=en_recours, **_recours_context(dossier, grid, en_recours),
+    )
+    return HTMLResponse(html)
+
+
 @router.get("")
 def page_dossier(
     request: Request,
@@ -96,6 +158,7 @@ def page_dossier(
     resultat = None
     if campaign.statut == "gelee":
         resultat = snapshot_rank_for(db, campaign, dossier.candidate_ref)
+    en_recours = recours_phase(campaign)
     return templates.TemplateResponse(
         request,
         "enseignant/dossier.html",
@@ -109,6 +172,8 @@ def page_dossier(
             "sections": _sections(dossier, grid),
             "editable": dossier.statut == "brouillon",
             "resultat": resultat,
+            "en_recours": en_recours,
+            **_recours_context(dossier, grid, en_recours),
         },
     )
 
@@ -500,6 +565,67 @@ def supprime_activite(
     db.commit()
     db.refresh(dossier)
     return _section_response(request, db, dossier, grid, criterion_id)
+
+
+@router.get("/classement")
+def page_classement(
+    request: Request,
+    user: User = Depends(require_role("enseignant")),
+    db: Session = Depends(get_db),
+):
+    """Classement (provisoire pendant les recours, définitif après gel) du groupe.
+
+    N'affiche la liste qu'une fois les résultats publiés : phase de recours
+    ouverte, ou classement gelé. Sinon, un message indique que le classement
+    n'est pas encore publié.
+    """
+    campaign, dossier, grid = _context(db, user)
+    published = recours_phase(campaign) or campaign.statut == "gelee"
+    ranking = candidate_group_ranking(db, campaign, dossier.candidate_ref) if published else None
+    return templates.TemplateResponse(
+        request,
+        "enseignant/classement.html",
+        {
+            "user": user,
+            "campaign": campaign,
+            "grid": grid,
+            "dossier": dossier,
+            "published": published,
+            "definitif": campaign.statut == "gelee",
+            "ranking": ranking,
+        },
+    )
+
+
+@router.post("/recours/{entry_id}")
+async def deposer_recours(
+    entry_id: int,
+    request: Request,
+    user: User = Depends(require_role("enseignant")),
+    db: Session = Depends(get_db),
+):
+    """Dépose un recours sur l'un des éléments du dossier (phase de recours)."""
+    _, dossier, grid = _context(db, user)
+    entry = _owned_entry(db, dossier, entry_id)
+    form = await request.form()
+    file_recours(db, entry, user, form.get("motif") or "", form.get("message") or "")
+    return _recours_panel_response(request, db, dossier, grid)
+
+
+@router.delete("/recours/{recours_id}")
+def retirer_recours(
+    recours_id: int,
+    request: Request,
+    user: User = Depends(require_role("enseignant")),
+    db: Session = Depends(get_db),
+):
+    """Retire un recours encore en attente."""
+    _, dossier, grid = _context(db, user)
+    recours = db.get(Recours, recours_id)
+    if recours is None or recours.entry.dossier_id != dossier.id:
+        raise HTTPException(status_code=404)
+    withdraw_recours(db, recours, user)
+    return _recours_panel_response(request, db, dossier, grid)
 
 
 @router.post("/soumettre")

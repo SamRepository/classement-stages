@@ -40,6 +40,19 @@ ROLES = ("enseignant", "commission", "responsable_commission", "admin")
 # explication = besoin d'explication / justificatif. Sans effet sur le score
 # (purement consultatif pour le responsable).
 REVIEW_FLAGS = ("ok", "pas_ok", "explication")
+# Recours de l'enseignant sur un élément (phase de contestation, après
+# publication des résultats provisoires). ``ouvert`` = déposé, en attente ;
+# ``accepte``/``rejete`` = tranché par le responsable (motivation obligatoire) ;
+# ``irrecevable`` = hors délai / non motivé ; ``retire`` = retiré par l'enseignant.
+RECOURS_STATUTS = ("ouvert", "accepte", "rejete", "irrecevable", "retire")
+# Nature du recours (« liste de choix » présentée à l'enseignant).
+RECOURS_MOTIFS = (
+    "desaccord_rejet",       # je conteste le rejet de l'élément
+    "sous_evaluation",       # l'élément vaut plus de points que retenu
+    "erreur_appreciation",   # erreur d'appréciation / de calcul
+    "erreur_saisie",         # erreur matérielle dans ma déclaration
+    "autre",
+)
 
 
 def _now() -> datetime:
@@ -64,6 +77,15 @@ class Campaign(Base):
     date_cloture: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     statut: Mapped[str] = mapped_column(String(20), default="ouverte")
     frozen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Phase de recours : ouverte manuellement par le responsable une fois les
+    # résultats provisoires publiés (campagne « cloturee »). Tant qu'elle est
+    # ouverte, l'enseignant voit le classement provisoire et peut contester ses
+    # éléments, et le gel est bloqué. La date limite est purement indicative
+    # (aucun délai réglementaire dans l'arrêté 345).
+    recours_ouverts: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("0")
+    )
+    recours_deadline: Mapped[date | None] = mapped_column(Date)
 
     dossiers: Mapped[list["Dossier"]] = relationship(back_populates="campaign")
 
@@ -166,6 +188,9 @@ class Entry(Base):
     reviews: Mapped[list["ElementReview"]] = relationship(
         back_populates="entry", cascade="all, delete-orphan"
     )
+    recours: Mapped[list["Recours"]] = relationship(
+        back_populates="entry", cascade="all, delete-orphan", order_by="Recours.id"
+    )
 
     __table_args__ = (
         CheckConstraint(f"statut IN {ENTRY_STATUTS}", name="ck_entry_statut"),
@@ -219,6 +244,51 @@ class ElementReview(Base):
     __table_args__ = (
         UniqueConstraint("entry_id", "reviewer_id", name="uq_review_entry_reviewer"),
         CheckConstraint(f"flag IN {REVIEW_FLAGS}", name="ck_review_flag"),
+    )
+
+
+class Recours(Base):
+    """Recours de l'enseignant contre une décision de la commission sur un élément.
+
+    Déposé pendant la phase de recours (résultats provisoires publiés,
+    ``campaign.recours_ouverts``). L'enseignant motive sa contestation d'un
+    élément (``motif`` dans une liste de choix + ``message`` libre, sans pièce
+    jointe). Le responsable tranche : ``accepte`` / ``rejete`` / ``irrecevable``,
+    avec ``reponse_motif`` obligatoire (art. 14-15). Un recours accepté n'agit
+    pas sur le score par lui-même : le responsable corrige alors l'élément avec
+    les outils d'examen existants (re-validation / ajustement), et le moteur
+    recalcule. L'enseignant peut ``retire`` un recours tant qu'il est ``ouvert``.
+    """
+
+    __tablename__ = "recours"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    entry_id: Mapped[int] = mapped_column(ForeignKey("entries.id"))
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    motif: Mapped[str] = mapped_column(String(30))
+    message: Mapped[str] = mapped_column(Text)
+    statut: Mapped[str] = mapped_column(String(20), default="ouvert")
+    reponse_motif: Mapped[str | None] = mapped_column(Text)
+    decided_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now
+    )
+
+    entry: Mapped[Entry] = relationship(back_populates="recours")
+    created_by_user: Mapped[User] = relationship(foreign_keys=[created_by])
+    decided_by_user: Mapped[User | None] = relationship(foreign_keys=[decided_by])
+
+    __table_args__ = (
+        CheckConstraint(f"statut IN {RECOURS_STATUTS}", name="ck_recours_statut"),
+        CheckConstraint(f"motif IN {RECOURS_MOTIFS}", name="ck_recours_motif"),
+        # Toute décision qui tranche le recours est motivée (art. 14-15).
+        CheckConstraint(
+            "statut NOT IN ('accepte', 'rejete', 'irrecevable') "
+            "OR reponse_motif IS NOT NULL",
+            name="ck_recours_reponse_motive",
+        ),
     )
 
 

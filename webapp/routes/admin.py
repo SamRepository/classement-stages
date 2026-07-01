@@ -17,7 +17,7 @@ from starlette.datastructures import UploadFile
 from webapp.auth import require_role
 from webapp.config import get_settings
 from webapp.db import Base, get_db
-from webapp.models import Benefit, Dossier, ElementReview, Entry, Event, User
+from webapp.models import Benefit, Dossier, ElementReview, Entry, Event, Recours, User
 from webapp.security import generate_password, hash_password
 from webapp.services import backup
 from webapp.services.accounts import import_accounts, import_benefits
@@ -28,6 +28,11 @@ from webapp.services.dossier import (
     reopen_dossier,
 )
 from webapp.services.mailer import notify_new_accounts
+from webapp.services.recours import (
+    close_recours_window,
+    open_recours_count,
+    open_recours_window,
+)
 from webapp.services.scoring import get_institution
 from webapp.templating import templates
 
@@ -107,6 +112,10 @@ def _donnees_liees(db: Session, u: User) -> list[str]:
          select(func.count(Entry.id)).where(Entry.decided_by == u.id)),
         ("avis de relecture",
          select(func.count(ElementReview.id)).where(ElementReview.reviewer_id == u.id)),
+        ("recours déposé(s)",
+         select(func.count(Recours.id)).where(Recours.created_by == u.id)),
+        ("recours traité(s)",
+         select(func.count(Recours.id)).where(Recours.decided_by == u.id)),
         ("historique de bénéfices",
          select(func.count(Benefit.id)).where(Benefit.user_id == u.id)),
         ("journal d'activité",
@@ -406,7 +415,8 @@ def campagne(request: Request, user: User = ADMIN, db: Session = Depends(get_db)
         "admin/campagne.html",
         {"user": user, "campaign": camp, "dossiers": dossiers,
          "departements": institution.get("departements", []),
-         "populations": institution.get("populations", [])},
+         "populations": institution.get("populations", []),
+         "recours_ouverts_count": open_recours_count(db, camp)},
     )
 
 
@@ -472,6 +482,26 @@ async def maj_campagne(request: Request, user: User = ADMIN, db: Session = Depen
         n = auto_submit_drafts(db, camp, user)
         if n:
             flash += f" {n} dossier(s) en brouillon soumis automatiquement."
+    request.session["flash"] = flash
+    return RedirectResponse("/admin/campagne", status_code=303)
+
+
+@router.post("/campagne/recours")
+async def maj_fenetre_recours(request: Request, user: User = ADMIN, db: Session = Depends(get_db)):
+    """Ouvre / ferme la période de recours (même effet que côté responsable)."""
+    camp = get_campaign(db)
+    if camp.statut == "gelee":
+        raise HTTPException(status_code=403, detail="Campagne gelée : paramètres figés.")
+    form = await request.form()
+    action = form.get("action")
+    if action == "ouvrir":
+        open_recours_window(db, camp, user, form.get("recours_deadline"))
+        flash = "Période de recours ouverte : les enseignants voient le classement provisoire."
+    elif action == "fermer":
+        close_recours_window(db, camp, user)
+        flash = "Période de recours fermée."
+    else:
+        raise HTTPException(status_code=422, detail="Action inconnue.")
     request.session["flash"] = flash
     return RedirectResponse("/admin/campagne", status_code=303)
 

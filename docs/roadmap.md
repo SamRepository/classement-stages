@@ -101,6 +101,21 @@ dossier web ≡ dict moteur pour chaque type de critère.
   supérieur structurel/fonctionnel, ISBN+URL pour les livres) ; **auto-soumission** des
   brouillons à la fermeture de la saisie ; **téléchargement du dossier complet en archive
   ZIP** (récapitulatif HTML imprimable + justificatifs PDF) ; 196 tests.
+- **Phase de recours** (01/07/2026) : entre l'examen commission et le gel, le responsable
+  **ouvre une fenêtre de recours** (campagne clôturée + `recours_ouverts`, date limite
+  indicative) qui **publie le classement provisoire** aux enseignants — chacun voit la
+  **liste complète de son groupe** (rang, réf, nom, score total ; jamais le détail des
+  autres) via `/mon-dossier/classement`, avec bandeau « résultats provisoires ». L'enseignant
+  **conteste n'importe quel élément** (motif dans une liste de choix + message, **texte
+  seul**, un recours ouvert par élément, retrait possible tant qu'il n'est pas tranché). Le
+  **responsable** traite la file des recours (`/commission/recours`) : accepté / rejeté /
+  irrecevable, **réponse motivée obligatoire** (art. 14-15). Accepter un recours n'agit pas
+  sur le score : le responsable **corrige alors l'élément** avec les outils d'examen existants
+  (re-validation, ajustement), et le moteur recalcule. Le **gel est bloqué** tant qu'un recours
+  reste ouvert. **Notifications e-mail** (mailer stdlib, silencieuses hors-ligne) : dépôt →
+  responsable(s), décision → enseignant. La fenêtre de recours se pilote depuis l'espace
+  **responsable** (classement) **ou l'espace admin** (campagne). Tout est tracé au journal ;
+  21 tests dédiés.
 
 **Reste à faire** :
 - déploiement effectif sur l'instance Coolify (PostgreSQL + volume `/data/uploads` +

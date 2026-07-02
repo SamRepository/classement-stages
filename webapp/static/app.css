@@ -101,6 +101,14 @@ small { color: var(--pico-muted-color, #6c757d); }
 .badge.recours-irrecevable { background: #e2e3e5; color: #41464b; }
 .badge.recours-retire { background: #e2e3e5; color: #41464b; }
 
+/* Tableau de bord : histogrammes de distribution par candidat */
+.histogramme { font-size: .85rem; }
+.hist-ligne { display: flex; align-items: center; gap: .4rem; margin: .15rem 0; }
+.hist-cle { width: 1.6rem; text-align: right; color: #555; }
+.hist-barre { display: inline-block; height: .8rem; min-width: 2px; border-radius: 3px;
+  background: #0d6efd; transition: width .2s; }
+.hist-val { color: #555; }
+
 /* Phase de recours : bandeau « résultats provisoires » et ligne du candidat */
 .recours-banner { background: #cfe2ff; color: #084298; border: 1px solid #9ec5fe;
   border-left: 4px solid #0d6efd; border-radius: 8px; padding: .6rem 1rem; margin: 0 0 1rem; }

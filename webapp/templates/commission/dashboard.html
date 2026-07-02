@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord{% endblock %}
+{% block contenu %}
+<hgroup>
+  <h1>Tableau de bord</h1>
+  <p>{{ grid.title_fr }} — campagne du {{ campaign.campaign_date.strftime('%d/%m/%Y') }}
+     · <span class="badge {{ campaign.statut }}">{{ campaign.statut }}</span>
+     {% if campaign.frozen_at %} · gelé le {{ campaign.frozen_at.strftime('%d/%m/%Y %H:%M') }}{% endif %}</p>
+</hgroup>
+
+<h2>Avancement administratif</h2>
+
+<article>
+  <h3>Candidatures</h3>
+  <div class="grid">
+    <div><strong>{{ dossiers.total }}</strong><br><small>candidatures</small></div>
+    <div><strong>{{ dossiers.soumis }}</strong><br><small>soumises</small></div>
+    <div><strong>{{ dossiers.brouillon }}</strong><br><small>en brouillon</small></div>
+    <div><strong>{{ dossiers.gele }}</strong><br><small>gelées</small></div>
+  </div>
+  <p><small>
+    {{ prets_a_geler }} dossier(s) soumis prêt(s) à geler (tous les éléments décidés)
+    · {{ jamais_connectes }} enseignant(s) jamais connecté(s).
+  </small></p>
+</article>
+
+<article>
+  <h3>Examen des éléments</h3>
+  <p><small>Éléments des dossiers soumis ou gelés (ceux effectivement examinés par la commission).</small></p>
+  <div class="grid">
+    <div><strong>{{ examen.total }}</strong><br><small>éléments</small></div>
+    <div><strong>{{ examen.valide }}</strong><br><small>validés</small></div>
+    <div><strong>{{ examen.en_attente }}</strong><br><small>en attente</small></div>
+    <div><strong>{{ examen.rejete }}</strong><br><small>rejetés</small></div>
+  </div>
+  {% if examen.total %}
+  <progress value="{{ examen.valide + examen.rejete }}" max="{{ examen.total }}"></progress>
+  <p><small>{{ examen.valide + examen.rejete }} / {{ examen.total }} éléments décidés.</small></p>
+  {% endif %}
+</article>
+
+<article>
+  <h3>Recours</h3>
+  {% if recours.total %}
+  <div class="grid">
+    <div><strong>{{ recours.ouvert }}</strong><br><small>en attente</small></div>
+    <div><strong>{{ recours.accepte }}</strong><br><small>acceptés</small></div>
+    <div><strong>{{ recours.rejete }}</strong><br><small>rejetés</small></div>
+    <div><strong>{{ recours.irrecevable + recours.retire }}</strong><br><small>irrecevables / retirés</small></div>
+  </div>
+  {% else %}
+  <p><small>Aucun recours déposé pour cette campagne.</small></p>
+  {% endif %}
+</article>
+
+{% if is_responsable %}
+<article>
+  <h3>Relecture <small>(réservé au responsable)</small></h3>
+  <p><small>
+    {{ relecture.avis_total }} / {{ relecture.elements_total }} avis posés
+    · {{ relecture.non_affectes }} dossier(s) soumis non affecté(s).
+  </small></p>
+  {% if relecture.lignes %}
+  <table>
+    <thead><tr><th>Relecteur</th><th>Dossiers affectés</th><th>Avis posés</th></tr></thead>
+    <tbody>
+      {% for l in relecture.lignes %}
+      <tr>
+        <td>{{ l.membre.nom }} {{ l.membre.prenom }}</td>
+        <td>{{ l.dossiers }}</td>
+        <td>{{ l.avis }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p><small>Aucun membre relecteur actif.</small></p>
+  {% endif %}
+  <p><a href="/commission/affectations">Gérer les affectations →</a></p>
+</article>
+{% endif %}
+
+<h2>Production scientifique
+  <a href="/commission/tableau-de-bord/export.csv" role="button" class="outline"
+     style="float:right;font-size:.8rem">Exporter en CSV</a></h2>
+<p><small>
+  Volumétrie des dossiers soumis ou gelés. Deux colonnes :
+  <strong>déclaré</strong> = tout ce qui est saisi ;
+  <strong>retenu</strong> = hors éléments rejetés par la commission. Les deux
+  convergent à mesure que l'examen avance.
+</small></p>
+
+{% if scientifique %}
+<div class="grid dashboard-sci">
+  {% for section in scientifique %}
+  <article>
+    <h3>{{ section.label }}</h3>
+    <table>
+      <thead><tr><th></th><th>Déclaré</th><th>Retenu</th></tr></thead>
+      <tbody>
+        {% if not section.single %}
+        {% for ligne in section.lignes %}
+        <tr>
+          <td>{{ ligne.label }}</td>
+          <td>{{ ligne.declare }}</td>
+          <td>{{ ligne.retenu }}{% if ligne.retenu != ligne.declare %}
+            <span class="badge rejete">-{{ ligne.declare - ligne.retenu }}</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+        {% endif %}
+        <tr>
+          <td><strong>{% if section.single %}{{ section.lignes[0].label }}{% else %}Total{% endif %}</strong></td>
+          <td><strong>{{ section.declare }}</strong></td>
+          <td><strong>{{ section.retenu }}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<p>Aucun élément scientifique déclaré pour l'instant (aucun dossier soumis).</p>
+{% endif %}
+
+{% if top_contributeurs %}
+<article>
+  <h3>Meilleurs contributeurs</h3>
+  <p><small>Candidats les plus productifs (nombre total d'éléments scientifiques retenus).</small></p>
+  <table>
+    <thead><tr><th>#</th><th>Réf.</th><th>Candidat</th><th>Population</th>
+      <th>Total retenu</th><th>Détail</th></tr></thead>
+    <tbody>
+      {% for c in top_contributeurs %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ c.ref }}</td>
+        <td>{{ c.nom }}</td>
+        <td>{{ c.population }}</td>
+        <td><strong>{{ c.total }}</strong></td>
+        <td><small>{% for d in c.detail %}{{ d.label }} : {{ d.count }}{% if not loop.last %} · {% endif %}{% endfor %}</small></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</article>
+{% endif %}
+
+{% if histogrammes %}
+<article>
+  <h3>Distribution par candidat</h3>
+  <p><small>Nombre de candidats selon le nombre d'éléments retenus, poste par poste
+     (dossiers soumis ou gelés).</small></p>
+  <div class="grid">
+    {% for h in histogrammes %}
+    <div class="histogramme">
+      <strong>{{ h.label }}</strong>
+      {% for tranche, nb in h.buckets.items() %}
+      <div class="hist-ligne">
+        <span class="hist-cle">{{ tranche }}</span>
+        <span class="hist-barre" style="width:{{ (nb / h.max * 100) if h.max else 0 }}%"></span>
+        <span class="hist-val">{{ nb }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</article>
+{% endif %}
+
+<p><a href="/commission/dossiers">← retour aux dossiers</a></p>
+{% endblock %}

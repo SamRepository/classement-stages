@@ -22,10 +22,12 @@
         <li><a href="/mon-dossier">Mon dossier</a></li>
         <li><a href="/mon-dossier/classement">Mon classement</a></li>
       {% elif user.role == 'commission' %}
+        <li><a href="/commission/tableau-de-bord">Tableau de bord</a></li>
         <li><a href="/commission/dossiers?affectation=moi">Mes dossiers</a></li>
         <li><a href="/commission/dossiers">Tous les dossiers</a></li>
         <li><a href="/commission/classement">Classement</a></li>
       {% elif user.role == 'responsable_commission' %}
+        <li><a href="/commission/tableau-de-bord">Tableau de bord</a></li>
         <li><a href="/commission/affectations">Affectations</a></li>
         <li><a href="/commission/dossiers">Dossiers</a></li>
         <li><a href="/commission/classement">Classement</a></li>

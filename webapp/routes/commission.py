@@ -19,7 +19,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -29,6 +29,7 @@ from webapp.auth import require_role
 from webapp.db import get_db
 from webapp.forms.grid_form import build_form_spec
 from webapp.models import REVIEW_FLAGS, Dossier, ElementReview, Entry, Recours, User
+from webapp.services.dashboard import build_dashboard, dashboard_csv
 from webapp.services.dossier import get_campaign, log_event
 from webapp.services.exports import export_response, freeze_campaign, pending_entries_count
 from webapp.services.recours import (
@@ -162,6 +163,48 @@ def _membres(db: Session) -> list[User]:
             .where(User.role == "commission", User.actif.is_(True))
             .order_by(User.nom, User.prenom)
         )
+    )
+
+
+@router.get("/tableau-de-bord")
+def tableau_de_bord(
+    request: Request,
+    user: User = LECTURE,
+    db: Session = Depends(get_db),
+):
+    """Vue de pilotage : KPIs administratifs + volumétrie scientifique.
+
+    Accessible aux membres et au responsable ; les blocs d'organisation
+    (répartition de la relecture) ne sont montrés qu'au responsable (gabarit).
+    """
+    campaign = get_campaign(db)
+    data = build_dashboard(db, campaign)
+    return templates.TemplateResponse(
+        request,
+        "commission/dashboard.html",
+        {
+            "user": user,
+            "is_responsable": _is_responsable(user),
+            "recours_statut_labels": STATUT_LABELS,
+            **data,
+        },
+    )
+
+
+@router.get("/tableau-de-bord/export.csv")
+def tableau_de_bord_csv(
+    user: User = LECTURE,
+    db: Session = Depends(get_db),
+):
+    """Export CSV du tableau de bord (Excel FR : séparateur ``;``, BOM UTF-8)."""
+    campaign = get_campaign(db)
+    # BOM pour qu'Excel reconnaisse l'UTF-8 (accents).
+    content = "﻿" + dashboard_csv(db, campaign)
+    filename = f"tableau-de-bord-{campaign.grid_id}-{campaign.campaign_date.isoformat()}.csv"
+    return Response(
+        content=content,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

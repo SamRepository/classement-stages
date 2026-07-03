@@ -27,6 +27,34 @@
 .bascule-mdp .icone-masquer { display: none; }
 .bascule-mdp[aria-pressed="true"] .icone-afficher { display: none; }
 .bascule-mdp[aria-pressed="true"] .icone-masquer { display: block; }
+
+/* Overlay de progression d'envoi de fichier (PDF volumineux). Voile plein écran
+   + panneau central avec spinner et barre de progression réelle. */
+.upload-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, .45);
+}
+.upload-overlay[hidden] { display: none; }
+.upload-panneau {
+  background: var(--pico-background-color, #fff); color: var(--pico-color, #111);
+  border-radius: 12px; padding: 1.5rem 1.75rem; width: min(92vw, 22rem);
+  text-align: center; box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
+}
+.upload-spinner {
+  width: 2.5rem; height: 2.5rem; margin: 0 auto .75rem;
+  border: .28rem solid var(--pico-muted-border-color, #d7dde3);
+  border-top-color: var(--pico-primary, #1095c1);
+  border-radius: 50%; animation: upload-spin .8s linear infinite;
+}
+@keyframes upload-spin { to { transform: rotate(360deg); } }
+.upload-titre { font-weight: 600; margin: 0 0 .25rem; }
+.upload-nom { margin: 0 0 .75rem; font-size: .9rem; word-break: break-word; color: var(--pico-muted-color, #6c757d); }
+.upload-bar { height: .55rem; background: var(--pico-muted-border-color, #e1e6ea); border-radius: 999px; overflow: hidden; }
+.upload-bar-fill { height: 100%; width: 0; background: var(--pico-primary, #1095c1); border-radius: 999px; transition: width .15s ease; }
+.upload-pct { margin: .5rem 0 0; font-variant-numeric: tabular-nums; font-weight: 600; }
+.upload-hint { margin: .5rem 0 0; }
+@media (prefers-reduced-motion: reduce) { .upload-spinner { animation: none; } }
 small { color: var(--pico-muted-color, #6c757d); }
 
 /* Date de fermeture de la plateforme (en-tête Mon dossier) */

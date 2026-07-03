@@ -9,6 +9,19 @@
   <script src="/static/htmx.min.js?v={{ static_version }}" defer></script>
 </head>
 <body>
+<!-- Overlay de progression d'envoi de fichier (affiché en JS pendant un upload PDF).
+     Sans JS, il reste masqué et l'envoi fonctionne comme un formulaire classique. -->
+<div id="upload-overlay" class="upload-overlay" hidden role="alertdialog"
+     aria-live="assertive" aria-label="Envoi du fichier en cours">
+  <div class="upload-panneau">
+    <div class="upload-spinner" aria-hidden="true"></div>
+    <p class="upload-titre">Envoi du fichier…</p>
+    <p class="upload-nom"></p>
+    <div class="upload-bar"><div class="upload-bar-fill"></div></div>
+    <p class="upload-pct">0 %</p>
+    <p class="upload-hint"><small>Merci de patienter, ne fermez pas cette page.</small></p>
+  </div>
+</div>
 <header class="container">
   <nav class="site-nav">
     <a href="/" class="marque">
@@ -84,6 +97,78 @@
   document.body.addEventListener('htmx:responseError', function (e) {
     alert(e.detail.xhr.responseText || 'Erreur inattendue — réessayez.');
   });
+
+  // Overlay de progression pendant l'envoi d'un PDF. Les formulaires du portail
+  // passent par HTMX : `htmx:xhr:progress` donne l'avancement réel de la montée
+  // du fichier (loaded/total). On n'affiche l'overlay que si le formulaire
+  // déclencheur porte un fichier sélectionné — sinon un simple changement de
+  // valeur ferait clignoter la fenêtre pour rien.
+  (function () {
+    // Pas de garde sur window.htmx : ce script inline s'exécute avant le htmx
+    // chargé en `defer`. On n'utilise que des écouteurs d'événements htmx (qui
+    // remontent jusqu'à document.body), aucune fonction de l'API htmx.
+    var overlay = document.getElementById('upload-overlay');
+    if (!overlay) return;
+    var barre = overlay.querySelector('.upload-bar-fill');
+    var pct = overlay.querySelector('.upload-pct');
+    var nom = overlay.querySelector('.upload-nom');
+    var actif = false;   // un envoi de fichier est en cours
+    var monte = false;   // le fichier a fini de monter (100 %) → phase serveur
+    var MIN_AFFICHAGE = 600;  // ms — durée minimale visible, sinon un envoi rapide
+    var afficheA = 0;         //      (petit fichier, réseau rapide) ne ferait qu'un flash
+    var timerCache = null;
+
+    // Fichier sélectionné dans le formulaire qui déclenche la requête, s'il existe.
+    function fichierEnvoye(elt) {
+      var form = elt && elt.closest ? elt.closest('form') : null;
+      if (!form) return null;
+      var inputs = form.querySelectorAll('input[type="file"]');
+      for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].files && inputs[i].files.length > 0) return inputs[i].files[0];
+      }
+      return null;
+    }
+
+    function cacher() {
+      if (!actif && overlay.hidden) return;  // rien à cacher (requête sans fichier)
+      var reste = MIN_AFFICHAGE - (Date.now() - afficheA);
+      var faire = function () { actif = false; monte = false; overlay.hidden = true; timerCache = null; };
+      if (reste > 0) { timerCache = setTimeout(faire, reste); }  // laisse l'overlay visible
+      else { faire(); }
+    }
+
+    document.body.addEventListener('htmx:beforeRequest', function (e) {
+      var f = fichierEnvoye(e.detail.elt);
+      if (!f) return;
+      if (timerCache) { clearTimeout(timerCache); timerCache = null; }  // annule un masquage en attente
+      actif = true; monte = false;
+      nom.textContent = f.name;
+      barre.style.width = '0%';
+      pct.textContent = '0 %';
+      afficheA = Date.now();
+      overlay.hidden = false;
+    });
+
+    document.body.addEventListener('htmx:xhr:progress', function (e) {
+      if (!actif || monte) return;  // après 100 %, les events suivants = réponse
+      if (!e.detail.lengthComputable || !e.detail.total) return;
+      var p = Math.round((e.detail.loaded / e.detail.total) * 100);
+      if (p >= 100) {
+        p = 100; monte = true;
+        pct.textContent = 'Traitement…';
+      } else {
+        pct.textContent = p + ' %';
+      }
+      barre.style.width = p + '%';
+    });
+
+    // afterRequest couvre succès et erreur ; les trois autres sont des filets
+    // pour ne jamais laisser l'overlay bloquer la page.
+    document.body.addEventListener('htmx:afterRequest', cacher);
+    document.body.addEventListener('htmx:responseError', cacher);
+    document.body.addEventListener('htmx:sendError', cacher);
+    document.body.addEventListener('htmx:timeout', cacher);
+  })();
 
   // Bouton œil afficher/masquer sur chaque champ mot de passe. Posé en JS pour
   // ne pas alourdir les gabarits ; sans JS, le champ reste un mot de passe normal.

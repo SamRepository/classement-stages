@@ -80,6 +80,36 @@
 </article>
 {% endif %}
 
+<h2>Pays de destination</h2>
+{% if destinations.total %}
+<article>
+  <div class="destinations">
+    <svg viewBox="0 0 200 200" class="dest-pie" role="img"
+         aria-label="Répartition des pays de destination">
+      {% if destinations.full %}
+      <circle cx="100" cy="100" r="100" fill="{{ destinations.full.color }}"></circle>
+      {% else %}
+      {% for s in destinations.slices %}
+      <path d="{{ s.path }}" fill="{{ s.color }}" stroke="#fff" stroke-width="1.5"></path>
+      {% endfor %}
+      {% endif %}
+    </svg>
+    <ul class="dest-legend">
+      {% for s in destinations.slices %}
+      <li>
+        <span class="dest-swatch" style="background:{{ s.color }}"></span>
+        <span class="dest-pays">{{ s.pays }}</span>
+        <span class="dest-val">{{ s.count }} · {{ s.pct }} %</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  <p><small>{{ destinations.total }} dossier(s) avec pays renseigné (soumis ou gelés).</small></p>
+</article>
+{% else %}
+<p>Aucun pays de destination renseigné pour l'instant.</p>
+{% endif %}
+
 <h2>Production scientifique
   <a href="/commission/tableau-de-bord/export.csv" role="button" class="outline"
      style="float:right;font-size:.8rem">Exporter en CSV</a></h2>
@@ -91,7 +121,7 @@
 </small></p>
 
 {% if scientifique %}
-<div class="grid dashboard-sci">
+<div class="dashboard-sci">
   {% for section in scientifique %}
   <article>
     <h3>{{ section.label }}</h3>
@@ -150,7 +180,7 @@
   <h3>Distribution par candidat</h3>
   <p><small>Nombre de candidats selon le nombre d'éléments retenus, poste par poste
      (dossiers soumis ou gelés).</small></p>
-  <div class="grid">
+  <div class="dashboard-hist">
     {% for h in histogrammes %}
     <div class="histogramme">
       <strong>{{ h.label }}</strong>

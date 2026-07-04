@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import csv
 import io
+import math
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -257,6 +258,71 @@ def _top_contributors(candidate_rows: list[dict], sections: list[dict],
     return top
 
 
+# Palette catégorielle validée (skill dataviz, mode clair), assignée dans l'ordre
+# des slots — jamais cyclée. Au-delà de 7 pays, le reste est regroupé en « Autres »
+# (8ᵉ slot), pour rester dans les couleurs validées et lisibles.
+PIE_COLORS = (
+    "#2a78d6", "#1baf7a", "#eda100", "#008300",
+    "#4a3aa7", "#e34948", "#e87ba4", "#eb6834",
+)
+PIE_MAX_SLICES = 7
+
+
+def _destinations(db: Session, campaign_id: int) -> dict:
+    """Répartition des pays de destination (dossiers soumis/gelés) pour le camembert.
+
+    Renvoie les parts prêtes à tracer (chemin SVG + couleur + pourcentage). Les
+    pays au-delà des 7 premiers sont regroupés en « Autres ». Une seule
+    destination → cercle plein (``full``) plutôt qu'un arc dégénéré.
+    """
+    rows = db.execute(
+        select(Dossier.pays, func.count(Dossier.id))
+        .where(
+            Dossier.campaign_id == campaign_id,
+            Dossier.statut.in_(SUBMITTED),
+            Dossier.pays.isnot(None),
+            Dossier.pays != "",
+        )
+        .group_by(Dossier.pays)
+        .order_by(func.count(Dossier.id).desc(), Dossier.pays)
+    ).all()
+    total = sum(n for _, n in rows)
+    if total == 0:
+        return {"total": 0, "slices": [], "full": None}
+
+    data = [(pays, n) for pays, n in rows]
+    if len(data) > PIE_MAX_SLICES + 1:
+        autres = sum(n for _, n in data[PIE_MAX_SLICES:])
+        data = data[:PIE_MAX_SLICES] + [("Autres", autres)]
+
+    if len(data) == 1:
+        pays, n = data[0]
+        return {
+            "total": total,
+            "full": {"pays": pays, "count": n, "color": PIE_COLORS[0]},
+            "slices": [{"pays": pays, "count": n, "pct": 100.0, "color": PIE_COLORS[0]}],
+        }
+
+    cx = cy = 100.0
+    r = 100.0
+    angle = -math.pi / 2  # départ à 12 h
+    slices = []
+    for i, (pays, n) in enumerate(data):
+        frac = n / total
+        end = angle + frac * 2 * math.pi
+        x1, y1 = cx + r * math.cos(angle), cy + r * math.sin(angle)
+        x2, y2 = cx + r * math.cos(end), cy + r * math.sin(end)
+        large = 1 if frac > 0.5 else 0
+        path = (f"M{cx:.2f},{cy:.2f} L{x1:.2f},{y1:.2f} "
+                f"A{r:.2f},{r:.2f} 0 {large} 1 {x2:.2f},{y2:.2f} Z")
+        slices.append({
+            "pays": pays, "count": n, "pct": round(frac * 100, 1),
+            "color": PIE_COLORS[i], "path": path,
+        })
+        angle = end
+    return {"total": total, "full": None, "slices": slices}
+
+
 def _relecture(db: Session, campaign_id: int) -> dict:
     """Répartition et avancement de la relecture (réservé au responsable).
 
@@ -397,6 +463,7 @@ def build_dashboard(db: Session, campaign) -> dict:
         ).scalar_one(),
         "examen": _examen(db, campaign.id),
         "recours": _recours(db, campaign.id),
+        "destinations": _destinations(db, campaign.id),
         "scientifique": sections,
         "histogrammes": _histograms(candidate_rows, sections),
         "top_contributeurs": _top_contributors(candidate_rows, sections),

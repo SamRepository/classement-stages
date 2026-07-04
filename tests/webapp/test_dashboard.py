@@ -198,6 +198,78 @@ def test_export_csv_interdit_enseignant(client, campaign, dossier_soumis, enseig
     assert client.get("/commission/tableau-de-bord/export.csv").status_code == 403
 
 
+def test_destinations_camembert(client, db_session, campaign, enseignant):
+    """Les pays de destination sont agrégés en parts (soumis/gelés, pays renseigné)."""
+    from webapp.services.dashboard import build_dashboard
+
+    def _dossier(ref, pays, statut="soumis"):
+        u = User(email=f"{ref}@test.dz", password_hash=hash_password("x"),
+                 nom=ref, prenom="X", role="enseignant")
+        db_session.add(u)
+        db_session.flush()
+        db_session.add(Dossier(campaign_id=campaign.id, user_id=u.id,
+                               candidate_ref=ref, statut=statut, pays=pays))
+
+    _dossier("A", "France")
+    _dossier("B", "France")
+    _dossier("C", "Canada")
+    _dossier("D", None)                 # pays non renseigné → ignoré
+    _dossier("E", "Italie", "brouillon")  # brouillon → ignoré
+    db_session.commit()
+
+    data = build_dashboard(db_session, campaign)
+    dest = data["destinations"]
+    assert dest["total"] == 3  # France×2 + Canada×1
+    assert dest["full"] is None
+    parts = {s["pays"]: s["count"] for s in dest["slices"]}
+    assert parts == {"France": 2, "Canada": 1}
+    # France en tête (tri décroissant) et chemin SVG présent.
+    assert dest["slices"][0]["pays"] == "France"
+    assert dest["slices"][0]["path"].startswith("M")
+
+
+def test_destinations_pays_unique_cercle_plein(client, db_session, campaign, enseignant):
+    """Une seule destination → cercle plein (pas d'arc dégénéré)."""
+    from webapp.services.dashboard import build_dashboard
+
+    db_session.add(Dossier(campaign_id=campaign.id, user_id=enseignant.id,
+                           candidate_ref="Z", statut="soumis", pays="Tunisie"))
+    db_session.commit()
+    dest = build_dashboard(db_session, campaign)["destinations"]
+    assert dest["full"] is not None
+    assert dest["full"]["pays"] == "Tunisie"
+
+
+def test_destinations_regroupe_en_autres(client, db_session, campaign):
+    """Au-delà de 7 pays, le reste est regroupé en « Autres »."""
+    from webapp.services.dashboard import build_dashboard
+
+    for i in range(9):
+        u = User(email=f"p{i}@test.dz", password_hash=hash_password("x"),
+                 nom=f"P{i}", prenom="X", role="enseignant")
+        db_session.add(u)
+        db_session.flush()
+        db_session.add(Dossier(campaign_id=campaign.id, user_id=u.id,
+                               candidate_ref=f"P{i}", statut="soumis", pays=f"Pays{i}"))
+    db_session.commit()
+    dest = build_dashboard(db_session, campaign)["destinations"]
+    assert len(dest["slices"]) == 8  # 7 pays + « Autres »
+    assert dest["slices"][-1]["pays"] == "Autres"
+    assert dest["total"] == 9
+
+
+def test_dashboard_affiche_camembert(client, db_session, campaign, dossier_soumis,
+                                     membre_commission):
+    """La page rend la section pays de destination."""
+    dossier_soumis.pays = "France"
+    db_session.commit()
+    login(client, "commission@test.dz")
+    r = client.get("/commission/tableau-de-bord")
+    assert r.status_code == 200
+    assert "Pays de destination" in r.text
+    assert "dest-pie" in r.text
+
+
 def test_jamais_connectes(client, db_session, campaign, enseignant):
     """Compte les enseignants actifs jamais connectés (last_login_at NULL)."""
     from webapp.services.dashboard import build_dashboard

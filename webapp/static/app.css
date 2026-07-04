@@ -129,12 +129,34 @@ small { color: var(--pico-muted-color, #6c757d); }
 .badge.recours-irrecevable { background: #e2e3e5; color: #41464b; }
 .badge.recours-retire { background: #e2e3e5; color: #41464b; }
 
-/* Tableau de bord : histogrammes de distribution par candidat */
+/* Tableau de bord : grilles qui s'enroulent sur plusieurs lignes (au lieu de la
+   grille Pico à une seule ligne, qui écrasait chaque carte à quelques pixels). */
+.dashboard-sci, .dashboard-hist {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.dashboard-sci article { margin: 0; padding: 1rem 1.1rem; }
+.dashboard-sci article h3 { font-size: .95rem; margin-bottom: .5rem; }
+.dashboard-sci table { margin: 0; font-size: .9rem; }
+.dashboard-sci td, .dashboard-sci th { padding: .3rem .4rem; }
+
+/* Camembert des pays de destination (SVG inline + légende) */
+.destinations { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; }
+.dest-pie { width: 200px; height: 200px; flex: 0 0 auto; }
+.dest-legend { list-style: none; margin: 0; padding: 0; min-width: 12rem; flex: 1 1 12rem; }
+.dest-legend li { display: flex; align-items: center; gap: .5rem; margin: .25rem 0; font-size: .9rem; }
+.dest-swatch { width: .9rem; height: .9rem; border-radius: 3px; flex: 0 0 auto; }
+.dest-legend .dest-pays { flex: 1; }
+.dest-legend .dest-val { color: #52514e; font-variant-numeric: tabular-nums; }
+
+/* Histogrammes de distribution par candidat */
 .histogramme { font-size: .85rem; }
 .hist-ligne { display: flex; align-items: center; gap: .4rem; margin: .15rem 0; }
 .hist-cle { width: 1.6rem; text-align: right; color: #555; }
 .hist-barre { display: inline-block; height: .8rem; min-width: 2px; border-radius: 3px;
-  background: #0d6efd; transition: width .2s; }
+  background: #2a78d6; transition: width .2s; }
 .hist-val { color: #555; }
 
 /* Phase de recours : bandeau « résultats provisoires » et ligne du candidat */

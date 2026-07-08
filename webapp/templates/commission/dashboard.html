@@ -53,6 +53,20 @@
   {% endif %}
 </article>
 
+<article>
+  <h3>Avis des relecteurs</h3>
+  {% if avis.total %}
+  <div class="grid">
+    <div><strong>{{ avis.ok }}</strong><br><small>conformes</small></div>
+    <div><strong>{{ avis.pas_ok }}</strong><br><small>non conformes</small></div>
+    <div><strong>{{ avis.explication }}</strong><br><small>à expliquer</small></div>
+  </div>
+  <p><small>{{ avis.total }} avis émis par les relecteurs (consultatifs, sans effet sur le score).</small></p>
+  {% else %}
+  <p><small>Aucun avis de relecteur pour l'instant.</small></p>
+  {% endif %}
+</article>
+
 {% if is_responsable %}
 <article>
   <h3>Relecture <small>(réservé au responsable)</small></h3>

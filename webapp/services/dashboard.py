@@ -32,6 +32,7 @@ from webapp.models import (
     DOSSIER_STATUTS,
     ENTRY_STATUTS,
     RECOURS_STATUTS,
+    REVIEW_FLAGS,
     Dossier,
     ElementReview,
     Entry,
@@ -120,6 +121,27 @@ def _recours(db: Session, campaign_id: int) -> dict:
         counts[statut] = n
     counts["total"] = sum(counts[s] for s in RECOURS_STATUTS)
     counts["ouverts"] = counts["ouvert"]
+    return counts
+
+
+def _avis(db: Session, campaign_id: int) -> dict:
+    """Avis consultatifs des relecteurs, ventilés par conformité (+ total).
+
+    Flags de ``ElementReview`` : ``ok`` = conforme, ``pas_ok`` = non conforme,
+    ``explication`` = à expliquer. Comptés sur les dossiers soumis/gelés. Avis
+    purement consultatifs (sans effet sur le score, cf. commission à deux niveaux).
+    """
+    counts = {f: 0 for f in REVIEW_FLAGS}
+    rows = db.execute(
+        select(ElementReview.flag, func.count(ElementReview.id))
+        .join(Entry, ElementReview.entry_id == Entry.id)
+        .join(Dossier, Entry.dossier_id == Dossier.id)
+        .where(Dossier.campaign_id == campaign_id, Dossier.statut.in_(SUBMITTED))
+        .group_by(ElementReview.flag)
+    ).all()
+    for flag, n in rows:
+        counts[flag] = n
+    counts["total"] = sum(counts[f] for f in REVIEW_FLAGS)
     return counts
 
 
@@ -391,6 +413,7 @@ def dashboard_csv(db: Session, campaign) -> str:
     dossiers = _dossiers_administratif(db, campaign.id)
     examen = _examen(db, campaign.id)
     recours = _recours(db, campaign.id)
+    avis = _avis(db, campaign.id)
     sections = _scientifique(db, campaign)
     criterion_ids = [s["criterion_id"] for s in sections]
     candidate_rows = _candidate_rows(db, campaign, criterion_ids)
@@ -413,6 +436,10 @@ def dashboard_csv(db: Session, campaign) -> str:
     w.writerow(["Éléments rejetés", examen["rejete"]])
     w.writerow(["Recours (total)", recours["total"]])
     w.writerow(["Recours en attente", recours["ouvert"]])
+    w.writerow(["Avis relecteurs (total)", avis["total"]])
+    w.writerow(["Avis conformes", avis["ok"]])
+    w.writerow(["Avis non conformes", avis["pas_ok"]])
+    w.writerow(["Avis à expliquer", avis["explication"]])
 
     w.writerow([])
     w.writerow(["Production scientifique (dossiers soumis/gelés)"])
@@ -463,6 +490,7 @@ def build_dashboard(db: Session, campaign) -> dict:
         ).scalar_one(),
         "examen": _examen(db, campaign.id),
         "recours": _recours(db, campaign.id),
+        "avis": _avis(db, campaign.id),
         "destinations": _destinations(db, campaign.id),
         "scientifique": sections,
         "histogrammes": _histograms(candidate_rows, sections),

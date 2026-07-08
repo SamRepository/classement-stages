@@ -198,6 +198,53 @@ def test_export_csv_interdit_enseignant(client, campaign, dossier_soumis, enseig
     assert client.get("/commission/tableau-de-bord/export.csv").status_code == 403
 
 
+def test_avis_agreges_par_conformite(client, db_session, campaign, dossier_soumis,
+                                     membre_commission):
+    """Les avis des relecteurs sont ventilés conforme / non conforme / à expliquer."""
+    from webapp.services.dashboard import build_dashboard
+
+    entries = list(db_session.scalars(
+        select(Entry).where(Entry.criterion_id == "publications")))
+    db_session.add_all([
+        ElementReview(entry_id=entries[0].id, reviewer_id=membre_commission.id, flag="ok"),
+        ElementReview(entry_id=entries[1].id, reviewer_id=membre_commission.id, flag="pas_ok"),
+        ElementReview(entry_id=entries[2].id, reviewer_id=membre_commission.id,
+                      flag="explication"),
+    ])
+    db_session.commit()
+
+    campaign = db_session.get(type(campaign), campaign.id)
+    avis = build_dashboard(db_session, campaign)["avis"]
+    assert avis["ok"] == 1
+    assert avis["pas_ok"] == 1
+    assert avis["explication"] == 1
+    assert avis["total"] == 3
+
+
+def test_avis_dans_le_dashboard(client, db_session, campaign, dossier_soumis,
+                                membre_commission):
+    """La page rend la section « Avis des relecteurs »."""
+    entry = db_session.scalar(select(Entry).where(Entry.item_id == "classe_b"))
+    db_session.add(ElementReview(entry_id=entry.id, reviewer_id=membre_commission.id,
+                                 flag="ok"))
+    db_session.commit()
+    login(client, "commission@test.dz")
+    r = client.get("/commission/tableau-de-bord")
+    assert r.status_code == 200
+    assert "Avis des relecteurs" in r.text
+    assert "non conformes" in r.text
+
+
+def test_avis_dans_le_csv(client, db_session, campaign, dossier_soumis, membre_commission):
+    entry = db_session.scalar(select(Entry).where(Entry.item_id == "classe_b"))
+    db_session.add(ElementReview(entry_id=entry.id, reviewer_id=membre_commission.id,
+                                 flag="pas_ok"))
+    db_session.commit()
+    login(client, "commission@test.dz")
+    corps = client.get("/commission/tableau-de-bord/export.csv").content.decode("utf-8-sig")
+    assert "Avis non conformes;1" in corps
+
+
 def test_destinations_camembert(client, db_session, campaign, enseignant):
     """Les pays de destination sont agrégés en parts (soumis/gelés, pays renseigné)."""
     from webapp.services.dashboard import build_dashboard

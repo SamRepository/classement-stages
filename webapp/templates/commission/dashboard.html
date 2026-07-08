@@ -56,6 +56,33 @@
   {% endif %}
 </article>
 
+{% if is_responsable %}
+<article>
+  <h3>Relecture <small>(réservé au responsable)</small></h3>
+  <p><small>
+    {{ relecture.avis_total }} / {{ relecture.elements_total }} avis posés
+    · {{ relecture.non_affectes }} dossier(s) soumis non affecté(s).
+  </small></p>
+  {% if relecture.lignes %}
+  <table>
+    <thead><tr><th>Relecteur</th><th>Dossiers affectés</th><th>Avis posés</th></tr></thead>
+    <tbody>
+      {% for l in relecture.lignes %}
+      <tr>
+        <td>{{ l.membre.nom }} {{ l.membre.prenom }}</td>
+        <td>{{ l.dossiers }}</td>
+        <td>{{ l.avis }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p><small>Aucun membre relecteur actif.</small></p>
+  {% endif %}
+  <p><a href="/commission/affectations">Gérer les affectations →</a></p>
+</article>
+{% endif %}
+
 <article>
   <h3>Examen des éléments</h3>
   <p><small>Éléments des dossiers soumis ou gelés (ceux effectivement examinés par la commission).</small></p>
@@ -84,33 +111,6 @@
   <p><small>Aucun recours déposé pour cette campagne.</small></p>
   {% endif %}
 </article>
-
-{% if is_responsable %}
-<article>
-  <h3>Relecture <small>(réservé au responsable)</small></h3>
-  <p><small>
-    {{ relecture.avis_total }} / {{ relecture.elements_total }} avis posés
-    · {{ relecture.non_affectes }} dossier(s) soumis non affecté(s).
-  </small></p>
-  {% if relecture.lignes %}
-  <table>
-    <thead><tr><th>Relecteur</th><th>Dossiers affectés</th><th>Avis posés</th></tr></thead>
-    <tbody>
-      {% for l in relecture.lignes %}
-      <tr>
-        <td>{{ l.membre.nom }} {{ l.membre.prenom }}</td>
-        <td>{{ l.dossiers }}</td>
-        <td>{{ l.avis }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p><small>Aucun membre relecteur actif.</small></p>
-  {% endif %}
-  <p><a href="/commission/affectations">Gérer les affectations →</a></p>
-</article>
-{% endif %}
 
 <h2>Pays de destination</h2>
 {% if destinations.total %}

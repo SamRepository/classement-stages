@@ -12,7 +12,7 @@
       "label_fr": "Pondération selon la position de l'auteur dans les publications scientifiques",
       "label_ar": "مركز المترشح من بين المؤلفين في المقالات العلمية",
       "weights": { "1": 1.0, "2": 0.9, "3": 0.8, "4": 0.7, "5_et_plus": 0.5 },
-      "applies_to": "publications (et, pour les grilles chercheurs, publications nationales classe C incluses)"
+      "applies_to": "publications (et, pour les grilles chercheurs, publications nationales classe C incluses) ; étendue par décision commission ENSET aux communications des grilles u1 et u3 — dérogation assumée, cf. notes du critère communications"
     },
     "counting_window": {
       "label_fr": "Fenêtre de comptabilisation des travaux",

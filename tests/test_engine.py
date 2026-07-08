@@ -110,6 +110,23 @@ def test_author_position_weighting(u1, shared):
     assert _line(b, "publications").points == pytest.approx(18.0)  # 20 × 0.9
 
 
+def test_author_position_weighting_communications(u1, shared):
+    """Dérogation commission ENSET : les communications sont pondérées comme les publications."""
+    candidate = {
+        "id": "X",
+        "entries": {
+            "communications": {
+                "items": [
+                    {"item": "intl_indexee_scopus_wos", "count": 1,
+                     "author_position": 2, "date": "2025-01-01"}
+                ]
+            }
+        },
+    }
+    b = score_candidate(u1, candidate, shared, CAMPAIGN)
+    assert _line(b, "communications").points == pytest.approx(5.4)  # 6 × 0.9
+
+
 def test_author_position_5_plus(u1, shared):
     candidate = {
         "id": "X",

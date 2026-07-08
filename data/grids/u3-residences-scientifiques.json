@@ -52,6 +52,8 @@
       "type": "count",
       "window": "after_last_benefit",
       "date_label_fr": "Date de communication",
+      "rules": ["author_position_weighting"],
+      "notes": "Décision commission ENSET : pondération par position d'auteur étendue aux communications (le décret la réserve aux publications). Dérogation assumée, appliquée uniformément.",
       "items": [
         { "id": "intl_indexee_scopus_wos", "scope": "international", "label_fr": "Manifestation classée (Scopus/WOS)", "points_per_unit": 6, "reference_recommended": true },
         { "id": "intl_referencee", "scope": "international", "label_ar": "المفهرسة", "label_fr": "Manifestation référencée (indexée dans des bases)", "points_per_unit": 4, "cap_units": 4, "reference_recommended": true },

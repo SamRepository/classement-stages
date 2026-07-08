@@ -124,24 +124,49 @@ def _recours(db: Session, campaign_id: int) -> dict:
     return counts
 
 
-def _avis(db: Session, campaign_id: int) -> dict:
+def _avis(db: Session, campaign) -> dict:
     """Avis consultatifs des relecteurs, ventilés par conformité (+ total).
 
     Flags de ``ElementReview`` : ``ok`` = conforme, ``pas_ok`` = non conforme,
     ``explication`` = à expliquer. Comptés sur les dossiers soumis/gelés. Avis
     purement consultatifs (sans effet sur le score, cf. commission à deux niveaux).
+
+    ``par_critere`` éclate les avis **actionnables** (non conformes + à expliquer)
+    par critère de la grille, pour repérer où se concentrent les points d'attention.
+    Seuls les critères concernés apparaissent, triés par nombre de signalements.
     """
     counts = {f: 0 for f in REVIEW_FLAGS}
+    par_critere: dict[str, dict[str, int]] = {}
     rows = db.execute(
-        select(ElementReview.flag, func.count(ElementReview.id))
+        select(Entry.criterion_id, ElementReview.flag, func.count(ElementReview.id))
         .join(Entry, ElementReview.entry_id == Entry.id)
         .join(Dossier, Entry.dossier_id == Dossier.id)
-        .where(Dossier.campaign_id == campaign_id, Dossier.statut.in_(SUBMITTED))
-        .group_by(ElementReview.flag)
+        .where(Dossier.campaign_id == campaign.id, Dossier.statut.in_(SUBMITTED))
+        .group_by(Entry.criterion_id, ElementReview.flag)
     ).all()
-    for flag, n in rows:
-        counts[flag] = n
+    for criterion_id, flag, n in rows:
+        counts[flag] += n
+        if flag in ("pas_ok", "explication"):
+            bucket = par_critere.setdefault(criterion_id, {"pas_ok": 0, "explication": 0})
+            bucket[flag] += n
     counts["total"] = sum(counts[f] for f in REVIEW_FLAGS)
+
+    labels = {
+        c["id"]: c.get("label_fr") or c["id"]
+        for c in grid_for_campaign(campaign).get("criteria", [])
+    }
+    detail = [
+        {
+            "criterion_id": criterion_id,
+            "label": labels.get(criterion_id, criterion_id),
+            "pas_ok": v["pas_ok"],
+            "explication": v["explication"],
+            "total": v["pas_ok"] + v["explication"],
+        }
+        for criterion_id, v in par_critere.items()
+    ]
+    detail.sort(key=lambda d: (-d["total"], d["label"]))
+    counts["par_critere"] = detail
     return counts
 
 
@@ -413,7 +438,7 @@ def dashboard_csv(db: Session, campaign) -> str:
     dossiers = _dossiers_administratif(db, campaign.id)
     examen = _examen(db, campaign.id)
     recours = _recours(db, campaign.id)
-    avis = _avis(db, campaign.id)
+    avis = _avis(db, campaign)
     sections = _scientifique(db, campaign)
     criterion_ids = [s["criterion_id"] for s in sections]
     candidate_rows = _candidate_rows(db, campaign, criterion_ids)
@@ -440,6 +465,13 @@ def dashboard_csv(db: Session, campaign) -> str:
     w.writerow(["Avis conformes", avis["ok"]])
     w.writerow(["Avis non conformes", avis["pas_ok"]])
     w.writerow(["Avis à expliquer", avis["explication"]])
+
+    if avis["par_critere"]:
+        w.writerow([])
+        w.writerow(["Avis par critère (non conformes / à expliquer)"])
+        w.writerow(["Critère", "Non conformes", "À expliquer", "Total"])
+        for c in avis["par_critere"]:
+            w.writerow([c["label"], c["pas_ok"], c["explication"], c["total"]])
 
     w.writerow([])
     w.writerow(["Production scientifique (dossiers soumis/gelés)"])
@@ -490,7 +522,7 @@ def build_dashboard(db: Session, campaign) -> dict:
         ).scalar_one(),
         "examen": _examen(db, campaign.id),
         "recours": _recours(db, campaign.id),
-        "avis": _avis(db, campaign.id),
+        "avis": _avis(db, campaign),
         "destinations": _destinations(db, campaign.id),
         "scientifique": sections,
         "histogrammes": _histograms(candidate_rows, sections),

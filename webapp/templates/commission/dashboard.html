@@ -25,6 +25,38 @@
 </article>
 
 <article>
+  <h3>Avis des relecteurs</h3>
+  {% if avis.total %}
+  <div class="grid">
+    <div><strong>{{ avis.ok }}</strong><br><small>conformes</small></div>
+    <div><strong>{{ avis.pas_ok }}</strong><br><small>non conformes</small></div>
+    <div><strong>{{ avis.explication }}</strong><br><small>à expliquer</small></div>
+  </div>
+  <p><small>{{ avis.total }} avis émis par les relecteurs (consultatifs, sans effet sur le score).</small></p>
+  {% if avis.par_critere %}
+  <details open>
+    <summary>Points d'attention par critère ({{ avis.par_critere|length }})</summary>
+    <table>
+      <thead><tr><th>Critère</th><th>Non conformes</th><th>À expliquer</th><th>Total</th></tr></thead>
+      <tbody>
+        {% for c in avis.par_critere %}
+        <tr>
+          <td>{{ c.label }}</td>
+          <td>{% if c.pas_ok %}<span class="badge rejete">{{ c.pas_ok }}</span>{% else %}—{% endif %}</td>
+          <td>{% if c.explication %}<span class="badge en_attente">{{ c.explication }}</span>{% else %}—{% endif %}</td>
+          <td><strong>{{ c.total }}</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+  {% endif %}
+  {% else %}
+  <p><small>Aucun avis de relecteur pour l'instant.</small></p>
+  {% endif %}
+</article>
+
+<article>
   <h3>Examen des éléments</h3>
   <p><small>Éléments des dossiers soumis ou gelés (ceux effectivement examinés par la commission).</small></p>
   <div class="grid">
@@ -50,20 +82,6 @@
   </div>
   {% else %}
   <p><small>Aucun recours déposé pour cette campagne.</small></p>
-  {% endif %}
-</article>
-
-<article>
-  <h3>Avis des relecteurs</h3>
-  {% if avis.total %}
-  <div class="grid">
-    <div><strong>{{ avis.ok }}</strong><br><small>conformes</small></div>
-    <div><strong>{{ avis.pas_ok }}</strong><br><small>non conformes</small></div>
-    <div><strong>{{ avis.explication }}</strong><br><small>à expliquer</small></div>
-  </div>
-  <p><small>{{ avis.total }} avis émis par les relecteurs (consultatifs, sans effet sur le score).</small></p>
-  {% else %}
-  <p><small>Aucun avis de relecteur pour l'instant.</small></p>
   {% endif %}
 </article>
 

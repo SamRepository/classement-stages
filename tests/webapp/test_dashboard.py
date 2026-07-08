@@ -235,6 +235,33 @@ def test_avis_dans_le_dashboard(client, db_session, campaign, dossier_soumis,
     assert "non conformes" in r.text
 
 
+def test_avis_par_critere(client, db_session, campaign, dossier_soumis, membre_commission):
+    """Les avis actionnables (non conformes + à expliquer) sont éclatés par critère."""
+    from webapp.services.dashboard import build_dashboard
+
+    pubs = list(db_session.scalars(select(Entry).where(Entry.criterion_id == "publications")))
+    comm = db_session.scalar(select(Entry).where(Entry.criterion_id == "communications"))
+    db_session.add_all([
+        ElementReview(entry_id=pubs[0].id, reviewer_id=membre_commission.id, flag="pas_ok"),
+        ElementReview(entry_id=pubs[1].id, reviewer_id=membre_commission.id, flag="explication"),
+        ElementReview(entry_id=comm.id, reviewer_id=membre_commission.id, flag="pas_ok"),
+        # un avis conforme ne doit PAS peser dans le détail par critère
+        ElementReview(entry_id=pubs[2].id, reviewer_id=membre_commission.id, flag="ok"),
+    ])
+    db_session.commit()
+
+    campaign = db_session.get(type(campaign), campaign.id)
+    detail = build_dashboard(db_session, campaign)["avis"]["par_critere"]
+    par = {c["criterion_id"]: c for c in detail}
+    assert par["publications"]["pas_ok"] == 1
+    assert par["publications"]["explication"] == 1
+    assert par["publications"]["total"] == 2
+    assert par["communications"]["pas_ok"] == 1
+    assert par["communications"]["explication"] == 0
+    # trié par total décroissant : publications (2) avant communications (1)
+    assert [c["criterion_id"] for c in detail] == ["publications", "communications"]
+
+
 def test_avis_dans_le_csv(client, db_session, campaign, dossier_soumis, membre_commission):
     entry = db_session.scalar(select(Entry).where(Entry.item_id == "classe_b"))
     db_session.add(ElementReview(entry_id=entry.id, reviewer_id=membre_commission.id,
@@ -243,6 +270,7 @@ def test_avis_dans_le_csv(client, db_session, campaign, dossier_soumis, membre_c
     login(client, "commission@test.dz")
     corps = client.get("/commission/tableau-de-bord/export.csv").content.decode("utf-8-sig")
     assert "Avis non conformes;1" in corps
+    assert "Avis par critère (non conformes / à expliquer)" in corps
 
 
 def test_destinations_camembert(client, db_session, campaign, enseignant):

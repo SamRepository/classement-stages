@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import select
 
 from tests.webapp.conftest import login
-from webapp.models import ElementReview, Entry
+from webapp.models import ElementReview, Entry, Event
 
 
 @pytest.fixture()
@@ -173,6 +173,58 @@ def test_rectifier_quantite_position_videe(client, db_session, campaign, dossier
     db_session.refresh(entry)
     assert entry.payload["count"] == 1
     assert "author_position" not in entry.payload
+
+
+def test_rectifier_type_publication(client, db_session, campaign, dossier, responsable):
+    """Le responsable reclasse une publication A+ en B (listes DGRSDT, PV du 08/07/2026)."""
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="publications",
+                         item_id="classe_a_plus",
+                         payload={"count": 1, "author_position": 1, "date": "2025-01-01"}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    entry = db_session.scalar(select(Entry).where(Entry.criterion_id == "publications"))
+    r = client.post(f"/commission/entrees/{entry.id}/ajuster-quantite",
+                    data={"quantite": "1", "author_position": "1", "item": "classe_b"})
+    assert r.status_code == 200
+    db_session.refresh(entry)
+    assert entry.item_id == "classe_b"
+    assert entry.payload["count"] == 1
+    # Le reclassement ne décide pas l'élément : il reste à valider.
+    assert entry.statut == "en_attente"
+    event = db_session.scalars(select(Event).order_by(Event.id.desc())).first()
+    assert "type classe_a_plus→classe_b" in (event.detail or "")
+
+
+def test_rectifier_type_inconnu_refuse(client, db_session, campaign, dossier, responsable):
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="publications",
+                         item_id="classe_a_plus",
+                         payload={"count": 1, "date": "2025-01-01"}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    entry = db_session.scalar(select(Entry).where(Entry.criterion_id == "publications"))
+    r = client.post(f"/commission/entrees/{entry.id}/ajuster-quantite",
+                    data={"quantite": "1", "item": "classe_z"})
+    assert r.status_code == 422
+    db_session.refresh(entry)
+    assert entry.item_id == "classe_a_plus"
+
+
+def test_rectifier_quantite_sans_item_conserve_le_type(client, db_session, campaign, dossier,
+                                                       responsable):
+    """Compatibilité : le champ `item` est optionnel, son absence laisse le type intact."""
+    db_session.add(Entry(dossier_id=dossier.id, criterion_id="publications",
+                         item_id="classe_a", payload={"count": 2, "date": "2025-03-01"}))
+    dossier.statut = "soumis"
+    db_session.commit()
+    login(client, "responsable@test.dz")
+    entry = db_session.scalar(select(Entry).where(Entry.criterion_id == "publications"))
+    r = client.post(f"/commission/entrees/{entry.id}/ajuster-quantite", data={"quantite": "1"})
+    assert r.status_code == 200
+    db_session.refresh(entry)
+    assert entry.item_id == "classe_a"
+    assert entry.payload["count"] == 1
 
 
 def test_rectifier_quantite_refusee_au_membre(client, db_session, campaign, dossier_soumis,

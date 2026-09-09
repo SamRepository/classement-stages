@@ -85,12 +85,21 @@
   {% endif %}
   {% if is_count %}
   <details {% if has_position and (e.payload.count or 1) > 1 %}open{% endif %}>
-    <summary role="button" class="secondary outline">Rectifier la quantité…</summary>
+    <summary role="button" class="secondary outline">Rectifier l'élément…</summary>
     <form hx-post="/commission/entrees/{{ e.id }}/ajuster-quantite" hx-target="#element-{{ e.id }}" hx-swap="outerHTML">
       {% if has_position %}
       <p><small>Confusion fréquente : le candidat a pu saisir le <strong>nombre d'auteurs</strong>
          dans la quantité. Pour une publication, la quantité vaut en général <strong>1</strong> ;
          le rang parmi les auteurs va dans « position d'auteur ».</small></p>
+      {% endif %}
+      {% if labels|length > 1 %}
+      <label>Type déclaré (corrige un classement erroné, ex. revue A → B)
+        <select name="item">
+          {% for item_id, item_label in labels.items() %}
+          <option value="{{ item_id }}" {% if item_id == e.item_id %}selected{% endif %}>{{ item_label }}</option>
+          {% endfor %}
+        </select>
+      </label>
       {% endif %}
       <div class="grid">
         <label>Quantité (nombre d'éléments)

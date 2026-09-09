@@ -449,13 +449,16 @@ async def ajuster_quantite(
     user: User = RESPONSABLE,
     db: Session = Depends(get_db),
 ):
-    """Rectifie la quantité (et la position d'auteur) d'un élément détaillé.
+    """Rectifie le type, la quantité et la position d'auteur d'un élément détaillé.
 
     Corrige la confusion fréquente « nombre d'auteurs saisi dans la quantité » :
     le responsable remet la quantité réelle (en général 1 par publication) et,
-    le cas échéant, la position d'auteur. Réservé au responsable (modifie le
-    score, comme l'ajustement des formules). La rectification est tracée ;
-    le statut de validation/rejet de l'élément n'est pas modifié ici.
+    le cas échéant, la position d'auteur. Corrige aussi le **type déclaré**
+    (PV commission du 08/07/2026 : classement de revue erroné au regard des
+    listes DGRSDT, ex. A vers B) — le champ ``item`` est optionnel : absent, il
+    laisse le type inchangé. Réservé au responsable (modifie le score, comme
+    l'ajustement des formules). La rectification est tracée ; le statut de
+    validation/rejet de l'élément n'est pas modifié ici.
     """
     entry = db.get(Entry, entry_id)
     if entry is None:
@@ -489,8 +492,24 @@ async def ajuster_quantite(
         raise HTTPException(status_code=422, detail="La quantité doit être ≥ 1.")
     payload["count"] = count
 
-    detail = f"entry={entry.id} {entry.criterion_id}/{entry.item_id or '-'} " \
+    ancien_item = entry.item_id
+    nouvel_item = ancien_item
+    raw_item = (form.get("item") or "").strip()
+    if raw_item and raw_item != ancien_item:
+        items = {i["id"]: i for i in spec.get("items", [])}
+        if raw_item not in items:
+            raise HTTPException(status_code=422, detail=f"Élément inconnu : {raw_item!r}.")
+        nouvel_item = raw_item
+        # Le bonus « chef de projet » n'existe pas sur tous les types : purgé
+        # quand le nouveau type ne le porte pas, sinon le moteur compterait un
+        # bonus sans support dans la grille.
+        if not items[raw_item]["leader_bonus"]:
+            payload.pop("leader_count", None)
+
+    detail = f"entry={entry.id} {entry.criterion_id}/{nouvel_item or '-'} " \
              f"quantité {ancienne_qte}→{count}"
+    if nouvel_item != ancien_item:
+        detail += f", type {ancien_item or '-'}→{nouvel_item or '-'}"
     if spec.get("has_position"):
         raw_pos = (form.get("author_position") or "").strip()
         ancienne_pos = payload.get("author_position")
@@ -509,6 +528,7 @@ async def ajuster_quantite(
             detail += f", position {ancienne_pos or '-'}→{nouvelle_pos or '-'}"
 
     entry.payload = payload
+    entry.item_id = nouvel_item
     log_event(db, user, "rectification_quantite", entry.dossier, detail=detail)
     db.commit()
     db.refresh(entry)

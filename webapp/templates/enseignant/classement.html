@@ -22,8 +22,8 @@
 {% else %}
 {% if not definitif %}
 <p class="recours-banner"><strong>⚠️ Résultats provisoires.</strong> Ce classement n'est pas
-   définitif : la période de recours est ouverte
-   {% if campaign.recours_deadline %}jusqu'au <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong>{% endif %}.
+   définitif : la période de recours est ouverte{% if campaign.recours_deadline %}
+   jusqu'au <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong>{% endif %}.
    Il peut évoluer après le traitement des recours. Pour contester un élément, rendez-vous sur
    <a href="/mon-dossier">votre dossier</a>.</p>
 {% else %}

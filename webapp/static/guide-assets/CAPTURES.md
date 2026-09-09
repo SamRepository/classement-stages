@@ -18,10 +18,13 @@ Les captures peuvent être annotées (flèches, encadrés) sous Excalidraw avant
 | `10-score.png` | Barre « Score provisoire » + détail du calcul |
 | `11-soumettre.png` | Section « Soumission » + bouton Soumettre |
 | `12-resultat.png` | Encadré « Résultat du classement » (campagne gelée) |
-| `13-archive-zip.png` | Bouton « Télécharger mon dossier complet (ZIP) » (dossier soumis/gelé) |
+| `13-archive-zip.png` | Lien « Télécharger mon dossier complet (ZIP) » (dossier soumis/gelé, **hors période de recours** : il est retiré pendant la fenêtre) |
 | `14-classement-provisoire.png` | Page « Mon classement » en période de recours : bandeau « Résultats provisoires » + liste du groupe (rang, réf, nom, score), sa ligne surlignée |
 | `15-recours.png` | Section « Recours — contestation des décisions » : liste des éléments avec décision + formulaire « Contester » (motif déroulant + message) déplié |
 
 Conseil : largeur ~1000 px, format PNG. Recadrer sur la zone utile.
+Les captures 13/14/15 ont été régénérées le 09/09/2026 sur un jeu de données **fictif**
+(noms inventés) : le guide est diffusé à tous les candidats, aucune donnée réelle ne doit
+y figurer.
 Pour `14`/`15`, se placer sur une campagne **clôturée avec la période de recours ouverte**
 (bouton « Ouvrir la période de recours » côté responsable ou admin).

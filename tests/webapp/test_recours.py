@@ -107,6 +107,25 @@ def test_motif_erreur_saisie_retire_des_choix(client, db_session, dossier_examin
     assert db_session.scalar(select(Recours)) is None
 
 
+def test_archive_suspendue_pendant_les_recours(client, db_session, campaign, dossier_examine,
+                                               enseignant):
+    """L'archive ZIP est coûteuse : lien masqué ET route refusée pendant la fenêtre."""
+    login(client, "enseignant@test.dz")
+    page = client.get("/mon-dossier")
+    assert "Le téléchargement du dossier complet (ZIP) sera de nouveau" in page.text
+    r = client.get("/mon-dossier/archive")
+    assert r.status_code == 403
+
+    # Après le gel, le téléchargement revient.
+    campaign.recours_ouverts = False
+    campaign.statut = "gelee"
+    dossier_examine.statut = "gele"
+    db_session.commit()
+    page = client.get("/mon-dossier")
+    assert "Télécharger mon dossier complet" in page.text
+    assert client.get("/mon-dossier/archive").status_code == 200
+
+
 def test_depot_hors_fenetre_refuse(client, db_session, campaign, dossier_examine, enseignant):
     campaign.recours_ouverts = False
     db_session.commit()

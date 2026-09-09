@@ -64,13 +64,18 @@ il est en cours d'examen et ne peut plus être modifié.</mark>
 {% include "enseignant/fragments/recours.html" %}
 {% endif %}
 
-{% if dossier.statut in ('soumis', 'gele') %}
-{# Placé après les recours : c'est la contestation qui prime pendant la fenêtre, et
-   l'archive (récapitulatif + tous les justificatifs) est lourde à produire. #}
+{# L'archive (récapitulatif + copie de tous les justificatifs dans un ZIP temporaire)
+   est l'opération la plus lourde du portail : plusieurs constructions simultanées
+   remplissent le disque du conteneur. Elle est donc retirée pendant la fenêtre de
+   recours, où la priorité est la contestation, et rendue après le gel. #}
+{% if dossier.statut in ('soumis', 'gele') and not en_recours %}
 <p class="archive-lien"><a href="/mon-dossier/archive">⬇ Télécharger mon dossier complet
    (ZIP : récapitulatif + justificatifs PDF)</a><br>
-   <small>Pour vos archives personnelles. Inutile pour déposer un recours : vos justificatifs
-   restent consultables un par un ci-dessous.</small></p>
+   <small>Pour vos archives personnelles.</small></p>
+{% elif en_recours %}
+<p class="archive-lien"><small>Le téléchargement du dossier complet (ZIP) sera de nouveau
+   disponible après la publication du classement définitif. Pour déposer un recours, il est
+   inutile : vos justificatifs restent consultables un par un ci-dessous.</small></p>
 {% endif %}
 
 <div class="dossier-content">

@@ -686,12 +686,25 @@ def telecharger_archive(
     user: User = Depends(require_role("enseignant")),
     db: Session = Depends(get_db),
 ):
-    """Archive ZIP du dossier (récapitulatif HTML + justificatifs PDF), après soumission."""
-    _, dossier, _ = _context(db, user)
+    """Archive ZIP du dossier (récapitulatif HTML + justificatifs PDF), après soumission.
+
+    Suspendue pendant la fenêtre de recours : la construction copie tous les
+    justificatifs dans un ZIP temporaire, et plusieurs demandes simultanées
+    saturent le disque du conteneur au moment où le portail doit encaisser la
+    consultation des résultats. Le lien est masqué, la route refuse aussi.
+    """
+    campaign, dossier, _ = _context(db, user)
     if dossier.statut not in ("soumis", "gele"):
         raise HTTPException(
             status_code=403,
             detail="Le téléchargement du dossier complet est disponible après sa soumission.",
+        )
+    if recours_phase(campaign):
+        raise HTTPException(
+            status_code=403,
+            detail="Le téléchargement du dossier complet est suspendu pendant la période de "
+                   "recours ; il sera de nouveau disponible après la publication du classement "
+                   "définitif. Vos justificatifs restent consultables un par un.",
         )
     path = build_dossier_archive(db, dossier)
     return FileResponse(

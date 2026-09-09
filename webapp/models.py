@@ -46,11 +46,15 @@ REVIEW_FLAGS = ("ok", "pas_ok", "explication")
 # ``irrecevable`` = hors délai / non motivé ; ``retire`` = retiré par l'enseignant.
 RECOURS_STATUTS = ("ouvert", "accepte", "rejete", "irrecevable", "retire")
 # Nature du recours (« liste de choix » présentée à l'enseignant).
+# ``erreur_saisie`` (erreur matérielle dans ma déclaration) a été retiré des choix
+# le 09/09/2026 : il laissait croire qu'on pouvait encore corriger sa déclaration
+# ou joindre une pièce, alors que le dépôt est clos à ce stade. Les recours déjà
+# déposés sous ce motif restent valides (contrainte en base inchangée) et leur
+# libellé reste connu de ``MOTIF_LABELS`` pour l'affichage.
 RECOURS_MOTIFS = (
     "desaccord_rejet",       # je conteste le rejet de l'élément
     "sous_evaluation",       # l'élément vaut plus de points que retenu
     "erreur_appreciation",   # erreur d'appréciation / de calcul
-    "erreur_saisie",         # erreur matérielle dans ma déclaration
     "autre",
 )
 

@@ -88,6 +88,25 @@ def test_depot_recours(client, db_session, dossier_examine, enseignant):
     assert rec.created_by == enseignant.id
 
 
+def test_motif_erreur_saisie_retire_des_choix(client, db_session, dossier_examine, enseignant):
+    """« Erreur matérielle dans ma déclaration » n'est plus proposé ni accepté.
+
+    Il suggérait que le candidat pouvait encore corriger sa déclaration ou joindre
+    une pièce, alors que le dépôt est clos pendant la phase de recours.
+    """
+    login(client, "enseignant@test.dz")
+    page = client.get("/mon-dossier")
+    assert page.status_code == 200
+    assert "Erreur matérielle" not in page.text
+    assert "aucune pièce justificative ne peut être ajoutée" in page.text
+
+    entry = _entry(db_session)
+    r = client.post(f"/mon-dossier/recours/{entry.id}",
+                    data={"motif": "erreur_saisie", "message": "j'ai mal saisi"})
+    assert r.status_code == 422
+    assert db_session.scalar(select(Recours)) is None
+
+
 def test_depot_hors_fenetre_refuse(client, db_session, campaign, dossier_examine, enseignant):
     campaign.recours_ouverts = False
     db_session.commit()

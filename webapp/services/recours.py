@@ -40,6 +40,8 @@ MOTIF_LABELS = {
     "desaccord_rejet": "Je conteste le rejet de cet élément",
     "sous_evaluation": "Cet élément vaut plus de points que ce qui a été retenu",
     "erreur_appreciation": "Erreur d'appréciation ou de calcul",
+    # Retiré des choix le 09/09/2026 (cf. RECOURS_MOTIFS) ; conservé ici pour
+    # afficher correctement les recours déposés avant ce retrait.
     "erreur_saisie": "Erreur matérielle dans ma déclaration",
     "autre": "Autre motif (préciser ci-dessous)",
 }

@@ -58,14 +58,19 @@
 il est en cours d'examen et ne peut plus être modifié.</mark>
 {% endif %}
 
-{% if dossier.statut in ('soumis', 'gele') %}
-<p><a href="/mon-dossier/archive" role="button" class="secondary">⬇ Télécharger mon dossier complet (ZIP : récapitulatif + justificatifs PDF)</a></p>
-{% endif %}
-
 <div id="score-host" hx-get="/mon-dossier/score" hx-trigger="load"></div>
 
 {% if show_recours %}
 {% include "enseignant/fragments/recours.html" %}
+{% endif %}
+
+{% if dossier.statut in ('soumis', 'gele') %}
+{# Placé après les recours : c'est la contestation qui prime pendant la fenêtre, et
+   l'archive (récapitulatif + tous les justificatifs) est lourde à produire. #}
+<p class="archive-lien"><a href="/mon-dossier/archive">⬇ Télécharger mon dossier complet
+   (ZIP : récapitulatif + justificatifs PDF)</a><br>
+   <small>Pour vos archives personnelles. Inutile pour déposer un recours : vos justificatifs
+   restent consultables un par un ci-dessous.</small></p>
 {% endif %}
 
 <div class="dossier-content">

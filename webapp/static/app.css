@@ -241,6 +241,8 @@ tr.edition td { background: #f3f7ff; }
 .score-bar { display: flex; align-items: baseline; gap: 1.25rem; flex-wrap: wrap; }
 .score-total { font-size: 1.5rem; font-weight: 800; color: #0b5ed7; }
 .score-repere { color: #555; }
+.archive-lien { margin-top: 1.25rem; }
+.archive-lien small { color: #555; }
 .score-details summary { cursor: pointer; }
 .score-panel { max-height: 55vh; overflow-y: auto; margin-top: .5rem; }
 .score-panel table { margin-bottom: .5rem; }

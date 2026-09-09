@@ -3,7 +3,13 @@
   {% for line in breakdown.lines %}{% for w in line.warnings %}{% set _ = warnings.append(w) %}{% endfor %}{% endfor %}
   {% set toutes = warnings + breakdown.warnings %}
   <div class="score-bar">
+    {% if publie %}
+    <span class="score-total">Score retenu&nbsp;: {{ breakdown.total|points }} pts</span>
+    <small class="score-repere">déclaré {{ declare_total|points }} pts{% if ecartes %} ·
+      <span class="warning">{{ ecartes|length }} élément(s) écarté(s) par la commission</span>{% endif %}</small>
+    {% else %}
     <span class="score-total">Score provisoire&nbsp;: {{ breakdown.total|points }} pts</span>
+    {% endif %}
     <details class="score-details">
       <summary>Détail du calcul{% if toutes %} · <span class="warning">{{ toutes|length }} observation(s)</span>{% endif %}</summary>
       <div class="score-panel">
@@ -29,8 +35,23 @@
           {% for w in toutes %}<li class="warning">{{ w }}</li>{% endfor %}
         </ul>
         {% endif %}
+        {% if ecartes %}
+        <p><small><strong>Éléments écartés par la commission</strong> — non comptés dans le score
+           ci-dessus. Vous pouvez les contester dans le tableau « Recours » plus bas.</small></p>
+        <ul>
+          {% for e in ecartes %}
+          <li class="warning"><small>{{ e.titre }}{% if e.intitule %} — « {{ e.intitule }} »{% endif %}
+            {% if e.motif %}<br>Motif : {{ e.motif }}{% endif %}</small></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        {% if publie %}
+        <small>Score retenu par la commission après vérification des justificatifs, éléments
+        rejetés déduits. C'est ce score qui détermine votre rang au classement provisoire.</small>
+        {% else %}
         <small>Score indicatif calculé à partir de vos déclarations. Le score final est arrêté
         par la commission après vérification des justificatifs.</small>
+        {% endif %}
       </div>
     </details>
   </div>

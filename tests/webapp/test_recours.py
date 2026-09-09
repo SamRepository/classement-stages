@@ -39,6 +39,38 @@ def _rang_entry(db_session):
 
 
 # ---------------------------------------------------------------------------
+# Encart de score : déclaré avant publication, retenu pendant les recours
+# ---------------------------------------------------------------------------
+
+
+def test_score_publie_affiche_le_retenu(client, db_session, dossier_examine, enseignant):
+    """Résultats publiés : score retenu en tête, déclaré en repère, rejets détaillés."""
+    login(client, "enseignant@test.dz")
+    r = client.get("/mon-dossier/score")
+    assert r.status_code == 200
+    assert "Score retenu" in r.text
+    assert "déclaré" in r.text
+    # L'élément rejeté est nommé avec son intitulé et son motif, sinon l'écart
+    # entre le déclaré et le retenu serait incompréhensible.
+    assert "1 élément(s) écarté(s)" in r.text
+    assert "Article B" in r.text
+    assert "Hors fenêtre" in r.text
+
+
+def test_score_avant_publication_reste_declare(client, db_session, campaign, dossier_examine,
+                                               enseignant):
+    """Fenêtre fermée : ni score retenu ni motif de rejet ne doivent transparaître."""
+    campaign.recours_ouverts = False
+    db_session.commit()
+    login(client, "enseignant@test.dz")
+    r = client.get("/mon-dossier/score")
+    assert r.status_code == 200
+    assert "Score provisoire" in r.text
+    assert "Score retenu" not in r.text
+    assert "Hors fenêtre" not in r.text
+
+
+# ---------------------------------------------------------------------------
 # Dépôt (enseignant)
 # ---------------------------------------------------------------------------
 

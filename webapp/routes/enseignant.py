@@ -65,16 +65,57 @@ def _find_section(dossier: Dossier, grid: dict, criterion_id: str) -> dict:
     raise HTTPException(status_code=404, detail=f"Critère inconnu : {criterion_id!r}.")
 
 
+def _lignes_ecartees(db: Session, grid: dict, exclusions: list[dict]) -> list[dict]:
+    """Éléments rejetés par la commission, libellés pour l'affichage enseignant.
+
+    Le moteur ne renvoie que des identifiants ; on rejoint la grille pour le
+    libellé du critère et du type, et l'entrée pour l'intitulé saisi — sans quoi
+    un candidat ayant plusieurs publications ne saurait pas laquelle a été écartée.
+    """
+    specs = {s["criterion_id"]: s for s in build_form_spec(grid)}
+    lignes = []
+    for exclusion in exclusions:
+        spec = specs.get(exclusion["criterion_id"])
+        titre = spec["label"] if spec else exclusion["criterion_id"]
+        if spec and exclusion.get("item_id"):
+            titre += " — " + next(
+                (i["label"] for i in spec.get("items", []) if i["id"] == exclusion["item_id"]),
+                exclusion["item_id"],
+            )
+        entry = db.get(Entry, exclusion["entry_id"])
+        lignes.append({
+            "titre": titre,
+            "intitule": (entry.payload or {}).get("intitule") if entry else None,
+            "motif": exclusion.get("motif"),
+        })
+    return lignes
+
+
 def _render_score(request: Request, db: Session, dossier: Dossier, *, oob: bool) -> str:
-    breakdown, _ = compute_score(db, dossier, mode="declare")
-    grid = grid_for_campaign(dossier.campaign)
+    """Encart de score de l'enseignant.
+
+    Avant publication des résultats, c'est le score **déclaré** qui s'affiche :
+    montrer le score retenu révélerait les rejets avant l'heure. Une fois les
+    résultats publiés (phase de recours ou gel), c'est l'inverse — le score
+    **retenu** fait foi, le déclaré reste en repère, et les éléments écartés sont
+    listés avec leur motif, sinon l'écart entre les deux serait incompréhensible.
+    """
+    campaign = dossier.campaign
+    grid = grid_for_campaign(campaign)
+    publie = recours_phase(campaign) or campaign.statut == "gelee"
+    declare, _ = compute_score(db, dossier, mode="declare")
+    if publie:
+        breakdown, exclusions = compute_score(db, dossier, mode="commission")
+        ecartes = _lignes_ecartees(db, grid, exclusions)
+    else:
+        breakdown, ecartes = declare, []
     # Critères « formule » (pénalité de bénéfices) : toujours affichés dans le détail,
     # même à 0 point, avec le n et le calcul.
     formula_ids = {c["id"] for c in grid.get("criteria", []) if c.get("type") == "formula"}
     return templates.get_template("enseignant/fragments/score.html").render(
-        request=request, breakdown=breakdown, oob=oob, formula_ids=formula_ids
+        request=request, breakdown=breakdown, oob=oob, formula_ids=formula_ids,
+        publie=publie, declare_total=declare.total, ecartes=ecartes,
     )
-
 
 def _section_response(
     request: Request, db: Session, dossier: Dossier, grid: dict, criterion_id: str,

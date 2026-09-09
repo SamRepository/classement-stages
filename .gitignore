@@ -29,3 +29,6 @@ docs/_pages/
 # IDE / outillage
 .vscode/
 .claude/settings.local.json
+
+# Documents de travail de la commission (données nominatives — hors dépôt)
+docs/work_meetings/

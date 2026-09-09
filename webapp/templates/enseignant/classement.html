@@ -32,20 +32,30 @@
 {% endif %}
 
 <article>
-  <p>Vous êtes classé(e) <strong>{{ ranking.my_rank }}{{ 'ᵉʳ' if ranking.my_rank == 1 else 'ᵉ' }}
-     sur {{ ranking.taille }}</strong>
-     {% if ranking.groupe %}(groupe : {{ ranking.groupe }}){% endif %}
-     avec un score de <strong>{{ ranking.my_total|points }} points</strong>{% if ranking.my_ex_aequo %}
-     <span class="badge en_attente">ex aequo</span>{% endif %}.</p>
+  <div class="mon-resultat">
+    <div class="mon-resultat-rang">
+      <span class="rang-valeur">{{ ranking.my_rank }}<sup>{{ 'er' if ranking.my_rank == 1 else 'e' }}</sup></span>
+      <span class="rang-total">sur {{ ranking.taille }}</span>
+    </div>
+    <div class="mon-resultat-infos">
+      <p class="mon-resultat-score"><strong>{{ ranking.my_total|points }} points</strong>
+         {% if ranking.my_ex_aequo %}<span class="badge en_attente">ex aequo</span>{% endif %}
+         <span class="mon-resultat-etat">{{ 'définitif' if definitif else 'provisoire' }}</span></p>
+      <p><small>{% if ranking.groupe %}Groupe de classement :
+         <strong>{{ ranking.groupe.replace('_', ' ')|capitalize }}</strong> · {% endif %}
+         Référence : <strong>{{ dossier.candidate_ref }}</strong></small></p>
+      <p><a href="#ma-position">Voir ma position dans la liste ↓</a></p>
+    </div>
+  </div>
 
   <table>
     <thead><tr><th>Rang</th><th>Réf.</th><th>Candidat</th><th>Score</th><th></th></tr></thead>
     <tbody>
       {% for r in ranking.rows %}
-      <tr {% if r.is_me %}class="ma-ligne"{% endif %}>
+      <tr {% if r.is_me %}class="ma-ligne" id="ma-position"{% endif %}>
         <td><strong>{{ r.rank }}</strong></td>
         <td>{{ r.candidate_ref }}</td>
-        <td>{{ r.nom }}{% if r.is_me %} <small>(vous)</small>{% endif %}</td>
+        <td>{{ r.nom }}{% if r.is_me %} <span class="badge vous">vous</span>{% endif %}</td>
         <td>{{ r.total|points }}</td>
         <td>{% if r.ex_aequo %}<span class="badge en_attente">ex aequo</span>{% endif %}</td>
       </tr>

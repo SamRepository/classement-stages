@@ -121,6 +121,7 @@ small { color: var(--pico-muted-color, #6c757d); }
 .badge.brouillon { background: #e2e3e5; color: #41464b; }
 .badge.soumis { background: #cfe2ff; color: #084298; }
 .badge.gele { background: #d1e7dd; color: #0f5132; }
+.badge.vous { background: #0b5ed7; color: #fff; }
 .badge.finance { background: #d1e7dd; color: #0f5132; }
 .badge.non-financable { background: #f8d7da; color: #842029; }
 .badge.recours-ouvert { background: #fff3cd; color: #664d03; }
@@ -164,7 +165,23 @@ small { color: var(--pico-muted-color, #6c757d); }
   border-left: 4px solid #0d6efd; border-radius: 8px; padding: .6rem 1rem; margin: 0 0 1rem; }
 .recours-banner h3 { margin-top: 0; }
 .recours-panel { margin-top: 1rem; }
-tr.ma-ligne { background: #cfe2ff; font-weight: 600; }
+tbody tr.ma-ligne td { background: #cfe2ff; font-weight: 700; }
+tbody tr.ma-ligne td:first-child { box-shadow: inset 5px 0 0 #0b5ed7; }
+tr.ma-ligne { scroll-margin-top: 1.5rem; }
+
+/* Encart « mon résultat » en tête du classement enseignant */
+.mon-resultat { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1rem;
+  padding: 1rem 1.25rem; border: 1px solid #b6d4fe; border-left: 6px solid #0b5ed7;
+  border-radius: .5rem; background: #eaf2ff; flex-wrap: wrap; }
+.mon-resultat-rang { text-align: center; line-height: 1.05; min-width: 5.5rem; }
+.rang-valeur { display: block; font-size: 2.75rem; font-weight: 800; color: #0b5ed7; }
+.rang-valeur sup { font-size: .45em; }
+.rang-total { font-size: .85rem; color: #555; }
+.mon-resultat-infos p { margin: 0 0 .25rem; }
+.mon-resultat-infos p:last-child { margin-bottom: 0; }
+.mon-resultat-score { font-size: 1.25rem; }
+.mon-resultat-etat { font-size: .8rem; color: #555; text-transform: uppercase;
+  letter-spacing: .04em; margin-left: .35rem; }
 
 /* Simulation budgétaire : dossiers au-delà de la coupure */
 tr.non-finance td { opacity: .55; }

@@ -1003,9 +1003,16 @@ async def basculer_fenetre_recours(
 @router.get("/recours")
 def recours_a_traiter(
     request: Request,
-    user: User = RESPONSABLE,
+    user: User = LECTURE,
     db: Session = Depends(get_db),
 ):
+    """File des recours : lecture pour toute la commission, décision au responsable.
+
+    Les membres relecteurs voient les contestations qui portent sur les dossiers
+    qu'ils ont relus — sans cela ils découvriraient les suites de leur relecture
+    après coup. Le formulaire de décision reste réservé au responsable (art. 14-15),
+    comme les routes de décision elles-mêmes.
+    """
     campaign = get_campaign(db)
     grid = grid_for_campaign(campaign)
     spec_map = {s["criterion_id"]: s for s in build_form_spec(grid)}
@@ -1021,6 +1028,7 @@ def recours_a_traiter(
             "recours_motif_labels": MOTIF_LABELS,
             "recours_statut_labels": STATUT_LABELS,
             "en_recours": recours_phase(campaign),
+            "is_responsable": _is_responsable(user),
         },
     )
 

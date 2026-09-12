@@ -126,6 +126,27 @@ def test_archive_suspendue_pendant_les_recours(client, db_session, campaign, dos
     assert client.get("/mon-dossier/archive").status_code == 200
 
 
+def test_file_recours_visible_en_lecture_par_un_membre(client, db_session, dossier_examine,
+                                                       enseignant, membre_commission):
+    """Un relecteur consulte la file des recours ; la décision reste au responsable."""
+    login(client, "enseignant@test.dz")
+    entry = _entry(db_session)
+    client.post(f"/mon-dossier/recours/{entry.id}",
+                data={"motif": "desaccord_rejet", "message": "La revue est bien classée."})
+
+    login(client, "commission@test.dz")
+    r = client.get("/commission/recours")
+    assert r.status_code == 200
+    assert "La revue est bien classée." in r.text          # le recours est lisible
+    assert "Consultation seule" in r.text
+    assert "Enregistrer la décision" not in r.text         # pas de formulaire
+
+    recours = db_session.scalar(select(Recours))
+    refus = client.post(f"/commission/recours/{recours.id}/decision",
+                        data={"decision": "accepte", "reponse_motif": "d'accord"})
+    assert refus.status_code == 403
+
+
 def test_depot_hors_fenetre_refuse(client, db_session, campaign, dossier_examine, enseignant):
     campaign.recours_ouverts = False
     db_session.commit()
@@ -248,11 +269,6 @@ def test_accept_recours_ne_touche_pas_lelement(client, db_session, dossier_exami
     assert rec.decided_by == responsable.id
     # L'élément reste tel quel : la correction se fait ensuite via les décisions.
     assert entry.statut == "rejete"
-
-
-def test_file_recours_interdite_au_membre(client, db_session, dossier_examine, membre_commission):
-    login(client, "commission@test.dz")
-    assert client.get("/commission/recours").status_code == 403
 
 
 def test_file_recours_visible_au_responsable(client, db_session, dossier_examine,

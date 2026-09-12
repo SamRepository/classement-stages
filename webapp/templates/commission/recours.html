@@ -2,24 +2,35 @@
 {% block titre %}Recours{% endblock %}
 {% block contenu %}
 <hgroup>
-  <h1>Recours à traiter</h1>
+  <h1>Recours{% if is_responsable %} à traiter{% endif %}</h1>
   <p>{{ grid.title_fr }} — campagne du {{ campaign.campaign_date.strftime('%d/%m/%Y') }}
      · <span class="badge {{ campaign.statut }}">{{ campaign.statut }}</span>
      {% if campaign.recours_ouverts %} · <span class="badge en_attente">recours ouverts</span>{% endif %}</p>
 </hgroup>
 
 {% if not en_recours %}
+{% if is_responsable %}
 <mark>La période de recours n'est pas ouverte. Ouvrez-la depuis le
   <a href="/commission/classement">classement</a> pour publier les résultats provisoires
   aux enseignants.</mark>
+{% else %}
+<mark>La période de recours n'est pas ouverte : les résultats provisoires ne sont pas encore
+  publiés aux enseignants.</mark>
+{% endif %}
 {% endif %}
 
 {% if not lignes %}
 <p>Aucun recours en attente de traitement.</p>
 {% else %}
+{% if is_responsable %}
 <p>{{ lignes|length }} recours en attente. Accepter un recours ne modifie pas le score : après
    acceptation, corrigez l'élément dans le dossier (re-validation, ajustement de quantité, de rang…)
    pour déclencher le recalcul.</p>
+{% else %}
+<p>{{ lignes|length }} recours en attente de traitement. <strong>Consultation seule</strong> :
+   la décision appartient au responsable de la commission (art. 14-15). Vous pouvez ouvrir chaque
+   dossier pour relire l'élément contesté et son justificatif.</p>
+{% endif %}
 
 {% for l in lignes %}
 {% set e = l.entry %}
@@ -51,6 +62,7 @@
     <footer><small>déposé le {{ r.created_at.strftime('%d/%m/%Y') }}</small></footer>
   </blockquote>
 
+  {% if is_responsable %}
   <form method="post" action="/commission/recours/{{ r.id }}/decision">
     <div class="grid">
       <label>Décision
@@ -67,6 +79,9 @@
     </label>
     <button type="submit">Enregistrer la décision</button>
   </form>
+  {% else %}
+  <p><small>En attente de la décision du responsable de la commission.</small></p>
+  {% endif %}
 </article>
 {% endfor %}
 {% endif %}

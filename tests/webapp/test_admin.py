@@ -56,6 +56,44 @@ def test_liste_comptes_triable(client, db_session, campaign, admin):
     assert par_email.index("amir@test.dz") < par_email.index("zoe@test.dz")
 
 
+def test_tri_comptes_nom_connexion_actif(client, db_session, campaign, admin):
+    """Les colonnes Nom, Dernière connexion et Actif sont triables."""
+    from datetime import datetime, timezone
+
+    db_session.add_all([
+        User(email="zoe@test.dz", password_hash="x", nom="ABBAS",
+             prenom="Zoé", role="enseignant", actif=False),
+        User(email="amir@test.dz", password_hash="x", nom="ZIANE",
+             prenom="Amir", role="enseignant",
+             last_login_at=datetime(2026, 9, 1, 10, 0, tzinfo=timezone.utc)),
+    ])
+    db_session.commit()
+    login(client, "admin@test.dz")
+
+    page = client.get("/admin/utilisateurs").text
+    for tri in ("nom", "connexion", "actif"):
+        assert f"/admin/utilisateurs?tri={tri}" in page
+
+    # Nom : ABBAS (Zoé) avant ZIANE (Amir), quel que soit l'e-mail.
+    par_nom = client.get("/admin/utilisateurs?tri=nom").text
+    assert par_nom.index("zoe@test.dz") < par_nom.index("amir@test.dz")
+
+    # Connexion : celui qui s'est connecté passe avant les « jamais connecté ».
+    par_connexion = client.get("/admin/utilisateurs?tri=connexion").text
+    assert par_connexion.index("amir@test.dz") < par_connexion.index("zoe@test.dz")
+
+    # Actif : les comptes actifs d'abord, l'inactif en dernier.
+    par_actif = client.get("/admin/utilisateurs?tri=actif").text
+    assert par_actif.index("amir@test.dz") < par_actif.index("zoe@test.dz")
+
+
+def test_tri_inconnu_retombe_sur_le_defaut(client, db_session, campaign, admin):
+    login(client, "admin@test.dz")
+    r = client.get("/admin/utilisateurs?tri=n_importe_quoi")
+    assert r.status_code == 200
+    assert "/admin/utilisateurs?tri=role" in r.text
+
+
 def test_colonne_derniere_connexion(client, db_session, campaign, admin, enseignant):
     """La liste des comptes affiche la dernière connexion ; « jamais » sinon, et
     signale les comptes qui ne se sont jamais connectés."""

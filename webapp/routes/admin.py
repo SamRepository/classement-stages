@@ -75,11 +75,23 @@ def _commit(db: Session) -> None:
         )
 
 
+# Tris proposés sur la liste des comptes. « connexion » place les comptes jamais
+# connectés en dernier (``last_login_at IS NULL`` trié après, sans dépendre du
+# placement des NULL propre à chaque moteur), les plus récents d'abord ; « actif »
+# remonte les comptes actifs.
+TRIS_UTILISATEURS = {
+    "role": (User.role, User.nom, User.prenom),
+    "email": (User.email,),
+    "nom": (User.nom, User.prenom, User.email),
+    "connexion": (User.last_login_at.is_(None), User.last_login_at.desc(), User.nom),
+    "actif": (User.actif.desc(), User.role, User.nom),
+}
+
+
 def _page_utilisateurs(request: Request, db: Session, user: User, *, tri: str = "role", **extra):
-    order = User.email if tri == "email" else (User.role, User.nom)
-    if tri != "email":
+    if tri not in TRIS_UTILISATEURS:
         tri = "role"
-    stmt = select(User).order_by(*(order if isinstance(order, tuple) else (order,)))
+    stmt = select(User).order_by(*TRIS_UTILISATEURS[tri])
     users = list(db.scalars(stmt))
     contexte = {"user": user, "users": users, "nouveaux": [], "ignores": [],
                 "envoi": None, "tri": tri, "role_labels": ROLE_LABELS,

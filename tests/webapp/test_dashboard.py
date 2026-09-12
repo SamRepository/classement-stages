@@ -221,6 +221,50 @@ def test_avis_agreges_par_conformite(client, db_session, campaign, dossier_soumi
     assert avis["total"] == 3
 
 
+def test_points_attention_nomment_les_dossiers(db_session, campaign, dossier_soumis,
+                                               membre_commission):
+    """Un point d'attention pointe le dossier concerné : sinon il est introuvable."""
+    from webapp.services.dashboard import build_dashboard
+
+    entries = list(db_session.scalars(
+        select(Entry).where(Entry.criterion_id == "publications")))
+    db_session.add_all([
+        ElementReview(entry_id=entries[0].id, reviewer_id=membre_commission.id,
+                      flag="explication"),
+        ElementReview(entry_id=entries[1].id, reviewer_id=membre_commission.id, flag="pas_ok"),
+    ])
+    db_session.commit()
+
+    campaign = db_session.get(type(campaign), campaign.id)
+    detail = build_dashboard(db_session, campaign)["avis"]["par_critere"]
+    publications = next(c for c in detail if c["criterion_id"] == "publications")
+    assert [d["ref"] for d in publications["dossiers"]] == [dossier_soumis.candidate_ref]
+    # Le dossier porte un avis « à expliquer » : signalé comme tel pour le repérer.
+    assert publications["dossiers"][0]["explication"] is True
+    assert publications["dossiers"][0]["id"] == dossier_soumis.id
+
+
+def test_fenetre_de_campagne_affichee(client, db_session, campaign, dossier_soumis,
+                                      responsable):
+    """La production scientifique annonce la période sur laquelle elle porte."""
+    from datetime import date
+
+    from webapp.services.dashboard import build_dashboard
+
+    campaign.window_start_date = date(2025, 1, 1)
+    campaign.window_end_date = date(2025, 12, 31)
+    db_session.commit()
+
+    campaign = db_session.get(type(campaign), campaign.id)
+    fenetre = build_dashboard(db_session, campaign)["fenetre"]
+    assert fenetre["type"] == "exercice"
+    assert fenetre["libelle"] == "du 01/01/2025 au 31/12/2025"
+
+    login(client, "responsable@test.dz")
+    page = client.get("/commission/tableau-de-bord").text
+    assert "du 01/01/2025 au 31/12/2025" in page
+
+
 def test_avis_dans_le_dashboard(client, db_session, campaign, dossier_soumis,
                                 membre_commission):
     """La page rend la section « Avis des relecteurs »."""

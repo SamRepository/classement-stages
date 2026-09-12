@@ -136,19 +136,26 @@ def _avis(db: Session, campaign) -> dict:
     Seuls les critères concernés apparaissent, triés par nombre de signalements.
     """
     counts = {f: 0 for f in REVIEW_FLAGS}
-    par_critere: dict[str, dict[str, int]] = {}
+    par_critere: dict[str, dict] = {}
+    # Une ligne par avis (et non un GROUP BY) : on veut aussi savoir SUR QUELS
+    # dossiers portent les points d'attention, sinon les retrouver parmi 42
+    # dossiers relève de la fouille.
     rows = db.execute(
-        select(Entry.criterion_id, ElementReview.flag, func.count(ElementReview.id))
+        select(Entry.criterion_id, ElementReview.flag, Dossier.id, Dossier.candidate_ref)
         .join(Entry, ElementReview.entry_id == Entry.id)
         .join(Dossier, Entry.dossier_id == Dossier.id)
         .where(Dossier.campaign_id == campaign.id, Dossier.statut.in_(SUBMITTED))
-        .group_by(Entry.criterion_id, ElementReview.flag)
     ).all()
-    for criterion_id, flag, n in rows:
-        counts[flag] += n
+    for criterion_id, flag, dossier_id, candidate_ref in rows:
+        counts[flag] += 1
         if flag in ("pas_ok", "explication"):
-            bucket = par_critere.setdefault(criterion_id, {"pas_ok": 0, "explication": 0})
-            bucket[flag] += n
+            bucket = par_critere.setdefault(
+                criterion_id, {"pas_ok": 0, "explication": 0, "dossiers": {}}
+            )
+            bucket[flag] += 1
+            bucket["dossiers"].setdefault(dossier_id, {"id": dossier_id,
+                                                       "ref": candidate_ref,
+                                                       "flags": set()})["flags"].add(flag)
     counts["total"] = sum(counts[f] for f in REVIEW_FLAGS)
 
     labels = {
@@ -162,6 +169,11 @@ def _avis(db: Session, campaign) -> dict:
             "pas_ok": v["pas_ok"],
             "explication": v["explication"],
             "total": v["pas_ok"] + v["explication"],
+            "dossiers": sorted(
+                ({"id": d["id"], "ref": d["ref"], "explication": "explication" in d["flags"]}
+                 for d in v["dossiers"].values()),
+                key=lambda d: d["ref"],
+            ),
         }
         for criterion_id, v in par_critere.items()
     ]
@@ -469,9 +481,10 @@ def dashboard_csv(db: Session, campaign) -> str:
     if avis["par_critere"]:
         w.writerow([])
         w.writerow(["Avis par critère (non conformes / à expliquer)"])
-        w.writerow(["Critère", "Non conformes", "À expliquer", "Total"])
+        w.writerow(["Critère", "Non conformes", "À expliquer", "Total", "Dossiers concernés"])
         for c in avis["par_critere"]:
-            w.writerow([c["label"], c["pas_ok"], c["explication"], c["total"]])
+            refs = " ".join(d["ref"] for d in c["dossiers"])
+            w.writerow([c["label"], c["pas_ok"], c["explication"], c["total"], refs])
 
     w.writerow([])
     w.writerow(["Production scientifique (dossiers soumis/gelés)"])
@@ -495,6 +508,27 @@ def dashboard_csv(db: Session, campaign) -> str:
             *[row["counts"][cid] for cid in criterion_ids], row["total"],
         ])
     return buf.getvalue()
+
+
+def _fenetre(campaign) -> dict:
+    """Période retenue par la campagne, telle qu'appliquée par le moteur.
+
+    Soit un intervalle d'exercice uniforme (bornes de la campagne), soit le repère
+    par bénéfice. Affiché en tête de la production scientifique : sans lui, on ne
+    sait pas sur quelle période porte la volumétrie.
+    """
+    debut, fin = campaign.window_start_date, campaign.window_end_date
+    if debut or fin:
+        return {
+            "type": "exercice",
+            "debut": debut,
+            "fin": fin,
+            "libelle": (f"du {debut.strftime('%d/%m/%Y')}" if debut else "jusqu'à")
+                       + (f" au {fin.strftime('%d/%m/%Y')}" if fin else ""),
+        }
+    repere = "la clôture de plateforme" if campaign.window_reference == "cloture" else "la mobilité"
+    return {"type": "benefice", "debut": None, "fin": None,
+            "libelle": f"après le dernier bénéfice (repère : {repere})"}
 
 
 def build_dashboard(db: Session, campaign) -> dict:
@@ -525,6 +559,7 @@ def build_dashboard(db: Session, campaign) -> dict:
         "avis": _avis(db, campaign),
         "destinations": _destinations(db, campaign.id),
         "scientifique": sections,
+        "fenetre": _fenetre(campaign),
         "histogrammes": _histograms(candidate_rows, sections),
         "top_contributeurs": _top_contributors(candidate_rows, sections),
         "relecture": _relecture(db, campaign.id),

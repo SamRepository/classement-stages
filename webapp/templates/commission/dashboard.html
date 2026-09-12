@@ -37,7 +37,8 @@
   <details open>
     <summary>Points d'attention par critère ({{ avis.par_critere|length }})</summary>
     <table>
-      <thead><tr><th>Critère</th><th>Non conformes</th><th>À expliquer</th><th>Total</th></tr></thead>
+      <thead><tr><th>Critère</th><th>Non conformes</th><th>À expliquer</th><th>Total</th>
+        <th>Dossiers concernés</th></tr></thead>
       <tbody>
         {% for c in avis.par_critere %}
         <tr>
@@ -45,6 +46,8 @@
           <td>{% if c.pas_ok %}<span class="badge rejete">{{ c.pas_ok }}</span>{% else %}—{% endif %}</td>
           <td>{% if c.explication %}<span class="badge en_attente">{{ c.explication }}</span>{% else %}—{% endif %}</td>
           <td><strong>{{ c.total }}</strong></td>
+          <td><small>{% for d in c.dossiers %}<a href="/commission/dossiers/{{ d.id }}"
+              {% if d.explication %}class="warning"{% endif %}>{{ d.ref }}</a>{% if not loop.last %} · {% endif %}{% endfor %}</small></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -146,7 +149,9 @@
   <a href="/commission/tableau-de-bord/export.csv" role="button" class="outline"
      style="float:right;font-size:.8rem">Exporter en CSV</a></h2>
 <p><small>
-  Volumétrie des dossiers soumis ou gelés. Deux colonnes :
+  Volumétrie des dossiers soumis ou gelés, sur la période retenue par la campagne :
+  <strong>{{ fenetre.libelle }}</strong>{% if fenetre.type == 'exercice' %} (intervalle
+  d'exercice appliqué uniformément){% endif %}. Deux colonnes :
   <strong>déclaré</strong> = tout ce qui est saisi ;
   <strong>retenu</strong> = hors éléments rejetés par la commission. Les deux
   convergent à mesure que l'examen avance.
@@ -187,7 +192,12 @@
 {% if top_contributeurs %}
 <article>
   <h3>Meilleurs contributeurs</h3>
-  <p><small>Candidats les plus productifs (nombre total d'éléments scientifiques retenus).</small></p>
+  <p><small>Candidats les plus productifs. <strong>Total retenu</strong> = somme des
+     <em>quantités déclarées</em> des éléments non rejetés (un élément saisi avec une quantité
+     de 3 compte pour 3), sur la période {{ fenetre.libelle }}.
+     {% if examen.en_attente %}<span class="warning">{{ examen.en_attente }} élément(s) restent
+     en attente de décision et sont comptés ici comme retenus.</span>{% else %}L'examen étant
+     terminé, ce total ne compte que des éléments validés.{% endif %}</small></p>
   <table>
     <thead><tr><th>#</th><th>Réf.</th><th>Candidat</th><th>Population</th>
       <th>Total retenu</th><th>Détail</th></tr></thead>

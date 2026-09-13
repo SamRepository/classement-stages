@@ -86,5 +86,30 @@
 {% endfor %}
 {% endif %}
 
+{% if tranches %}
+<details>
+  <summary role="button" class="secondary outline">Recours déjà tranchés ({{ tranches|length }})</summary>
+  <table>
+    <thead><tr><th>Candidat</th><th>Élément</th><th>Recours</th><th>Décision</th>
+      <th>Réponse motivée</th></tr></thead>
+    <tbody>
+      {% for l in tranches %}
+      {% set r = l.recours %}
+      <tr>
+        <td><a href="/commission/dossiers/{{ l.dossier.id }}">{{ l.dossier.candidate_ref }}</a><br>
+          <small>{{ l.dossier.user.nom }} {{ l.dossier.user.prenom }}</small></td>
+        <td><small>{{ l.titre }}{% if l.item_label %} — {{ l.item_label }}{% endif %}
+          {% if l.intitule %}<br>« {{ l.intitule }} »{% endif %}</small></td>
+        <td><small>{{ recours_motif_labels[r.motif] }}<br>« {{ r.message }} »</small></td>
+        <td><span class="badge {{ r.statut }}">{{ recours_statut_labels[r.statut] }}</span>
+          {% if r.decided_at %}<br><small>{{ r.decided_at.strftime('%d/%m/%Y') }}</small>{% endif %}</td>
+        <td><small>{{ r.reponse_motif or '—' }}</small></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</details>
+{% endif %}
+
 <p><a href="/commission/classement">← retour au classement</a></p>
 {% endblock %}

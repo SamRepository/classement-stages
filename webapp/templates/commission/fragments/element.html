@@ -25,6 +25,24 @@
     {% endif %}
   </p>
 
+  {# Recours de l'enseignant et réponse motivée : une fois le recours tranché, il
+     sort de la file d'attente, c'est ici qu'il reste consultable. #}
+  {% if recours %}
+  <p class="recours-element recours-{{ recours.statut }}">
+    <small><strong>Recours de l'enseignant</strong>
+      <span class="badge {{ 'en_attente' if recours.statut == 'ouvert' else recours.statut }}">{{
+        recours_statut_labels.get(recours.statut, recours.statut) }}</span>
+      — {{ recours_motif_labels.get(recours.motif, recours.motif) }}
+      <br>« {{ recours.message }} »
+      {% if recours.reponse_motif %}
+      <br><strong>Réponse de la commission</strong>
+        {%- if recours.decided_at %} ({{ recours.decided_at.strftime('%d/%m/%Y') }}){% endif %} :
+        {{ recours.reponse_motif }}
+      {% endif %}
+    </small>
+  </p>
+  {% endif %}
+
   {# Avis du relecteur affecté — affiché au responsable et aux autres lecteurs. #}
   {% if review and not can_review %}
   <p class="avis-relecteur flag-{{ review.flag }}">

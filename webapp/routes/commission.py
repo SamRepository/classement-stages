@@ -33,10 +33,12 @@ from webapp.services.dashboard import build_dashboard, dashboard_csv
 from webapp.services.dossier import get_campaign, log_event
 from webapp.services.exports import export_response, freeze_campaign, pending_entries_count
 from webapp.services.recours import (
+    active_recours,
     MOTIF_LABELS,
     STATUT_LABELS,
     close_recours_window,
     decide_recours,
+    list_closed_recours,
     list_open_recours,
     open_recours_count,
     open_recours_window,
@@ -121,7 +123,10 @@ def _element_context(entry: Entry, user: User) -> dict:
     # Avis montré : celui que le membre édite, sinon celui du relecteur affecté
     # (pour éclairer le responsable et les autres lecteurs).
     review = _review_of(entry, user.id if can_review else dossier.assigned_reviewer_id)
-    return {"can_decide": can_decide, "can_review": can_review, "review": review}
+    # Le recours et sa réponse motivée s'affichent avec l'élément : c'est là qu'ils
+    # se lisent, une fois le recours sorti de la file d'attente.
+    return {"can_decide": can_decide, "can_review": can_review, "review": review,
+            "recours": active_recours(entry)}
 
 
 def _render_element(request: Request, db: Session, entry: Entry, user: User,
@@ -141,6 +146,7 @@ def _render_element(request: Request, db: Session, entry: Entry, user: User,
     html = templates.get_template("commission/fragments/element.html").render(
         request=request, e=entry, labels=labels, is_formula=is_formula,
         is_count=is_count, has_position=has_position,
+        recours_motif_labels=MOTIF_LABELS, recours_statut_labels=STATUT_LABELS,
         **_element_context(entry, user),
     )
     if with_score:
@@ -285,6 +291,8 @@ def vue_dossier(
             "can_review": can_review,
             "flag_counts": flag_counts,
             "elem_ctx": {e.id: _element_context(e, user) for e in dossier.entries},
+            "recours_motif_labels": MOTIF_LABELS,
+            "recours_statut_labels": STATUT_LABELS,
             "benefits": dossier.user.benefits,
         },
     )
@@ -1017,6 +1025,7 @@ def recours_a_traiter(
     grid = grid_for_campaign(campaign)
     spec_map = {s["criterion_id"]: s for s in build_form_spec(grid)}
     lignes = [_recours_ligne(spec_map, r) for r in list_open_recours(db, campaign)]
+    tranches = [_recours_ligne(spec_map, r) for r in list_closed_recours(db, campaign)]
     return templates.TemplateResponse(
         request,
         "commission/recours.html",
@@ -1025,6 +1034,7 @@ def recours_a_traiter(
             "campaign": campaign,
             "grid": grid,
             "lignes": lignes,
+            "tranches": tranches,
             "recours_motif_labels": MOTIF_LABELS,
             "recours_statut_labels": STATUT_LABELS,
             "en_recours": recours_phase(campaign),

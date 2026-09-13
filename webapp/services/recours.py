@@ -249,6 +249,21 @@ def list_open_recours(db: Session, campaign: Campaign) -> list[Recours]:
     )
 
 
+def list_closed_recours(db: Session, campaign: Campaign) -> list[Recours]:
+    """Recours déjà tranchés ou retirés (les plus récents d'abord).
+
+    Une fois tranché, un recours sort de la file d'attente : sans cette liste, la
+    réponse motivée (art. 14-15) ne serait plus visible nulle part côté commission.
+    """
+    return list(
+        db.scalars(
+            _campaign_recours_query(campaign, only_open=False)
+            .where(Recours.statut != "ouvert")
+            .order_by(Recours.id.desc())
+        )
+    )
+
+
 def open_recours_window(
     db: Session, campaign: Campaign, user: User, deadline_raw: str | None
 ) -> None:

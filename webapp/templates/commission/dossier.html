@@ -55,7 +55,7 @@
                   is_count = (section.spec.widget == 'count_detail'),
                   has_position = section.spec.has_position,
                   can_decide = elem_ctx[e.id].can_decide, can_review = elem_ctx[e.id].can_review,
-                  review = elem_ctx[e.id].review %}
+                  review = elem_ctx[e.id].review, recours = elem_ctx[e.id].recours %}
             {% include "commission/fragments/element.html" %}
           {% endwith %}
         {% endfor %}

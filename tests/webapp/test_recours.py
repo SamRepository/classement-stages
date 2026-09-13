@@ -147,6 +147,41 @@ def test_file_recours_visible_en_lecture_par_un_membre(client, db_session, dossi
     assert refus.status_code == 403
 
 
+def test_reponse_motivee_visible_apres_decision(client, db_session, dossier_examine,
+                                                enseignant, responsable):
+    """Une fois tranché, le recours sort de la file : sa réponse doit rester lisible.
+
+    Côté commission, sur l'élément lui-même et dans l'historique de la page recours ;
+    côté enseignant, dans son panneau de recours.
+    """
+    login(client, "enseignant@test.dz")
+    entry = _entry(db_session)
+    client.post(f"/mon-dossier/recours/{entry.id}",
+                data={"motif": "desaccord_rejet", "message": "La revue est classée B."})
+
+    login(client, "responsable@test.dz")
+    recours = db_session.scalar(select(Recours))
+    r = client.post(f"/commission/recours/{recours.id}/decision",
+                    data={"decision": "rejete",
+                          "reponse_motif": "La revue ne figure pas dans les listes 2025."})
+    assert r.status_code in (200, 303)
+
+    # Sur l'élément, dans le dossier.
+    page = client.get(f"/commission/dossiers/{dossier_examine.id}").text
+    assert "Recours de l'enseignant" in page
+    assert "La revue est classée B." in page
+    assert "La revue ne figure pas dans les listes 2025." in page
+
+    # Dans l'historique de la file des recours (il n'est plus en attente).
+    file_recours = client.get("/commission/recours").text
+    assert "Recours déjà tranchés (1)" in file_recours
+    assert "La revue ne figure pas dans les listes 2025." in file_recours
+
+    # Et côté enseignant.
+    login(client, "enseignant@test.dz")
+    assert "La revue ne figure pas dans les listes 2025." in client.get("/mon-dossier").text
+
+
 def test_depot_hors_fenetre_refuse(client, db_session, campaign, dossier_examine, enseignant):
     campaign.recours_ouverts = False
     db_session.commit()

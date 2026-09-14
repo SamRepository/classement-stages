@@ -9,6 +9,7 @@
   "institution_type": "(requis) 'universite' (grilles u1-u4) ou 'centre_recherche' (grilles rc5-rc9)",
   "tutelle": "MESRS",
   "adresse": "",
+  "ville": "",
   "site_web": "",
 
   "departements": [
@@ -33,6 +34,10 @@
     "u2-personnel-administratif": ["personnel_administratif", "personnel_technique"],
     "u3-residences-scientifiques": ["enseignant_chercheur"],
     "u4-perfectionnement": ["doctorant_non_salarie", "maitre_assistant", "enseignant_chercheur"]
+  },
+
+  "title_overrides": {
+    "_comment": "Optionnel. Dénomination retenue par l'établissement pour une grille (grid_id -> intitulé), quand la commission n'emploie pas le titre du décret dans ses documents officiels (ex. « Résidence scientifique… » -> « Séjour scientifique… »). Utilisée par les en-têtes de PV, de fiches et du HTML ; le scoring n'est pas affecté."
   },
 
   "label_overrides": {

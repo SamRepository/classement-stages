@@ -83,6 +83,25 @@ def validate_candidate(institution: dict, candidate: dict, grid: dict) -> list[s
     return warnings
 
 
+def title_override_for(institution: dict, grid_id: str) -> str | None:
+    """Intitulé de la grille propre à l'établissement, ou ``None``.
+
+    Les grilles portent la transcription du décret (``title_fr``, ex. « Résidence
+    scientifique… ») ; un établissement dont la commission retient une autre
+    dénomination dans ses documents officiels (ex. « Séjour scientifique… » à
+    l'ENSET-Skikda) la déclare sous ``title_overrides[<grid_id>]``. Utilisé par
+    les en-têtes de PV, fiches et HTML.
+    """
+    value = institution.get("title_overrides", {}).get(grid_id)
+    return str(value) if value else None
+
+
+def city_of(institution: dict) -> str | None:
+    """Commune du siège, pour la mention « Fait à … » des documents signés."""
+    value = institution.get("ville")
+    return str(value) if value else None
+
+
 def label_overrides_for(institution: dict, grid_id: str) -> dict[str, str]:
     """Surcharges de libellés (``criterion_id`` → ``label_fr``) du profil pour une grille.
 

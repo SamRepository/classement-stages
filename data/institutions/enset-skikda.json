@@ -7,6 +7,7 @@
   "institution_type": "universite",
   "tutelle": "Ministère de l'Enseignement Supérieur et de la Recherche Scientifique (MESRS)",
   "adresse": "Cité Frères Bousta, Azzaba – Skikda, Algérie",
+  "ville": "Azzaba",
   "site_web": "https://enset-skikda.dz",
 
   "departements": [
@@ -33,6 +34,10 @@
     "u2-personnel-administratif": ["personnel_administratif", "personnel_technique"],
     "u3-residences-scientifiques": ["enseignant_chercheur"],
     "u4-perfectionnement": ["doctorant_non_salarie", "maitre_assistant", "enseignant_chercheur"]
+  },
+
+  "title_overrides": {
+    "u3-residences-scientifiques": "Séjour scientifique de courte durée de haut niveau — établissements universitaires et écoles"
   },
 
   "label_overrides": {

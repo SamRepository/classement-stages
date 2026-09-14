@@ -19,6 +19,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
+from classement.institutions import city_of, title_override_for
 from classement.models import RankedCandidate, ScoreBreakdown
 
 _TITLE_FONT = Font(bold=True, size=13)
@@ -53,11 +54,30 @@ def _candidate_name(candidate: dict) -> str:
     return name or str(candidate.get("id", "?"))
 
 
+def _grid_title(institution: dict | None, grid: dict) -> str:
+    """Intitulé affiché : dénomination de l'établissement si elle existe, sinon décret."""
+    override = title_override_for(institution, grid["id"]) if institution else None
+    return override or grid.get("title_fr", grid["id"])
+
+
+def _fait_a(institution: dict | None) -> str:
+    """Mention « Fait à <commune>, le <date de génération> » des documents signés.
+
+    La commune vient du profil d'établissement (``ville``) et la date est celle de
+    la génération du document : un PV se signe le jour où il est produit. À défaut
+    de commune renseignée, on retombe sur les pointillés à compléter à la main.
+    """
+    ville = city_of(institution) if institution else None
+    if not ville:
+        return "Fait à ………………………, le ………………………"
+    return f"Fait à {ville}, le {date.today().strftime('%d/%m/%Y')}"
+
+
 def _header_block(ws, institution: dict | None, grid: dict, campaign_date: str | None, row: int = 1) -> int:
     if institution:
         ws.cell(row=row, column=1, value=institution.get("nom_fr", institution.get("id"))).font = _TITLE_FONT
         row += 1
-    ws.cell(row=row, column=1, value=grid.get("title_fr", grid["id"])).font = _SUB_FONT
+    ws.cell(row=row, column=1, value=_grid_title(institution, grid)).font = _SUB_FONT
     row += 1
     ws.cell(
         row=row,
@@ -135,7 +155,7 @@ def export_pv(
             ws.column_dimensions[get_column_letter(col)].width = width
 
         sig = header_row + len(ranked) + 3
-        ws.cell(row=sig, column=1, value="Fait à ………………………, le ………………………")
+        ws.cell(row=sig, column=1, value=_fait_a(institution))
         ws.cell(row=sig + 2, column=5, value="Le Président du Conseil Scientifique / de la Commission")
 
     wb.save(str(path))
@@ -295,12 +315,12 @@ def export_html(
     e = html.escape
     parts: list[str] = [
         "<!doctype html><html lang='fr'><head><meta charset='utf-8'>",
-        f"<title>PV de classement — {e(grid.get('title_fr', grid['id']))}</title>",
+        f"<title>PV de classement — {e(_grid_title(institution, grid))}</title>",
         f"<style>{_CSS}</style></head><body>",
     ]
     if institution:
         parts.append(f"<h1>{e(institution.get('nom_fr', institution['id']))}</h1>")
-    parts.append(f"<p><b>{e(grid.get('title_fr', grid['id']))}</b><br>")
+    parts.append(f"<p><b>{e(_grid_title(institution, grid))}</b><br>")
     parts.append(
         f"Arrêté n° 345 du 09/03/2026 — campagne du {e(campaign_date or date.today().isoformat())}</p>"
     )
@@ -323,7 +343,7 @@ def export_html(
             parts.append("<tr>" + "".join(f"<td>{e(c)}</td>" for c in cells) + "</tr>")
         parts.append("</table>")
     parts.append(
-        "<div class='sig'><span>Fait à ………………, le ………………</span>"
+        f"<div class='sig'><span>{e(_fait_a(institution))}</span>"
         "<span>Le Président du Conseil Scientifique / de la Commission</span></div>"
     )
 

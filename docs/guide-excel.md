@@ -292,7 +292,15 @@ python -m classement score --grid u3-residences-scientifiques --institution ense
 | `classement-u3.html` | PV + toutes les fiches, une page par fiche.                                                                                                                                   | **Voie PDF** : ouvrir dans un navigateur → Imprimer → Enregistrer en PDF.                                            |
 
 Les **ex aequo** partagent le même rang (1, 2, 2, 4) et sont signalés : l'arrêté ne
-définit pas de critère de départage, l'arbitrage revient à la commission.
+définit pas de critère de départage, l'arbitrage revient à la commission. Quand la
+commission tranche malgré tout (places limitées), le PV doit énoncer la règle retenue
+et l'appliquer à tous les ex aequo de la ligne, sans quoi l'ordre paraît arbitraire.
+
+L'**en-tête et le bloc signature** viennent du profil d'établissement : `ville` produit
+la mention « Fait à …, le … » datée du jour de génération (pointillés à compléter
+à la main si le champ est absent), et `title_overrides[<grid_id>]` remplace l'intitulé du
+décret par la dénomination employée par l'établissement (à l'ENSET-Skikda, « Séjour
+scientifique de courte durée… » pour u3).
 
 ## 6. Simulation budgétaire
 

@@ -42,7 +42,8 @@ from webapp.services.recours import (
     list_open_recours,
     open_recours_count,
     open_recours_window,
-    recours_phase,
+    recours_filing_open,
+    results_published,
 )
 from webapp.services.scoring import compute_ranking, compute_score, get_costs, grid_for_campaign
 from webapp.templating import templates
@@ -870,6 +871,7 @@ def classement(
             "nb_classes": len(result.dossiers),
             "is_responsable": _is_responsable(user),
             "recours_ouverts_count": open_recours_count(db, campaign),
+            "depot_ouvert": recours_filing_open(campaign),
         },
     )
 
@@ -1037,7 +1039,8 @@ def recours_a_traiter(
             "tranches": tranches,
             "recours_motif_labels": MOTIF_LABELS,
             "recours_statut_labels": STATUT_LABELS,
-            "en_recours": recours_phase(campaign),
+            "en_recours": recours_filing_open(campaign),
+            "publie": results_published(campaign),
             "is_responsable": _is_responsable(user),
         },
     )

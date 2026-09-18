@@ -69,10 +69,18 @@
     <p><small>La période de recours ne s'ouvre qu'une fois la saisie <strong>clôturée</strong>
        (résultats provisoires). Statut actuel : {{ campaign.statut }}.</small></p>
   {% elif campaign.recours_ouverts %}
+    {% if depot_ouvert %}
     <p>Recours <strong>ouverts</strong> : les enseignants voient le classement provisoire et
        peuvent contester leurs éléments.
-       {% if campaign.recours_deadline %}Date limite indicative :
-       {{ campaign.recours_deadline.strftime('%d/%m/%Y') }}.{% endif %}</p>
+       {% if campaign.recours_deadline %}Les dépôts se ferment d'eux-mêmes après le
+       <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong> inclus ; le
+       classement restera visible aux enseignants jusqu'au gel.{% endif %}</p>
+    {% else %}
+    <p>Recours <strong>clos</strong>{% if campaign.recours_deadline %} depuis le
+       <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong> (date limite
+       dépassée){% endif %} : plus aucune contestation n'est recevable. Les enseignants gardent
+       l'accès au classement provisoire et aux motifs de rejet jusqu'au gel.</p>
+    {% endif %}
     <p>{% if recours_ouverts_count %}<strong>{{ recours_ouverts_count }}</strong> recours en attente
        de traitement (par le responsable de la commission).{% else %}Aucun recours en attente.{% endif %}</p>
     <form method="post" action="/admin/campagne/recours"
@@ -84,8 +92,10 @@
     <p>Ouvrez la période de recours pour publier le classement provisoire aux enseignants.</p>
     <form method="post" action="/admin/campagne/recours">
       <input type="hidden" name="action" value="ouvrir">
-      <label>Date limite indicative (optionnelle)
+      <label>Date limite de dépôt (optionnelle, incluse)
         <input type="date" name="recours_deadline">
+        <small>Passé cette date, plus aucun recours n'est recevable — sans rien retirer de la
+           visibilité du classement. À vide : la fenêtre ne se ferme qu'à la main.</small>
       </label>
       <button type="submit">Ouvrir la période de recours</button>
     </form>

@@ -84,12 +84,19 @@ class Campaign(Base):
     # Phase de recours : ouverte manuellement par le responsable une fois les
     # résultats provisoires publiés (campagne « cloturee »). Tant qu'elle est
     # ouverte, l'enseignant voit le classement provisoire et peut contester ses
-    # éléments, et le gel est bloqué. La date limite est purement indicative
-    # (aucun délai réglementaire dans l'arrêté 345).
+    # éléments. La date limite, si elle est fixée, ferme les dépôts d'elle-même
+    # (incluse : on dépose toute la journée) ; l'arrêté 345 n'impose aucun délai,
+    # celui-ci est propre à l'établissement.
     recours_ouverts: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("0")
     )
     recours_deadline: Mapped[date | None] = mapped_column(Date)
+    # Publication des résultats aux enseignants, horodatée à la première ouverture
+    # des recours. Publié une fois, publié pour de bon : fermer la fenêtre de
+    # recours (à la main ou par dépassement de la date limite) arrête les dépôts,
+    # pas l'accès au classement ni aux motifs de rejet — sans quoi un candidat
+    # perdrait la motivation de l'art. 14-15 entre la clôture des recours et le gel.
+    results_published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     dossiers: Mapped[list["Dossier"]] = relationship(back_populates="campaign")
 

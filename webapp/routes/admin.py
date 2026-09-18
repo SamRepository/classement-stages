@@ -32,6 +32,7 @@ from webapp.services.recours import (
     close_recours_window,
     open_recours_count,
     open_recours_window,
+    recours_filing_open,
 )
 from webapp.services.scoring import get_institution
 from webapp.templating import templates
@@ -428,7 +429,8 @@ def campagne(request: Request, user: User = ADMIN, db: Session = Depends(get_db)
         {"user": user, "campaign": camp, "dossiers": dossiers,
          "departements": institution.get("departements", []),
          "populations": institution.get("populations", []),
-         "recours_ouverts_count": open_recours_count(db, camp)},
+         "recours_ouverts_count": open_recours_count(db, camp),
+         "depot_ouvert": recours_filing_open(camp)},
     )
 
 

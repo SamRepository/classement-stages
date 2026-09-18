@@ -29,7 +29,8 @@ from webapp.services.recours import (
     STATUT_LABELS,
     active_recours,
     file_recours,
-    recours_phase,
+    recours_filing_open,
+    results_published,
     withdraw_recours,
 )
 from webapp.services.scoring import compute_score, get_institution, grid_for_campaign
@@ -102,7 +103,7 @@ def _render_score(request: Request, db: Session, dossier: Dossier, *, oob: bool)
     """
     campaign = dossier.campaign
     grid = grid_for_campaign(campaign)
-    publie = recours_phase(campaign) or campaign.statut == "gelee"
+    publie = results_published(campaign)
     declare, _ = compute_score(db, dossier, mode="declare")
     if publie:
         breakdown, exclusions = compute_score(db, dossier, mode="commission")
@@ -179,7 +180,7 @@ def _recours_panel_response(
     request: Request, db: Session, dossier: Dossier, grid: dict
 ) -> HTMLResponse:
     db.refresh(dossier)
-    en_recours = recours_phase(dossier.campaign)
+    en_recours = recours_filing_open(dossier.campaign)
     html = templates.get_template("enseignant/fragments/recours.html").render(
         request=request, dossier=dossier, campaign=dossier.campaign,
         en_recours=en_recours, **_recours_context(dossier, grid, en_recours),
@@ -199,7 +200,7 @@ def page_dossier(
     resultat = None
     if campaign.statut == "gelee":
         resultat = snapshot_rank_for(db, campaign, dossier.candidate_ref)
-    en_recours = recours_phase(campaign)
+    en_recours = recours_filing_open(campaign)
     return templates.TemplateResponse(
         request,
         "enseignant/dossier.html",
@@ -214,6 +215,7 @@ def page_dossier(
             "editable": dossier.statut == "brouillon",
             "resultat": resultat,
             "en_recours": en_recours,
+            "publie": results_published(campaign),
             **_recours_context(dossier, grid, en_recours),
         },
     )
@@ -621,7 +623,7 @@ def page_classement(
     n'est pas encore publié.
     """
     campaign, dossier, grid = _context(db, user)
-    published = recours_phase(campaign) or campaign.statut == "gelee"
+    published = results_published(campaign)
     ranking = candidate_group_ranking(db, campaign, dossier.candidate_ref) if published else None
     return templates.TemplateResponse(
         request,
@@ -632,6 +634,7 @@ def page_classement(
             "grid": grid,
             "dossier": dossier,
             "published": published,
+            "en_recours": recours_filing_open(campaign),
             "definitif": campaign.statut == "gelee",
             "ranking": ranking,
         },
@@ -699,7 +702,7 @@ def telecharger_archive(
             status_code=403,
             detail="Le téléchargement du dossier complet est disponible après sa soumission.",
         )
-    if recours_phase(campaign):
+    if recours_filing_open(campaign):
         raise HTTPException(
             status_code=403,
             detail="Le téléchargement du dossier complet est suspendu pendant la période de "

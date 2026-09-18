@@ -9,7 +9,13 @@
 </hgroup>
 
 {% if not en_recours %}
-{% if is_responsable %}
+{% if publie %}
+<mark>Les dépôts de recours sont clos{% if campaign.recours_deadline %} depuis le
+  {{ campaign.recours_deadline.strftime('%d/%m/%Y') }}{% endif %} : les enseignants gardent
+  l'accès au classement et aux motifs de rejet, mais ne peuvent plus contester.
+  {% if is_responsable %}Traitez les recours déjà déposés, puis gelez le classement depuis le
+  <a href="/commission/classement">classement</a>.{% endif %}</mark>
+{% elif is_responsable %}
 <mark>La période de recours n'est pas ouverte. Ouvrez-la depuis le
   <a href="/commission/classement">classement</a> pour publier les résultats provisoires
   aux enseignants.</mark>

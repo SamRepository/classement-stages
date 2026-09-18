@@ -53,6 +53,15 @@
      Le classement sera figé après le traitement des recours.</p>
   <p><a href="/mon-dossier/classement" role="button">Voir le classement provisoire →</a></p>
 </article>
+{% elif publie %}
+<article class="recours-banner">
+  <h3>Résultats provisoires — période de recours close</h3>
+  <p>La période de recours est close{% if campaign.recours_deadline %} depuis le
+     <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong>{% endif %} : vous ne
+     pouvez plus contester d'élément. Les décisions de la commission et leurs motifs restent
+     consultables ci-dessous, et le classement sera figé après le traitement des recours déposés.</p>
+  <p><a href="/mon-dossier/classement" role="button">Voir le classement provisoire →</a></p>
+</article>
 {% elif not editable %}
 <mark>Votre dossier a été soumis{% if dossier.submitted_at %} le {{ dossier.submitted_at.strftime('%d/%m/%Y') }}{% endif %} :
 il est en cours d'examen et ne peut plus être modifié.</mark>
@@ -67,14 +76,14 @@ il est en cours d'examen et ne peut plus être modifié.</mark>
 {# L'archive (récapitulatif + copie de tous les justificatifs dans un ZIP temporaire)
    est l'opération la plus lourde du portail : plusieurs constructions simultanées
    remplissent le disque du conteneur. Elle est donc retirée pendant la fenêtre de
-   recours, où la priorité est la contestation, et rendue après le gel. #}
+   recours, où la priorité est la contestation, et rendue dès la clôture des dépôts. #}
 {% if dossier.statut in ('soumis', 'gele') and not en_recours %}
 <p class="archive-lien"><a href="/mon-dossier/archive">⬇ Télécharger mon dossier complet
    (ZIP : récapitulatif + justificatifs PDF)</a><br>
    <small>Pour vos archives personnelles.</small></p>
 {% elif en_recours %}
 <p class="archive-lien"><small>Le téléchargement du dossier complet (ZIP) sera de nouveau
-   disponible après la publication du classement définitif. Pour déposer un recours, il est
+   disponible à la clôture de la période de recours. Pour déposer un recours, il est
    inutile : vos justificatifs restent consultables un par un ci-dessous.</small></p>
 {% endif %}
 

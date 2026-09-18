@@ -116,6 +116,18 @@ dossier web ≡ dict moteur pour chaque type de critère.
   responsable(s), décision → enseignant. La fenêtre de recours se pilote depuis l'espace
   **responsable** (classement) **ou l'espace admin** (campagne). Tout est tracé au journal ;
   21 tests dédiés.
+- **Publication et dépôt dissociés** (18/09/2026) : la visibilité des résultats côté
+  enseignant était déduite de `recours_ouverts`, si bien que **fermer la fenêtre de
+  recours dépubliait le classement** — score déclaré de retour à la place du retenu,
+  motifs de rejet masqués — alors que la campagne n'était pas encore gelée. Deux verrous
+  désormais : `results_published` (horodaté à la première ouverture des recours, ne se
+  rétracte plus, ou gel) commande la lecture ; `recours_filing_open` (campagne clôturée +
+  fenêtre ouverte + date limite non dépassée) commande le dépôt **et le retrait**. La
+  **date limite devient opposable** — elle n'était qu'affichée : passé le dernier jour
+  (inclus), le dépôt est refusé avec un message daté, sans rien retirer de la visibilité du
+  classement ni des motifs. L'archive ZIP revient dès la clôture des dépôts, sans attendre
+  le gel. Migration `d0e1f2a3b4c5` avec reprise des campagnes déjà publiées ; 5 tests
+  dédiés.
 
 **Reste à faire** :
 - déploiement effectif sur l'instance Coolify (PostgreSQL + volume `/data/uploads` +

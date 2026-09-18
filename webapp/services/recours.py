@@ -54,13 +54,33 @@ STATUT_LABELS = {
 }
 
 
-def recours_phase(campaign: Campaign) -> bool:
-    """Vrai si la phase de recours est active (résultats provisoires publiés).
+def results_published(campaign: Campaign) -> bool:
+    """Vrai si les résultats sont publiés aux enseignants.
 
-    La campagne doit être clôturée (saisie fermée, examen commission fait) et le
-    responsable avoir explicitement ouvert la fenêtre de recours.
+    Commande l'accès au classement, au score **retenu** et aux motifs de rejet.
+    Publié une fois, publié pour de bon : la date de publication est posée à la
+    première ouverture des recours et ne s'efface plus. Fermer la fenêtre de
+    recours arrête les dépôts, pas la lecture — sans quoi un candidat perdrait la
+    motivation de l'art. 14-15 entre la clôture des recours et le gel, et
+    retrouverait son score déclaré comme si rien n'avait été examiné.
     """
-    return campaign.statut == "cloturee" and bool(campaign.recours_ouverts)
+    return campaign.results_published_at is not None or campaign.statut == "gelee"
+
+
+def recours_filing_open(campaign: Campaign, today: date | None = None) -> bool:
+    """Vrai si un recours peut encore être déposé (ou retiré).
+
+    Exige une campagne clôturée, la fenêtre ouverte par le responsable, et de ne
+    pas avoir dépassé la date limite si elle est fixée. La date limite est
+    **incluse** : on dépose toute la journée, la fermeture tombe au lendemain
+    00h00 (heure du serveur). L'arrêté 345 n'impose aucun délai : celui-ci est
+    propre à l'établissement, d'où son caractère facultatif.
+    """
+    if campaign.statut != "cloturee" or not campaign.recours_ouverts:
+        return False
+    deadline = campaign.recours_deadline
+    return deadline is None or (today or date.today()) <= deadline
+
 
 
 def active_recours(entry: Entry) -> Recours | None:
@@ -135,6 +155,14 @@ def _notify_decision(recours: Recours) -> None:
     mailer.notify(enseignant.email, "Votre recours a été traité", corps)
 
 
+def _closed_detail(campaign: Campaign) -> str:
+    """Message de refus, daté quand la date limite est ce qui a fermé les dépôts."""
+    deadline = campaign.recours_deadline
+    if campaign.recours_ouverts and deadline and date.today() > deadline:
+        return f"La période de recours est close depuis le {deadline.strftime('%d/%m/%Y')}."
+    return "La période de recours n'est pas ouverte."
+
+
 def file_recours(
     db: Session, entry: Entry, user: User, motif: str, message: str
 ) -> Recours:
@@ -142,11 +170,8 @@ def file_recours(
     dossier = entry.dossier
     if dossier.user_id != user.id:
         raise HTTPException(status_code=403, detail="Cet élément n'est pas dans votre dossier.")
-    if not recours_phase(dossier.campaign):
-        raise HTTPException(
-            status_code=403,
-            detail="La période de recours n'est pas ouverte.",
-        )
+    if not recours_filing_open(dossier.campaign):
+        raise HTTPException(status_code=403, detail=_closed_detail(dossier.campaign))
     if motif not in RECOURS_MOTIFS:
         raise HTTPException(status_code=422, detail=f"Motif de recours inconnu : {motif!r}.")
     message = (message or "").strip()
@@ -176,6 +201,13 @@ def withdraw_recours(db: Session, recours: Recours, user: User) -> None:
     """Retrait par l'enseignant, possible tant que le recours n'est pas tranché."""
     if recours.created_by != user.id:
         raise HTTPException(status_code=403, detail="Ce recours n'est pas le vôtre.")
+    if not recours_filing_open(recours.entry.dossier.campaign):
+        # Fermé à la même date que le dépôt : un retrait tardif serait un piège,
+        # l'enseignant ne pouvant plus redéposer.
+        raise HTTPException(
+            status_code=403,
+            detail="La période de recours est close : un recours déposé ne peut plus être retiré.",
+        )
     if recours.statut != "ouvert":
         raise HTTPException(
             status_code=409,
@@ -288,12 +320,19 @@ def open_recours_window(
     else:
         campaign.recours_deadline = None
     campaign.recours_ouverts = True
+    if campaign.results_published_at is None:
+        campaign.results_published_at = datetime.now(timezone.utc)
     log_event(db, user, "recours_ouverts", detail=f"deadline={campaign.recours_deadline or '-'}")
     db.commit()
 
 
 def close_recours_window(db: Session, campaign: Campaign, user: User) -> None:
-    """Ferme la période de recours (les enseignants ne peuvent plus contester)."""
+    """Ferme la période de recours : plus aucun dépôt ni retrait.
+
+    Fermeture anticipée, à la main — la date limite de la campagne produit le
+    même effet d'elle-même. Les résultats publiés restent visibles : classement,
+    score retenu et motifs de rejet (cf. ``results_published``).
+    """
     campaign.recours_ouverts = False
     log_event(db, user, "recours_fermes")
     db.commit()

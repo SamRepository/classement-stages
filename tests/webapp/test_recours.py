@@ -1,5 +1,7 @@
 """Phase de recours : dépôt (enseignant), traitement (responsable), garde-fous."""
 
+from datetime import date, datetime, timedelta, timezone
+
 import pytest
 from sqlalchemy import select
 
@@ -25,6 +27,8 @@ def dossier_examine(db_session, campaign, dossier):
     dossier.statut = "soumis"
     campaign.statut = "cloturee"
     campaign.recours_ouverts = True
+    # Comme le fait « ouvrir la fenêtre de recours » : la publication est horodatée.
+    campaign.results_published_at = datetime.now(timezone.utc)
     db_session.commit()
     db_session.refresh(dossier)
     return dossier
@@ -59,8 +63,9 @@ def test_score_publie_affiche_le_retenu(client, db_session, dossier_examine, ens
 
 def test_score_avant_publication_reste_declare(client, db_session, campaign, dossier_examine,
                                                enseignant):
-    """Fenêtre fermée : ni score retenu ni motif de rejet ne doivent transparaître."""
+    """Jamais publié : ni score retenu ni motif de rejet ne doivent transparaître."""
     campaign.recours_ouverts = False
+    campaign.results_published_at = None
     db_session.commit()
     login(client, "enseignant@test.dz")
     r = client.get("/mon-dossier/score")
@@ -116,13 +121,18 @@ def test_archive_suspendue_pendant_les_recours(client, db_session, campaign, dos
     r = client.get("/mon-dossier/archive")
     assert r.status_code == 403
 
-    # Après le gel, le téléchargement revient.
+    # Dès la clôture des dépôts, le téléchargement revient : la contestation
+    # n'est plus la priorité, inutile d'attendre le gel.
     campaign.recours_ouverts = False
-    campaign.statut = "gelee"
-    dossier_examine.statut = "gele"
     db_session.commit()
     page = client.get("/mon-dossier")
     assert "Télécharger mon dossier complet" in page.text
+    assert client.get("/mon-dossier/archive").status_code == 200
+
+    # Et après le gel, toujours.
+    campaign.statut = "gelee"
+    dossier_examine.statut = "gele"
+    db_session.commit()
     assert client.get("/mon-dossier/archive").status_code == 200
 
 
@@ -190,6 +200,85 @@ def test_depot_hors_fenetre_refuse(client, db_session, campaign, dossier_examine
     r = client.post(f"/mon-dossier/recours/{entry.id}",
                     data={"motif": "autre", "message": "test"})
     assert r.status_code == 403
+
+
+def test_depot_refuse_apres_la_date_limite(client, db_session, campaign, dossier_examine,
+                                           enseignant):
+    """La date limite ferme les dépôts d'elle-même, sans clic du responsable."""
+    campaign.recours_deadline = date.today() - timedelta(days=1)
+    db_session.commit()
+    login(client, "enseignant@test.dz")
+    entry = _entry(db_session)
+    r = client.post(f"/mon-dossier/recours/{entry.id}",
+                    data={"motif": "autre", "message": "test"})
+    assert r.status_code == 403
+    # Refus daté, pas un 403 muet : le candidat doit savoir depuis quand c'est clos.
+    assert campaign.recours_deadline.strftime("%d/%m/%Y") in r.text
+
+
+def test_depot_accepte_le_jour_de_la_date_limite(client, db_session, campaign, dossier_examine,
+                                                 enseignant):
+    """Date limite incluse : on dépose toute la journée du dernier jour."""
+    campaign.recours_deadline = date.today()
+    db_session.commit()
+    login(client, "enseignant@test.dz")
+    entry = _entry(db_session)
+    r = client.post(f"/mon-dossier/recours/{entry.id}",
+                    data={"motif": "desaccord_rejet", "message": "je conteste"})
+    assert r.status_code == 200
+    assert db_session.scalar(select(Recours).where(Recours.entry_id == entry.id)) is not None
+
+
+def test_retrait_refuse_apres_la_date_limite(client, db_session, campaign, dossier_examine,
+                                             enseignant):
+    """Retrait fermé avec le dépôt : sinon l'enseignant se retire sans pouvoir redéposer."""
+    login(client, "enseignant@test.dz")
+    entry = _entry(db_session)
+    client.post(f"/mon-dossier/recours/{entry.id}",
+                data={"motif": "desaccord_rejet", "message": "je conteste"})
+    recours = db_session.scalar(select(Recours).where(Recours.entry_id == entry.id))
+    campaign.recours_deadline = date.today() - timedelta(days=1)
+    db_session.commit()
+    r = client.delete(f"/mon-dossier/recours/{recours.id}")
+    assert r.status_code == 403
+    db_session.refresh(recours)
+    assert recours.statut == "ouvert"
+
+
+def test_publication_ne_se_retracte_pas(client, db_session, campaign, dossier_examine,
+                                        enseignant):
+    """Dépôts clos mais pas encore gelé : le candidat garde classement, score et motifs.
+
+    Régression : la visibilité était déduite de ``recours_ouverts``, si bien que
+    fermer la fenêtre renvoyait l'enseignant à son score *déclaré* et masquait les
+    motifs de rejet (art. 14-15) alors que la commission avait déjà tranché.
+    """
+    campaign.recours_deadline = date.today() - timedelta(days=1)
+    db_session.commit()
+    login(client, "enseignant@test.dz")
+
+    score = client.get("/mon-dossier/score")
+    assert "Score retenu" in score.text
+    assert "Hors fenêtre" in score.text          # motif du rejet toujours lisible
+
+    classement = client.get("/mon-dossier/classement")
+    assert "n'est pas encore publié" not in classement.text
+    assert dossier_examine.candidate_ref in classement.text
+
+    page = client.get("/mon-dossier")
+    assert "période de recours close" in page.text
+    assert "Contester" not in page.text          # mais plus de formulaire
+
+
+def test_depot_accepte_sans_date_limite(client, db_session, campaign, dossier_examine,
+                                        enseignant):
+    """Sans date limite, la fenêtre ne se ferme qu'à la main (comportement d'origine)."""
+    assert campaign.recours_deadline is None
+    login(client, "enseignant@test.dz")
+    entry = _entry(db_session)
+    r = client.post(f"/mon-dossier/recours/{entry.id}",
+                    data={"motif": "desaccord_rejet", "message": "je conteste"})
+    assert r.status_code == 200
 
 
 def test_depot_message_obligatoire(client, db_session, dossier_examine, enseignant):
@@ -336,10 +425,13 @@ def test_ouvrir_fermer_fenetre(client, db_session, campaign, dossier, responsabl
     db_session.refresh(campaign)
     assert campaign.recours_ouverts is True
     assert campaign.recours_deadline.isoformat() == "2026-07-15"
+    publie_le = campaign.results_published_at
+    assert publie_le is not None          # l'ouverture publie les résultats
     r = client.post("/commission/recours/fenetre", data={"action": "fermer"})
     assert r.status_code == 303
     db_session.refresh(campaign)
     assert campaign.recours_ouverts is False
+    assert campaign.results_published_at == publie_le   # publié une fois, publié pour de bon
 
 
 def test_ouvrir_refuse_si_saisie_ouverte(client, db_session, campaign, responsable):
@@ -447,6 +539,7 @@ def test_classement_provisoire_visible(client, db_session, dossier_examine, ense
 
 def test_classement_masque_hors_phase(client, db_session, campaign, dossier_examine, enseignant):
     campaign.recours_ouverts = False
+    campaign.results_published_at = None
     db_session.commit()
     login(client, "enseignant@test.dz")
     r = client.get("/mon-dossier/classement")

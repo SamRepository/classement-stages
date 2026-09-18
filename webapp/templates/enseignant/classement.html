@@ -21,11 +21,19 @@
 
 {% else %}
 {% if not definitif %}
+{% if en_recours %}
 <p class="recours-banner"><strong>⚠️ Résultats provisoires.</strong> Ce classement n'est pas
    définitif : la période de recours est ouverte{% if campaign.recours_deadline %}
-   jusqu'au <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong>{% endif %}.
+   jusqu'au <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong> inclus{% endif %}.
    Il peut évoluer après le traitement des recours. Pour contester un élément, rendez-vous sur
    <a href="/mon-dossier">votre dossier</a>.</p>
+{% else %}
+<p class="recours-banner"><strong>⚠️ Résultats provisoires.</strong> La période de recours est
+   close{% if campaign.recours_deadline %} depuis le
+   <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong>{% endif %} : plus aucune
+   contestation n'est recevable. Ce classement peut encore évoluer au traitement des recours
+   déposés ; il deviendra définitif au gel par la commission.</p>
+{% endif %}
 {% else %}
 <p class="cloture-info">Classement gelé{% if campaign.frozen_at %} le
    {{ campaign.frozen_at.strftime('%d/%m/%Y à %H:%M') }}{% endif %} : il fait foi.</p>

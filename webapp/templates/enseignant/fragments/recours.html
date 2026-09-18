@@ -5,9 +5,11 @@
   <p>Pour chaque élément, vous pouvez contester la décision de la commission en la motivant.
      Votre recours sera examiné par le responsable de la commission
      {% if campaign.recours_deadline %}(période ouverte jusqu'au
-     <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong>){% endif %}.</p>
+     <strong>{{ campaign.recours_deadline.strftime('%d/%m/%Y') }}</strong> inclus){% endif %}.</p>
   {% else %}
-  <p><small>La période de recours est close. L'état de vos recours est indiqué ci-dessous.</small></p>
+  <p><small>La période de recours est close{% if campaign.recours_deadline %} depuis le
+     {{ campaign.recours_deadline.strftime('%d/%m/%Y') }}{% endif %} : aucune nouvelle
+     contestation n'est recevable. L'état de vos recours est indiqué ci-dessous.</small></p>
   {% endif %}
 
   <div class="table-wrap">
